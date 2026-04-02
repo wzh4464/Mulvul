@@ -1,0 +1,2955 @@
+# PrimeVul Layer-1 初始化 Prompts
+# 每个 prompt 之间用空行分隔
+# Prompt 中必须包含 {input} 占位符
+
+# Prompt 1
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Start by identifying whether external input influences security-critical operations.
+- Inspect array, buffer, and pointer handling for missing bounds and lifetime safeguards.
+- Check memory allocation/freeing patterns for leaks, double frees, or use-after-free issues.
+- Look for concurrency primitives that could cause race conditions or inconsistent state.
+- When no concrete vulnerability conditions exist, return 'Benign'.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 2
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Review buffer allocations, index arithmetic, and memcpy/memset usage for overflow or underflow patterns.
+- Distinguish pointer misuse by checking for null validation, dangling references, and invalid dereferences.
+- Confirm lifetime management: match allocations to frees and inspect error paths for leaks or double frees.
+- Prefer 'Benign' when operations stay within documented bounds and defensive guards are present.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 3
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Trace all user-controlled inputs; ensure sanitization before reaching system, SQL, or command execution calls.
+- Map CWE hints (e.g., CWE-79, CWE-89) to major categories while verifying the exploit is feasible.
+- Contrast injection findings with buffer or integer issues to avoid mislabeling multi-symptom defects.
+- Choose 'Benign' when inputs are validated, escaped, or unused in sensitive contexts.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 4
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Focus on concurrency primitives (locks, atomics, threads); identify missing synchronization around shared state.
+- Examine memory sharing, producer/consumer logic, and ordering guarantees for race windows.
+- When concurrency looks safe, fall back to scanning for memory, buffer, or injection issues before 'Benign'.
+- Document evidence-driven reasoning within the guidance to disambiguate close categories.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 5
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Audit memory allocation and cleanup paths: ensure every malloc/new has a corresponding free/delete.
+- Detect use-after-free by following pointers after deallocation or across error labels.
+- Treat lack of deallocation on all exit paths as Memory Management issues unless the lifetime is intentional.
+- If memory handling is correct, check pointer, integer, and buffer safety before defaulting to 'Benign'.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 6
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Evaluate arithmetic and casting for overflow/underflow when values influence lengths, indexes, or allocations.
+- Watch for signed/unsigned conversions, bit shifts, and loop counters that can wrap unexpectedly.
+- Differentiate between Buffer Errors (actual out-of-bounds access) and Integer Errors (unsafe numeric range handling).
+- Confirm no exploitable arithmetic flaw exists before selecting 'Benign'.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 7
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Inspect file and path construction for traversal sequences or unsafe concatenation of untrusted input.
+- Review cryptographic usage for deprecated algorithms, missing randomness, or hard-coded secrets.
+- Check logging and error handling for unintended information disclosure.
+- Mark as 'Benign' only if path, crypto, and disclosure surfaces are hardened and validated.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 8
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Combine control-flow and data-flow evidence to justify selecting a specific CWE major category.
+- Prioritize categories that align with the root cause, not just surface symptoms.
+- Highlight differentiators between closely related categories (e.g., Buffer Errors vs. Pointer Dereference).
+- Default to 'Benign' when safeguards mitigate potential issues or evidence is speculative.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 9
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Use a two-pass review: first scan for any vulnerability triggers, then confirm mitigation coverage.
+- Record decisive cues (API usage, missing checks, lifetime anomalies) that map to each CWE major category.
+- Reinforce conservative judgment—require demonstrable exploit paths before assigning a vulnerable label.
+- End guidance with a reminder to return just the category token.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 10
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following level-0 CWE root categories:
+- Benign
+- CWE-284 Improper Access Control
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities
+- CWE-664 Improper Control of a Resource Through its Lifetime
+- CWE-682 Incorrect Calculation
+- CWE-691 Insufficient Control Flow Management
+- CWE-693 Protection Mechanism Failure
+- CWE-703 Improper Check or Handling of Exceptional Conditions
+- CWE-707 Improper Neutralization
+- CWE-710 Improper Adherence to Coding Standards
+- Other
+Category Descriptions (fixed reference):
+- CWE-284 Improper Access Control: The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.
+- CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities: Description unavailable.
+- CWE-664 Improper Control of a Resource Through its Lifetime: The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.
+- CWE-682 Incorrect Calculation: The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.
+- CWE-691 Insufficient Control Flow Management: Description unavailable.
+- CWE-693 Protection Mechanism Failure: The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.
+- CWE-703 Improper Check or Handling of Exceptional Conditions: The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.
+- CWE-707 Improper Neutralization: The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.
+- CWE-710 Improper Adherence to Coding Standards: Description unavailable.
+
+Reference Subcategories (for context):
+CWE-284 Improper Access Control:
+  - CWE-269 Improper Privilege Management
+    - CWE-271 Privilege Dropping / Lowering Errors
+      - CWE-273 Improper Check for Dropped Privileges
+  - CWE-285 Improper Authorization
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+    - CWE-862 Missing Authorization
+    - CWE-863 Incorrect Authorization
+      - CWE-639 Authorization Bypass Through User-Controlled Key
+  - CWE-287 Improper Authentication
+    - CWE-295 Improper Certificate Validation
+    - CWE-306 Missing Authentication for Critical Function
+      - CWE-288 Authentication Bypass Using an Alternate Path or Channel
+    - CWE-1390 Weak Authentication
+      - CWE-290 Authentication Bypass by Spoofing
+      - CWE-294 Authentication Bypass by Capture-replay
+      - CWE-307 Improper Restriction of Excessive Authentication Attempts
+      - CWE-522 Insufficiently Protected Credentials
+      - CWE-1391 Use of Weak Credentials
+        - CWE-798 Use of Hard-coded Credentials
+  - CWE-346 Origin Validation Error
+CWE-435 Improper Interaction Between Multiple Correctly-Behaving Entities:
+  - CWE-436 Interpretation Conflict
+    - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-444 Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')
+CWE-664 Improper Control of a Resource Through its Lifetime:
+  - CWE-118 Incorrect Access of Indexable Resource ('Range Error')
+    - CWE-119 Improper Restriction of Operations within the Bounds of a Memory Buffer
+      - CWE-125 Out-of-bounds Read
+      - CWE-787 Out-of-bounds Write
+        - CWE-120 Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-788 Access of Memory Location After End of Buffer
+        - CWE-121 Stack-based Buffer Overflow
+        - CWE-122 Heap-based Buffer Overflow
+      - CWE-823 Use of Out-of-range Pointer Offset
+      - CWE-824 Access of Uninitialized Pointer
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-221 Information Loss or Omission
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+  - CWE-400 Uncontrolled Resource Consumption
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+  - CWE-404 Improper Resource Shutdown or Release
+    - CWE-459 Incomplete Cleanup
+    - CWE-763 Release of Invalid Pointer or Reference
+    - CWE-772 Missing Release of Resource after Effective Lifetime
+      - CWE-401 Missing Release of Memory after Effective Lifetime
+  - CWE-610 Externally Controlled Reference to a Resource in Another Sphere
+    - CWE-441 Unintended Proxy or Intermediary ('Confused Deputy')
+      - CWE-918 Server-Side Request Forgery (SSRF)
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+    - CWE-601 URL Redirection to Untrusted Site ('Open Redirect')
+    - CWE-611 Improper Restriction of XML External Entity Reference
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-665 Improper Initialization
+    - CWE-770 Allocation of Resources Without Limits or Throttling
+    - CWE-908 Use of Uninitialized Resource
+      - CWE-457 Use of Uninitialized Variable
+    - CWE-909 Missing Initialization of Resource
+  - CWE-666 Operation on Resource in Wrong Phase of Lifetime
+    - CWE-415 Double Free
+    - CWE-672 Operation on a Resource after Expiration or Release
+      - CWE-613 Insufficient Session Expiration
+      - CWE-825 Expired Pointer Dereference
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+        - CWE-415 Double Free
+        - CWE-416 Use After Free
+  - CWE-668 Exposure of Resource to Wrong Sphere
+    - CWE-134 Use of Externally-Controlled Format String
+    - CWE-200 Exposure of Sensitive Information to an Unauthorized Actor
+      - CWE-203 Observable Discrepancy
+      - CWE-209 Generation of Error Message Containing Sensitive Information
+      - CWE-538 Insertion of Sensitive Information into Externally-Accessible File or Directory
+        - CWE-532 Insertion of Sensitive Information into Log File
+    - CWE-522 Insufficiently Protected Credentials
+    - CWE-552 Files or Directories Accessible to External Parties
+    - CWE-642 External Control of Critical State Data
+      - CWE-426 Untrusted Search Path
+      - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+    - CWE-732 Incorrect Permission Assignment for Critical Resource
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+      - CWE-276 Incorrect Default Permissions
+      - CWE-281 Improper Preservation of Permissions
+  - CWE-669 Incorrect Resource Transfer Between Spheres
+    - CWE-212 Improper Removal of Sensitive Information Before Storage or Transfer
+    - CWE-434 Unrestricted Upload of File with Dangerous Type
+  - CWE-673 External Influence of Sphere Definition
+    - CWE-426 Untrusted Search Path
+  - CWE-704 Incorrect Type Conversion or Cast
+    - CWE-681 Incorrect Conversion between Numeric Types
+    - CWE-843 Access of Resource Using Incompatible Type ('Type Confusion')
+  - CWE-706 Use of Incorrectly-Resolved Name or Reference
+    - CWE-22 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+    - CWE-59 Improper Link Resolution Before File Access ('Link Following')
+      - CWE-61 UNIX Symbolic Link (Symlink) Following
+  - CWE-913 Improper Control of Dynamically-Managed Code Resources
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-502 Deserialization of Untrusted Data
+CWE-682 Incorrect Calculation:
+  - CWE-131 Incorrect Calculation of Buffer Size
+  - CWE-190 Integer Overflow or Wraparound
+  - CWE-191 Integer Underflow (Wrap or Wraparound)
+  - CWE-193 Off-by-one Error
+  - CWE-369 Divide By Zero
+CWE-691 Insufficient Control Flow Management:
+  - CWE-362 Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')
+  - CWE-662 Improper Synchronization
+    - CWE-667 Improper Locking
+    - CWE-667 Improper Locking
+  - CWE-670 Always-Incorrect Control Flow Implementation
+    - CWE-617 Reachable Assertion
+  - CWE-799 Improper Control of Interaction Frequency
+    - CWE-307 Improper Restriction of Excessive Authentication Attempts
+  - CWE-834 Excessive Iteration
+    - CWE-674 Uncontrolled Recursion
+    - CWE-835 Loop with Unreachable Exit Condition ('Infinite Loop')
+CWE-693 Protection Mechanism Failure:
+  - CWE-311 Missing Encryption of Sensitive Data
+  - CWE-326 Inadequate Encryption Strength
+  - CWE-327 Use of a Broken or Risky Cryptographic Algorithm
+  - CWE-330 Use of Insufficiently Random Values
+    - CWE-331 Insufficient Entropy
+    - CWE-344 Use of Invariant Value in Dynamically Changing Context
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-345 Insufficient Verification of Data Authenticity
+    - CWE-346 Origin Validation Error
+    - CWE-347 Improper Verification of Cryptographic Signature
+    - CWE-349 Acceptance of Extraneous Untrusted Data With Trusted Data
+    - CWE-352 Cross-Site Request Forgery (CSRF)
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-924 Improper Enforcement of Message Integrity During Transmission in a Communication Channel
+  - CWE-602 Client-Side Enforcement of Server-Side Security
+    - CWE-565 Reliance on Cookies without Validation and Integrity Checking
+CWE-703 Improper Check or Handling of Exceptional Conditions:
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+  - CWE-754 Improper Check for Unusual or Exceptional Conditions
+    - CWE-252 Unchecked Return Value
+    - CWE-273 Improper Check for Dropped Privileges
+    - CWE-354 Improper Validation of Integrity Check Value
+    - CWE-476 NULL Pointer Dereference
+  - CWE-755 Improper Handling of Exceptional Conditions
+    - CWE-209 Generation of Error Message Containing Sensitive Information
+CWE-707 Improper Neutralization:
+  - CWE-20 Improper Input Validation
+    - CWE-1285 Improper Validation of Specified Index, Position, or Offset in Input
+      - CWE-129 Improper Validation of Array Index
+  - CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')
+    - CWE-77 Improper Neutralization of Special Elements used in a Command ('Command Injection')
+      - CWE-78 Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+      - CWE-88 Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+    - CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+    - CWE-91 XML Injection (aka Blind XPath Injection)
+    - CWE-93 Improper Neutralization of CRLF Sequences ('CRLF Injection')
+      - CWE-113 Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')
+    - CWE-94 Improper Control of Generation of Code ('Code Injection')
+    - CWE-943 Improper Neutralization of Special Elements in Data Query Logic
+      - CWE-89 Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+  - CWE-116 Improper Encoding or Escaping of Output
+  - CWE-172 Encoding Error
+  - CWE-228 Improper Handling of Syntactically Invalid Structure
+    - CWE-241 Improper Handling of Unexpected Data Type
+    - CWE-241 Improper Handling of Unexpected Data Type
+CWE-710 Improper Adherence to Coding Standards:
+  - CWE-476 NULL Pointer Dereference
+  - CWE-573 Improper Following of Specification by Caller
+    - CWE-675 Multiple Operations on Resource in Single-Operation Context
+      - CWE-1341 Multiple Releases of Same Resource or Handle
+        - CWE-415 Double Free
+  - CWE-657 Violation of Secure Design Principles
+    - CWE-671 Lack of Administrator Control over Security
+      - CWE-798 Use of Hard-coded Credentials
+  - CWE-684 Incorrect Provision of Specified Functionality
+    - CWE-451 User Interface (UI) Misrepresentation of Critical Information
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+      - CWE-1021 Improper Restriction of Rendered UI Layers or Frames
+
+### FEW-SHOT EXAMPLES START
+Example 1:
+Code: char buf[32]; strcpy(buf, user_input);
+Category: Buffer Errors
+
+Example 2:
+Code: snprintf(buf, sizeof(buf), "%s", user_input);
+Category: Benign
+
+Example 3:
+Code: query = "SELECT * FROM users WHERE name='" + input + "'";
+Category: Injection
+
+Example 4:
+Code: free(ptr); return ptr->field;
+Category: Memory Management
+
+Example 5:
+Code: if (ptr) { return ptr->field; }
+Category: Benign
+
+Example 6:
+Code: return ptr->field;
+Category: Pointer Dereference
+
+Example 7:
+Code: int n = len + 1; char *p = malloc(n * 1024); // n may overflow
+Category: Integer Errors
+
+Example 8:
+Code: shared_counter++;
+Category: Concurrency Issues
+
+Example 9:
+Code: fopen("/var/data/" + user_path, "r");
+Category: Path Traversal
+
+Example 10:
+Code: AES_set_encrypt_key("hardcodedkey", 64, &key);
+Category: Cryptography Issues
+
+Example 11:
+Code: printf("auth failed for %s with token %s", user, token);
+Category: Information Exposure
+
+Example 12:
+Code: vulnerable pattern exists but does not match the other major categories.
+Category: Other
+### FEW-SHOT EXAMPLES END
+
+### ANALYSIS GUIDANCE START
+- Validate that selected categories remain mutually exclusive: choose the most specific applicable label.
+- Escalate ambiguous findings to 'Other' only when no primary category captures the vulnerability traits.
+- Encourage deeper inspection of secondary evidence when error patterns repeat across batches.
+- Reinforce the requirement to output exactly one category name and nothing else.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+

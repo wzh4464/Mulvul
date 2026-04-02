@@ -1,0 +1,404 @@
+# PrimeVul Layer-1 初始化 Prompts
+# 每个 prompt 之间用 "=" * 80 分隔
+# 只能修改 ### ANALYSIS GUIDANCE START / END 区域内的内容，其余结构保持不变
+# Prompt 中必须包含 {input} 占位符，并严格遵守模板格式
+
+# Prompt 1: 直接分析型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Perform a line-by-line review highlighting any operation that can lead to an exploitable vulnerability.
+- Correlate risky APIs (memcpy, strcpy, system, exec, SQL builders, etc.) with missing validation or bounds checks.
+- Confirm that every control/exit path keeps memory ownership balanced and pointers valid.
+- Default to 'Benign' if no concrete exploit chain is evident.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 2: 安全专家角色
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Assume the role of a security auditor validating how untrusted input propagates to sensitive sinks.
+- Map each suspicious construct to the most specific CWE major category; avoid overlap by picking the dominant root cause.
+- Treat mitigated issues (proper sanitization, bounds checks, locks) as non-vulnerable evidence supporting 'Benign'.
+- Use 'Other' only when a clear vulnerability exists that does not fit the named categories.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 3: 任务导向型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Identify the primary security failure by tracing data/control flow to the exact operation that breaks safety guarantees.
+- Prioritize categories in this order: Buffer Errors → Injection → Memory Management → Pointer Dereference → Integer Errors → Concurrency Issues → Path Traversal → Cryptography Issues → Information Exposure → Other.
+- When multiple issues appear, select the first category in the priority list whose conditions are satisfied.
+- Select 'Benign' when every risky operation is protected by explicit validation, bounds checks, or safe APIs.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 4: 模式匹配型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Match code fragments against known vulnerability signatures (unsafe string copies, unchecked format strings, unsanitized SQL, etc.).
+- Separate Buffer Errors from Pointer Dereference by verifying whether the bug stems from bounds mistakes or invalid pointer lifetime.
+- Distinguish Injection vs. Information Exposure by checking if untrusted data reaches interpreters vs. directly leaking secrets.
+- If no signature matches and safeguards are present, classify the code as 'Benign'.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 5: 步骤分析型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Step 1: Inventory external inputs and confirm validation or sanitization status.
+- Step 2: Inspect memory and pointer operations for size, lifetime, and null-safety violations.
+- Step 3: Evaluate control-flow for concurrency hazards and privilege boundaries before final classification.
+- If every check passes, designate the sample as 'Benign'.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 6: 特征检测型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Highlight characteristic cues for each category: bounds violations, use-after-free markers, SQL concatenation, race-prone locks, etc.
+- Use decision points: if buffer size math is unsafe → Buffer Errors; if user strings reach exec/SQL → Injection; if free/alloc pair misaligns → Memory Management.
+- Escalate ambiguous cases to 'Other' only after exhausting specific category signatures.
+- Return 'Benign' when all characteristic cues are absent or mitigated.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 7: 简洁型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Run a concise checklist: buffers, pointers, memory lifetime, input sanitization, arithmetic bounds, threading, filesystem, crypto, disclosure.
+- As soon as one checklist item fails, map directly to the matching CWE major category.
+- If every checklist item passes, confidently answer 'Benign'.
+- Keep reasoning minimal—focus on decisive signals only.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 8: CWE专家型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Cross-reference any observed weakness with canonical CWE definitions to ensure accurate major-category mapping.
+- Justify the selection by tying concrete evidence (e.g., CWE-787 pattern) to the broader category name.
+- When CWE clues appear but mitigation is complete, classify as 'Benign'.
+- Reserve 'Other' for confirmed vulnerabilities whose CWE mapping lies outside the major list.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 9: 对比分析型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Contrast the observed implementation with safe reference patterns to spot deviations that introduce vulnerabilities.
+- Weigh competing hypotheses (e.g., Buffer Errors vs. Integer Errors) and choose the one supported by stronger evidence.
+- Document why non-selected categories do not apply before finalizing the answer.
+- Default to 'Benign' if the implementation matches secure reference behavior.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
+
+# Prompt 10: 上下文型
+You are a security-focused code analysis assistant.
+
+Classify the provided code into exactly one of the following CWE major categories:
+- Benign
+- Buffer Errors
+- Injection
+- Memory Management
+- Pointer Dereference
+- Integer Errors
+- Concurrency Issues
+- Path Traversal
+- Cryptography Issues
+- Information Exposure
+- Other
+
+### ANALYSIS GUIDANCE START
+- Consider environmental context: concurrency models, privilege boundaries, user-controlled inputs, and deployment assumptions.
+- Determine how contextual factors amplify or mitigate potential vulnerabilities before selecting a category.
+- Emphasize the most critical, exploitable weakness exposed by the context; ignore theoretical issues without impact.
+- Choose 'Benign' when the context demonstrates robust safeguards and no realistic exploit vector.
+### ANALYSIS GUIDANCE END
+
+Decision Rules (do not modify):
+- Examine control flow, data flow, and API usage for concrete vulnerability patterns.
+- Confirm that untrusted input crossing trust boundaries is either sanitized or defended.
+- Validate memory and pointer operations for bounds, lifetime, and null safety.
+- Prefer `Benign` when there is no actionable, exploitable vulnerability evidence.
+
+Output Requirements (do not modify):
+- Respond with a single category name from the list above.
+- Do not provide explanations or additional text.
+
+Code to analyze:
+{input}
+
+CWE Major Category:
+
+================================================================================
