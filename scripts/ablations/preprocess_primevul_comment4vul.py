@@ -100,7 +100,7 @@ Setup options:
 1. Install tree-sitter adapter: uv add tree-sitter
 2. Or download parserTool: https://drive.google.com/file/d/1JMQbWIgN6GRGRAXW7UdYzD7OVScBK-Fq/view
 
-Refer to docs/parsertool_setup.md for details.
+Refer to docs/ABLATIONS.md for the legacy preprocessing notes.
                 """)
                 return None, None
 
@@ -118,7 +118,7 @@ Option 1 (Recommended): Install tree-sitter adapter
 
 Option 2: Setup parserTool
   Download from: https://drive.google.com/file/d/1JMQbWIgN6GRGRAXW7UdYzD7OVScBK-Fq/view
-  See: docs/parsertool_setup.md
+  See: docs/ABLATIONS.md
 
             """)
             return None, None

@@ -11,6 +11,12 @@ Mulvul is organized around two first-class workflows:
 Other ideas such as RAG, parallel scoring, top-k routing, and alternative
 detectors should be treated as ablations layered on top of this baseline.
 
+Minimal repository docs live in:
+
+- `docs/README.md`
+- `docs/MAINLINE_ARCHITECTURE.md`
+- `docs/ABLATIONS.md`
+
 ## 🎯 Focus Areas
 
 - **Vulnerability Detection**: Primary focus on code security analysis

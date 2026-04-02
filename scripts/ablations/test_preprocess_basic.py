@@ -110,8 +110,8 @@ def main():
         print("\n" + "=" * 60)
         print("✓ All basic tests passed!")
         print("=" * 60)
-        print("\nNote: Full NL AST processing requires parserTool dependency.")
-        print("See docs/primevul_comment4vul_integration.md for setup instructions.")
+        print("\nNote: Full NL AST processing is legacy ablation code.")
+        print("See docs/ABLATIONS.md for the remaining setup notes.")
 
     except AssertionError as e:
         print(f"\n✗ Test failed: {e}")
