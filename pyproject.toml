@@ -52,6 +52,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
     "black>=23.0.0",
@@ -92,6 +93,7 @@ packages = ["src/mulvul"]
 [tool.hatch.envs.default]
 dependencies = [
     "pytest",
+    "pytest-asyncio",
     "pytest-cov",
     "pytest-mock",
 ]
@@ -133,10 +135,12 @@ addopts = [
     "--strict-config",
     "--disable-warnings",
 ]
+asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "asyncio: marks async tests that require pytest-asyncio",
 ]
 
 [tool.coverage.run]

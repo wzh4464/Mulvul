@@ -38,6 +38,7 @@ from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConf
 from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
 from mulvul.utils.trace import TraceManager, TraceConfig, trace_enabled_from_env
 from mulvul.core.prompt_change_logger import PromptChangeLogger
+from mulvul.utils.legacy import ensure_legacy_three_layer_enabled
 
 
 # ---------------------------------------------------------------------------
@@ -1465,6 +1466,11 @@ def main():
         '--evo-cwe-subset', type=str, default=None,
         help='Path to JSON file with CWE subset for ablation',
     )
+    parser.add_argument(
+        "--allow-legacy-script",
+        action="store_true",
+        help="显式启用 legacy 的 --method mulvul 路径",
+    )
 
     # 输出参数
     parser.add_argument(
@@ -1473,6 +1479,14 @@ def main():
     )
 
     args = parser.parse_args()
+
+    try:
+        ensure_legacy_three_layer_enabled(
+            method=args.method,
+            allow_legacy_script=args.allow_legacy_script,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if args.release:
         os.environ["EVOPROMPT_RELEASE"] = "1"

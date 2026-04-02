@@ -52,7 +52,8 @@ class MultiAgentCoordinator:
         self,
         detection_agent: DetectionAgent,
         meta_agent: MetaAgent,
-        config: Optional[CoordinatorConfig] = None
+        config: Optional[CoordinatorConfig] = None,
+        prompt_change_logger=None,
     ):
         """Initialize coordinator.
 
@@ -64,6 +65,7 @@ class MultiAgentCoordinator:
         self.detection_agent = detection_agent
         self.meta_agent = meta_agent
         self.config = config or CoordinatorConfig()
+        self.prompt_change_logger = prompt_change_logger
 
         # Statistics tracking
         self.statistics_collector = StatisticsCollector()

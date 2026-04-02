@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import List, Protocol, Any, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -35,6 +36,16 @@ def create_strategy(mode: str, llm_client: Any, config: Dict[str, Any]) -> Detec
         from mulvul.strategies.hierarchical import HierarchicalStrategy
         return HierarchicalStrategy(llm_client, config)
     if mode == "mulvul":
+        allow_legacy = config.get("allow_legacy_mulvul", False) or os.getenv(
+            "MULVUL_ENABLE_LEGACY_MODE", ""
+        ).lower() in {"1", "true", "yes"}
+        if not allow_legacy:
+            raise ValueError(
+                "Legacy mode 'mulvul' is disabled by default because its "
+                "evolution interface ignores the evolving prompt. Use the "
+                "mainline workflows instead, or re-enable it explicitly with "
+                "--allow-legacy-mulvul / MULVUL_ENABLE_LEGACY_MODE=1."
+            )
         from mulvul.strategies.mulvul_strategy import MulVulStrategy
         return MulVulStrategy(llm_client, config)
     if mode == "baseline":

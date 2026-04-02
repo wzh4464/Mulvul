@@ -83,6 +83,8 @@ class TestRetrieveMiddleCategoryByName:
         assert isinstance(result, RetrievalResult)
         # Should return examples (may be from major fallback)
         assert result.debug_info is not None
+        assert result.debug_info["pool_size"] == 1
+        assert all(example.cwe != "CWE-89" for example in result.examples)
 
     def test_invalid_name_returns_empty_with_error(self):
         kb = _make_kb_with_examples()

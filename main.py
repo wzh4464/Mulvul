@@ -1294,7 +1294,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Mulvul Main - PrimeVul Layer-1 并发漏洞分类")
     parser.add_argument("--mode", choices=["flat", "hierarchical", "mulvul", "baseline", "coevolution"],
-                       default="flat", help="检测策略: flat=11类平铺, hierarchical=三层级联, mulvul=路由+检测+聚合, baseline=零样本, coevolution=多智能体协同")
+                       default="flat", help="检测策略: flat=11类平铺, hierarchical=三层级联, mulvul=legacy 路由+检测+聚合(需显式启用), baseline=零样本, coevolution=多智能体协同")
     parser.add_argument("--batch-size", type=int, default=16, help="每个 batch 的样本数")
     parser.add_argument("--max-generations", type=int, default=5, help="最大进化代数")
     parser.add_argument("--primevul-dir", type=str, default="./data/primevul/primevul",
@@ -1343,6 +1343,11 @@ def main():
         help="启用错误累积+元学习调优",
     )
     parser.add_argument(
+        "--allow-legacy-mulvul",
+        action="store_true",
+        help="显式启用 legacy 的 --mode mulvul 路径",
+    )
+    parser.add_argument(
         "--max-category-drop",
         type=float,
         default=DEFAULT_MAX_CATEGORY_DROP,
@@ -1377,6 +1382,7 @@ def main():
         "force_resample": args.force_resample,
         "enable_rag": args.enable_rag,
         "enable_meta": args.enable_meta,
+        "allow_legacy_mulvul": args.allow_legacy_mulvul,
         "max_category_drop": args.max_category_drop,
     }
 

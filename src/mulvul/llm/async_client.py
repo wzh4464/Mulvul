@@ -34,6 +34,30 @@ def load_env_vars():
     logger.warning("No .env file found in any expected location")
 
 
+def _get_env_int(name: str, default: int) -> int:
+    """Read an integer environment variable with fallback."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning("Invalid integer for %s: %s; using %s", name, value, default)
+        return default
+
+
+def _get_env_float(name: str, default: float) -> float:
+    """Read a float environment variable with fallback."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        logger.warning("Invalid float for %s: %s; using %s", name, value, default)
+        return default
+
+
 # Load environment variables at module level
 load_env_vars()
 
@@ -58,9 +82,9 @@ class AsyncLLMClient:
         self.backup_api_base = os.getenv("BACKUP_API_BASE_URL", "https://newapi.aicohere.org/v1")
         
         self.max_concurrency = max_concurrency
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
-        self.timeout = timeout
+        self.max_retries = _get_env_int("ASYNC_LLM_MAX_RETRIES", max_retries)
+        self.retry_delay = _get_env_float("ASYNC_LLM_RETRY_DELAY", retry_delay)
+        self.timeout = _get_env_float("ASYNC_LLM_TIMEOUT", timeout)
         
         if not self.api_key:
             raise ValueError("API_KEY not found. Please set it in .env file or environment variable.")

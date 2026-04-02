@@ -40,6 +40,30 @@ def load_env_vars():
     logger.warning("No .env file found in any expected location")
 
 
+def _get_env_int(name: str, default: int) -> int:
+    """Read an integer environment variable with fallback."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning("Invalid integer for %s: %s; using %s", name, value, default)
+        return default
+
+
+def _get_env_float(name: str, default: float) -> float:
+    """Read a float environment variable with fallback."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        logger.warning("Invalid float for %s: %s; using %s", name, value, default)
+        return default
+
+
 # Load environment variables at module level
 load_env_vars()
 
@@ -76,8 +100,9 @@ class SVENLLMClient(LLMClient):
         self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o")
         self.backup_api_base = os.getenv("BACKUP_API_BASE_URL", "https://newapi.aicohere.org/v1")
         
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
+        self.max_retries = _get_env_int("SVEN_LLM_MAX_RETRIES", max_retries)
+        self.retry_delay = _get_env_float("SVEN_LLM_RETRY_DELAY", retry_delay)
+        self.request_timeout = _get_env_float("SVEN_LLM_TIMEOUT", 30.0)
         self.max_concurrency = max_concurrency
         
         if not self.api_key:
@@ -114,7 +139,7 @@ class SVENLLMClient(LLMClient):
                     response = self.session.post(
                         f"{api_base}/chat/completions",
                         json=data,
-                        timeout=30
+                        timeout=self.request_timeout
                     )
                     response.raise_for_status()
                     
@@ -239,13 +264,12 @@ class SVENLLMClient(LLMClient):
         
         def query_with_retry(prompt):
             """带重试的单次查询"""
-            max_retries = 3
-            for attempt in range(max_retries):
+            for attempt in range(self.max_retries):
                 try:
                     return self.generate(prompt, **kwargs)
                 except Exception as e:
-                    if attempt == max_retries - 1:
-                        logger.warning(f"    ⚠️ 请求失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                    if attempt == self.max_retries - 1:
+                        logger.warning(f"    ⚠️ 请求失败 (尝试 {attempt + 1}/{self.max_retries}): {e}")
                         return "error"
                     time.sleep(0.5 * (attempt + 1))  # 递增延时
         
@@ -264,7 +288,7 @@ class SVENLLMClient(LLMClient):
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
                 try:
-                    result = future.result(timeout=30)  # 30秒超时
+                    result = future.result(timeout=self.request_timeout + 5.0)
                     results[index] = result
                 except Exception as e:
                     logger.error(f"    ❌ 并发请求 {index + 1} 异常: {e}")
@@ -311,8 +335,10 @@ class OpenAICompatibleClient(LLMClient):
         self.api_key = api_key or os.getenv("API_KEY", "")
         self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-3.5-turbo")
         
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
+        self.max_retries = _get_env_int("OPENAI_CLIENT_MAX_RETRIES", max_retries)
+        self.retry_delay = _get_env_float("OPENAI_CLIENT_RETRY_DELAY", retry_delay)
+        self.request_timeout = _get_env_float("OPENAI_CLIENT_TIMEOUT", 60.0)
+        self.max_concurrency = _get_env_int("OPENAI_CLIENT_MAX_CONCURRENCY", 16)
         
         if not self.api_key:
             raise ValueError("API_KEY not found. Please set it in .env file or environment variable.")
@@ -320,7 +346,9 @@ class OpenAICompatibleClient(LLMClient):
         # Initialize OpenAI client
         self.client = OpenAI(
             base_url=self.api_base,
-            api_key=self.api_key
+            api_key=self.api_key,
+            timeout=self.request_timeout,
+            max_retries=0,
         )
         
         logger.info(f"Initialized OpenAI-compatible client with model: {self.model_name}")
@@ -335,7 +363,7 @@ class OpenAICompatibleClient(LLMClient):
                     "messages": messages,
                     "temperature": temperature,
                     "stream": False,  # Non-streaming for simplicity
-                    "timeout": 60.0  # 60 second timeout
+                    "timeout": self.request_timeout,
                 }
                 if max_tokens is not None:
                     params["max_tokens"] = max_tokens
@@ -385,6 +413,27 @@ class OpenAICompatibleClient(LLMClient):
     
     def batch_generate(self, prompts: List[str], **kwargs) -> List[str]:
         """Generate text for multiple prompts with batch processing and concurrent support."""
+        use_async = kwargs.get("use_async", len(prompts) > 5)
+        if use_async:
+            try:
+                from .async_client import sven_llm_query_sync
+
+                max_concurrency = kwargs.get("max_concurrency", self.max_concurrency)
+                logger.info(
+                    "Using async processing with concurrency %s for %s prompts",
+                    max_concurrency,
+                    len(prompts),
+                )
+                return sven_llm_query_sync(
+                    prompts,
+                    max_concurrency=max_concurrency,
+                    **kwargs,
+                )
+            except ImportError:
+                logger.warning(
+                    "Async client not available, falling back to local batch processing"
+                )
+
         results = []
         delay = kwargs.get("delay", 0.1)
         batch_size = kwargs.get("batch_size", 8)  # Default batch size is 8
@@ -444,13 +493,12 @@ class OpenAICompatibleClient(LLMClient):
         
         def query_with_retry(prompt):
             """带重试的单次查询"""
-            max_retries = 3
-            for attempt in range(max_retries):
+            for attempt in range(self.max_retries):
                 try:
                     return self.generate(prompt, **kwargs)
                 except Exception as e:
-                    if attempt == max_retries - 1:
-                        logger.warning(f"    ⚠️ 请求失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                    if attempt == self.max_retries - 1:
+                        logger.warning(f"    ⚠️ 请求失败 (尝试 {attempt + 1}/{self.max_retries}): {e}")
                         return "error"
                     time.sleep(0.5 * (attempt + 1))  # 递增延时
         
@@ -469,7 +517,7 @@ class OpenAICompatibleClient(LLMClient):
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
                 try:
-                    result = future.result(timeout=30)  # 30秒超时
+                    result = future.result(timeout=self.request_timeout + 5.0)
                     results[index] = result
                 except Exception as e:
                     logger.error(f"    ❌ 并发请求 {index + 1} 异常: {e}")

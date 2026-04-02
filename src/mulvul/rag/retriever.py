@@ -8,7 +8,33 @@ import re
 from dataclasses import dataclass
 
 from .knowledge_base import KnowledgeBase, CodeExample
-from ..prompts.hierarchical_three_layer import MajorCategory, MiddleCategory
+from ..prompts.hierarchical_three_layer import (
+    MAJOR_TO_MIDDLE,
+    MajorCategory,
+    MiddleCategory,
+)
+
+
+def _resolve_major_category(name: str) -> Optional[MajorCategory]:
+    """Resolve a major category name to its enum value."""
+    if not name:
+        return None
+
+    for category in MajorCategory:
+        if category.value.lower() == name.lower():
+            return category
+    return None
+
+
+def _resolve_middle_category(name: str) -> Optional[MiddleCategory]:
+    """Resolve a middle category name to its enum value."""
+    if not name:
+        return None
+
+    for category in MiddleCategory:
+        if category.value.lower() == name.lower():
+            return category
+    return None
 
 
 @dataclass
@@ -99,14 +125,14 @@ class CodeSimilarityRetriever:
         Returns:
             Retrieval result with examples and formatted text
         """
-        # Get examples for this major category from middle categories
+        # Get middle-category examples only from the routed major branch.
         all_examples = []
-        for examples in self.kb.middle_examples.values():
-            # Filter to examples matching this major category
-            for ex in examples:
-                if ex.category in [mc.value for mc in major_category.__class__]:
-                    continue
-                all_examples.append(ex)
+        allowed_middle_names = {
+            middle.value for middle in MAJOR_TO_MIDDLE.get(major_category, [])
+        }
+        for middle_name, examples in self.kb.middle_examples.items():
+            if middle_name in allowed_middle_names:
+                all_examples.extend(examples)
 
         # Fallback: use major category examples if not enough middle examples
         if len(all_examples) < top_k:
@@ -131,19 +157,19 @@ class CodeSimilarityRetriever:
         Returns:
             Retrieval result with examples and formatted text
         """
-        try:
-            major_category = MajorCategory(major_name)
-        except ValueError:
-            # Try case-insensitive match
-            for mc in MajorCategory:
-                if mc.value.lower() == major_name.lower():
-                    major_category = mc
-                    break
-            else:
-                return RetrievalResult(
-                    examples=[], formatted_text="", similarity_scores=[],
-                    debug_info={"pool_size": 0, "message": f"Unknown major category: {major_name}"}
-                )
+        major_category = _resolve_major_category(major_name)
+        if major_category is None:
+            return RetrievalResult(
+                examples=[],
+                formatted_text="",
+                similarity_scores=[],
+                debug_info={
+                    "error": f"Unknown major category: {major_name}",
+                    "pool_size": 0,
+                    "num_retrieved": 0,
+                    "top_similarity": 0.0,
+                },
+            )
         return self.retrieve_for_middle_category(query_code, major_category, top_k)
 
     def retrieve_for_cwe(
@@ -195,19 +221,19 @@ class CodeSimilarityRetriever:
         Returns:
             Retrieval result with examples and formatted text
         """
-        try:
-            middle_category = MiddleCategory(middle_name)
-        except ValueError:
-            # Try case-insensitive match
-            for mc in MiddleCategory:
-                if mc.value.lower() == middle_name.lower():
-                    middle_category = mc
-                    break
-            else:
-                return RetrievalResult(
-                    examples=[], formatted_text="", similarity_scores=[],
-                    debug_info={"pool_size": 0, "message": f"Unknown middle category: {middle_name}"}
-                )
+        middle_category = _resolve_middle_category(middle_name)
+        if middle_category is None:
+            return RetrievalResult(
+                examples=[],
+                formatted_text="",
+                similarity_scores=[],
+                debug_info={
+                    "error": f"Unknown middle category: {middle_name}",
+                    "pool_size": 0,
+                    "num_retrieved": 0,
+                    "top_similarity": 0.0,
+                },
+            )
         return self.retrieve_for_cwe(query_code, middle_category, top_k)
 
     def _retrieve_from_pool(
@@ -231,7 +257,12 @@ class CodeSimilarityRetriever:
                 examples=[],
                 formatted_text="",
                 similarity_scores=[],
-                debug_info={"pool_size": 0, "message": "Empty example pool"}
+                debug_info={
+                    "pool_size": 0,
+                    "num_retrieved": 0,
+                    "top_similarity": 0.0,
+                    "message": "Empty example pool",
+                },
             )
 
         # Compute similarities
@@ -249,23 +280,36 @@ class CodeSimilarityRetriever:
         # Format for prompt
         formatted = self._format_examples([ex for _, ex in top_examples])
 
-        # Build debug info
-        debug_info = None
+        # Always provide compact retrieval metadata; extend it when debug=True.
+        debug_info = {
+            "pool_size": len(example_pool),
+            "num_retrieved": len(top_examples),
+            "top_similarity": top_examples[0][0] if top_examples else 0.0,
+        }
         if self.debug:
-            debug_info = {
-                "pool_size": len(example_pool),
-                "top_k": top_k,
-                "retrieved": [
-                    {
-                        "category": ex.category,
-                        "cwe": ex.cwe,
-                        "similarity": round(score, 4),
-                        "code_preview": ex.code[:100] + "..." if len(ex.code) > 100 else ex.code
-                    }
-                    for score, ex in top_examples
-                ],
-                "query_preview": query_code[:100] + "..." if len(query_code) > 100 else query_code
-            }
+            debug_info.update(
+                {
+                    "top_k": top_k,
+                    "retrieved": [
+                        {
+                            "category": ex.category,
+                            "cwe": ex.cwe,
+                            "similarity": round(score, 4),
+                            "code_preview": (
+                                ex.code[:100] + "..."
+                                if len(ex.code) > 100
+                                else ex.code
+                            ),
+                        }
+                        for score, ex in top_examples
+                    ],
+                    "query_preview": (
+                        query_code[:100] + "..."
+                        if len(query_code) > 100
+                        else query_code
+                    ),
+                }
+            )
             self._print_debug(debug_info)
 
         return RetrievalResult(
