@@ -48,7 +48,7 @@ def create_parser() -> argparse.ArgumentParser:
     evaluate.add_argument(
         "--prompts-path",
         required=True,
-        help="Prompt artifact produced by the evolution workflow.",
+        help="Prompt artifact or prompt bundle produced by the evolution workflow.",
     )
     evaluate.add_argument("--output-dir", default="./outputs/mainline/evaluation")
     evaluate.add_argument("--kb-path", default=None, help="Optional knowledge base.")

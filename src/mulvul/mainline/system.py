@@ -1,27 +1,27 @@
-"""Main router-detector system used by the two first-class workflows."""
+"""Thin v1-compatible wrapper over the v2 bundle/scorer/policy runtime."""
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, List, Tuple
 
-from mulvul.agents.hierarchical_detector import (
-    CWE_TO_MIDDLE,
-    MAJOR_TO_MIDDLE,
-    MIDDLE_TO_CWE,
-    MIDDLE_TO_MAJOR,
-    LevelDetector,
-)
 from mulvul.rag.retriever import MulVulRetriever
 
 from .ablations import AblationConfig
 from .artifacts import PromptArtifact
+from .bundle import NodeScoreResult, PromptBundle, PromptBundleAdapter
+from .policy import (
+    DetectionPath as V2DetectionPath,
+    GreedyCascadePolicy,
+    RetrieverEvidenceProvider,
+    TopKCascadePolicy,
+)
+from .scorer import LLMNodeScorer
 
 
 @dataclass
 class StageScore:
-    """Score assigned by a target-specific prompt."""
+    """Compatibility view of a node-local score."""
 
     target: str
     confidence: float
@@ -32,7 +32,7 @@ class StageScore:
 
 @dataclass
 class DetectionPath:
-    """A full route through the detector cascade."""
+    """Compatibility view of a route through the cascade."""
 
     major: str
     major_confidence: float
@@ -45,7 +45,7 @@ class DetectionPath:
 
 @dataclass
 class MainlineDetectionResult:
-    """Structured result from the mainline detector system."""
+    """Structured result preserved for external callers."""
 
     prediction: str
     major: str
@@ -60,8 +60,6 @@ class MainlineDetectionResult:
         return self.prediction != "Benign"
 
     def to_dict(self) -> Dict[str, object]:
-        """Serialize the result for logging."""
-
         return {
             "prediction": self.prediction,
             "major": self.major,
@@ -96,258 +94,118 @@ class MainlineDetectionResult:
 
 
 class MainlineDetectorSystem:
-    """Evaluate code with the frozen best-prompt router-detector cascade."""
+    """Evaluate code with the frozen mainline bundle runtime."""
 
     def __init__(
         self,
         llm_client,
-        artifact: PromptArtifact,
+        artifact: PromptArtifact | PromptBundle,
         ablations: AblationConfig | None = None,
         retriever: MulVulRetriever | None = None,
     ):
         self.llm_client = llm_client
-        self.artifact = artifact
         self.ablations = ablations or AblationConfig()
         self.retriever = retriever if self.ablations.use_retrieval else None
 
-        self.major_detectors = self._build_major_detectors()
-        self.middle_detectors = self._build_middle_detectors()
-        self.cwe_detectors = self._build_cwe_detectors()
-
-    def _build_major_detectors(self) -> Dict[str, LevelDetector]:
-        candidates = list(MAJOR_TO_MIDDLE.keys()) + ["Benign"]
-        return {
-            major: LevelDetector(
-                level="major",
-                target=major,
-                llm_client=self.llm_client,
-                prompt=prompt,
-                candidates=candidates,
-                retriever=self.retriever,
+        if isinstance(artifact, PromptArtifact):
+            self.bundle = PromptBundleAdapter.from_artifact(
+                artifact,
+                source_artifact="prompt_artifact.json",
+                allow_partial=True,
             )
-            for major, prompt in self.artifact.router_prompts.items()
-        }
+        else:
+            self.bundle = artifact
 
-    def _build_middle_detectors(self) -> Dict[str, LevelDetector]:
-        detectors: Dict[str, LevelDetector] = {}
-        for middle, prompt in self.artifact.middle_prompts.items():
-            major = MIDDLE_TO_MAJOR.get(middle)
-            if not major:
-                continue
-            candidates = MAJOR_TO_MIDDLE.get(major, []) + ["Benign"]
-            detectors[middle] = LevelDetector(
-                level="middle",
-                target=middle,
-                llm_client=self.llm_client,
-                prompt=prompt,
-                candidates=candidates,
-                retriever=self.retriever,
-            )
-        return detectors
-
-    def _build_cwe_detectors(self) -> Dict[str, LevelDetector]:
-        detectors: Dict[str, LevelDetector] = {}
-        for cwe, prompt in self.artifact.cwe_prompts.items():
-            middle = CWE_TO_MIDDLE.get(cwe)
-            if not middle:
-                continue
-            candidates = MIDDLE_TO_CWE.get(middle, []) + ["Benign"]
-            detectors[cwe] = LevelDetector(
-                level="cwe",
-                target=cwe,
-                llm_client=self.llm_client,
-                prompt=prompt,
-                candidates=candidates,
-                retriever=self.retriever,
-            )
-        return detectors
+        self.scorer = LLMNodeScorer(llm_client, self.bundle)
+        evidence_provider = RetrieverEvidenceProvider(self.retriever) if self.retriever else None
+        policy_cls = (
+            TopKCascadePolicy
+            if self.ablations.major_top_k > 1 or self.ablations.middle_top_k > 1
+            else GreedyCascadePolicy
+        )
+        self.policy = policy_cls(
+            evidence_provider=evidence_provider,
+            parallel=self.ablations.parallel_scoring,
+            major_top_k=self.ablations.major_top_k,
+            middle_top_k=self.ablations.middle_top_k,
+        )
 
     def detect(self, code: str) -> MainlineDetectionResult:
-        """Run the mainline router-detector cascade on one sample."""
+        inference = self.policy.run(self.bundle, self.scorer, code)
+        return self._to_legacy_result(inference)
 
-        major_scores = self._score_detectors(self.major_detectors.values(), code)
-        stage_scores: Dict[str, List[StageScore]] = {"major": major_scores}
+    def _to_legacy_result(self, inference) -> MainlineDetectionResult:
+        stage_scores = {
+            stage: [self._to_stage_score(result) for result in results]
+            for stage, results in inference.stage_results.items()
+        }
+        candidate_paths = [
+            self._to_detection_path(path) for path in inference.candidate_paths
+        ]
 
-        if not major_scores or major_scores[0].confidence < self.ablations.decision_threshold:
+        if inference.best_path is None:
             return MainlineDetectionResult(
-                prediction="Benign",
+                prediction=inference.prediction,
                 major="Benign",
                 middle="Benign",
                 cwe="Benign",
-                score=major_scores[0].confidence if major_scores else 0.0,
+                score=0.0,
                 stage_scores=stage_scores,
+                candidate_paths=candidate_paths,
             )
 
-        major_candidates = major_scores[: self.ablations.major_top_k]
-        middle_scores = self._score_selected_middles(code, major_candidates)
-        stage_scores["middle"] = middle_scores
-        middle_lookup = {score.target: score for score in middle_scores}
-
-        candidate_paths: List[DetectionPath] = []
-        cwe_scores: List[StageScore] = []
-
-        for major_score in major_candidates:
-            major = major_score.target
-            selected_middles = [
-                score
-                for score in middle_scores
-                if MIDDLE_TO_MAJOR.get(score.target) == major
-            ][: self.ablations.middle_top_k]
-
-            for middle_score in selected_middles:
-                cwe_candidates = [
-                    detector
-                    for cwe, detector in self.cwe_detectors.items()
-                    if CWE_TO_MIDDLE.get(cwe) == middle_score.target
-                ]
-                if not cwe_candidates:
-                    candidate_paths.append(
-                        DetectionPath(
-                            major=major,
-                            major_confidence=major_score.confidence,
-                            middle=middle_score.target,
-                            middle_confidence=middle_score.confidence,
-                            cwe="Unknown",
-                            cwe_confidence=0.0,
-                            score=major_score.confidence * middle_score.confidence,
-                        )
-                    )
-                    continue
-
-                scored_cwes = self._score_detectors(cwe_candidates, code)
-                cwe_scores.extend(scored_cwes)
-                if not scored_cwes:
-                    continue
-
-                best_cwe = scored_cwes[0]
-                candidate_paths.append(
-                    DetectionPath(
-                        major=major,
-                        major_confidence=major_score.confidence,
-                        middle=middle_score.target,
-                        middle_confidence=middle_score.confidence,
-                        cwe=best_cwe.target,
-                        cwe_confidence=best_cwe.confidence,
-                        score=(
-                            major_score.confidence
-                            * middle_score.confidence
-                            * best_cwe.confidence
-                        ),
-                    )
-                )
-
-        stage_scores["cwe"] = sorted(
-            cwe_scores, key=lambda item: item.confidence, reverse=True
-        )
-
-        if not candidate_paths:
-            top_major = major_scores[0]
-            middle = "Unknown"
-            middle_conf = 0.0
-            if middle_scores:
-                best_middle = middle_lookup.get(middle_scores[0].target, middle_scores[0])
-                middle = best_middle.target
-                middle_conf = best_middle.confidence
-            return MainlineDetectionResult(
-                prediction=top_major.target,
-                major=top_major.target,
-                middle=middle,
-                cwe="Unknown",
-                score=top_major.confidence * max(middle_conf, 1.0),
-                stage_scores=stage_scores,
-            )
-
-        best_path = max(candidate_paths, key=lambda item: item.score)
-        prediction = best_path.cwe if best_path.cwe != "Unknown" else best_path.middle
+        major, middle, cwe = self._path_labels(inference.best_path)
         return MainlineDetectionResult(
-            prediction=prediction,
-            major=best_path.major,
-            middle=best_path.middle,
-            cwe=best_path.cwe,
-            score=best_path.score,
+            prediction=inference.prediction,
+            major=major,
+            middle=middle,
+            cwe=cwe,
+            score=inference.best_path.score,
             stage_scores=stage_scores,
-            candidate_paths=sorted(
-                candidate_paths, key=lambda item: item.score, reverse=True
-            ),
+            candidate_paths=candidate_paths,
         )
 
-    def _score_selected_middles(
-        self,
-        code: str,
-        major_scores: Iterable[StageScore],
-    ) -> List[StageScore]:
-        middle_detectors = []
-        for score in major_scores:
-            major = score.target
-            for middle in MAJOR_TO_MIDDLE.get(major, []):
-                detector = self.middle_detectors.get(middle)
-                if detector is not None:
-                    middle_detectors.append(detector)
-        return self._score_detectors(middle_detectors, code)
-
-    def _score_detectors(
-        self,
-        detectors: Iterable[LevelDetector],
-        code: str,
-    ) -> List[StageScore]:
-        detector_list = list(detectors)
-        if not detector_list:
-            return []
-
-        if not self.ablations.parallel_scoring or len(detector_list) == 1:
-            scores = [self._score_detector(detector, code) for detector in detector_list]
-        else:
-            scores = self._score_detectors_parallel(detector_list, code)
-        return sorted(scores, key=lambda item: item.confidence, reverse=True)
-
-    def _score_detectors_parallel(
-        self,
-        detectors: List[LevelDetector],
-        code: str,
-    ) -> List[StageScore]:
-        scores: List[StageScore] = []
-        with ThreadPoolExecutor(max_workers=len(detectors)) as executor:
-            future_map = {
-                executor.submit(self._score_detector, detector, code): detector.target
-                for detector in detectors
-            }
-            for future in as_completed(future_map):
-                target = future_map[future]
-                try:
-                    scores.append(future.result())
-                except Exception as exc:
-                    scores.append(
-                        StageScore(
-                            target=target,
-                            confidence=0.0,
-                            predicted_label="Error",
-                            raw_response=str(exc),
-                        )
-                    )
-        return scores
-
-    def _score_detector(self, detector: LevelDetector, code: str) -> StageScore:
-        candidates_str = ", ".join(detector.candidates)
-        evidence = detector._retrieve_evidence(code)
-        prompt = detector.prompt.format(
-            code=code[:4000],
-            evidence=evidence,
-            candidates=candidates_str,
-        )
-        response = detector.llm_client.generate(prompt)
-        ranking = detector._parse_response(response, top_k=len(detector.candidates))
-
-        target_confidence = 0.0
-        for label, confidence in ranking:
-            if label == detector.target:
-                target_confidence = confidence
-                break
-
-        predicted_label = ranking[0][0] if ranking else "Benign"
+    def _to_stage_score(self, result: NodeScoreResult) -> StageScore:
         return StageScore(
-            target=detector.target,
-            confidence=target_confidence,
-            predicted_label=predicted_label,
-            ranking=ranking,
-            raw_response=response,
+            target=result.target_label,
+            confidence=result.target_confidence,
+            predicted_label=result.predicted_label or "Benign",
+            ranking=list(result.ranking),
+            raw_response=result.raw_response,
         )
+
+    def _to_detection_path(self, path: V2DetectionPath) -> DetectionPath:
+        major, middle, cwe = self._path_labels(path)
+        major_conf = 0.0
+        middle_conf = 0.0
+        cwe_conf = 0.0
+        for result in path.stage_results:
+            if result.stage == "major":
+                major_conf = result.target_confidence
+            elif result.stage == "middle":
+                middle_conf = result.target_confidence
+            elif result.stage == "cwe":
+                cwe_conf = result.target_confidence
+        return DetectionPath(
+            major=major,
+            major_confidence=major_conf,
+            middle=middle,
+            middle_confidence=middle_conf,
+            cwe=cwe,
+            cwe_confidence=cwe_conf,
+            score=path.score,
+        )
+
+    def _path_labels(self, path: V2DetectionPath) -> tuple[str, str, str]:
+        major = "Benign"
+        middle = "Benign"
+        cwe = "Benign"
+        for result in path.stage_results:
+            if result.stage == "major":
+                major = result.target_label
+            elif result.stage == "middle":
+                middle = result.target_label
+                cwe = "Benign"
+            elif result.stage == "cwe":
+                cwe = result.target_label
+        return major, middle, cwe

@@ -19,6 +19,7 @@ from mulvul.rag.retriever import MulVulRetriever
 
 from .ablations import AblationConfig, apply_ablation_presets
 from .artifacts import PromptArtifact
+from .bundle import PromptBundleAdapter, PromptBundleIO
 from .system import MainlineDetectorSystem
 
 
@@ -129,6 +130,13 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         {"prompts": trainer.best_prompts, "scores": trainer.best_scores}
     )
     artifact.save(artifact_path)
+    bundle_path = Path(config.output_dir) / "prompt_bundle.json"
+    bundle = PromptBundleAdapter.from_artifact(
+        artifact,
+        source_artifact=str(artifact_path),
+        allow_partial=False,
+    )
+    PromptBundleIO.save(bundle, bundle_path, allow_partial=False)
 
     summary = {
         "timestamp": datetime.now().isoformat(),
@@ -137,6 +145,7 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         "rounds": config.rounds,
         "samples_per_class": config.samples_per_class,
         "prompt_artifact": str(artifact_path),
+        "prompt_bundle": str(bundle_path),
         "router_prompt_count": len(artifact.router_prompts),
         "middle_prompt_count": len(artifact.middle_prompts),
         "cwe_prompt_count": len(artifact.cwe_prompts),
@@ -159,10 +168,10 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         if config.kb_path and ablation_config.use_retrieval
         else None
     )
-    artifact = PromptArtifact.load(config.prompts_path)
+    bundle_or_artifact = _load_runtime_prompts(config.prompts_path)
     system = MainlineDetectorSystem(
         llm_client=llm_client,
-        artifact=artifact,
+        artifact=bundle_or_artifact,
         ablations=ablation_config,
         retriever=retriever,
     )
@@ -224,6 +233,7 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         "timestamp": datetime.now().isoformat(),
         "eval_file": config.eval_file,
         "prompts_path": config.prompts_path,
+        "prompt_format": _detect_prompt_format(config.prompts_path),
         "ablations": list(config.ablations),
         "samples": len(samples),
         "elapsed_seconds": elapsed,
@@ -244,3 +254,21 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
     with summary_path.open("w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2, ensure_ascii=False)
     return summary
+
+
+def _detect_prompt_format(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    return "v2_bundle" if data.get("schema_version") == "2" else "v1_artifact"
+
+
+def _load_runtime_prompts(path: str):
+    prompt_format = _detect_prompt_format(path)
+    if prompt_format == "v2_bundle":
+        return PromptBundleIO.load(path, load_mode="strict_v2")
+    artifact = PromptArtifact.load(path)
+    return PromptBundleAdapter.from_artifact(
+        artifact,
+        source_artifact=path,
+        allow_partial=True,
+    )

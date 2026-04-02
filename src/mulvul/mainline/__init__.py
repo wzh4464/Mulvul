@@ -10,6 +10,22 @@ baseline.
 
 from .ablations import AblationConfig, apply_ablation_presets
 from .artifacts import PromptArtifact
+from .bundle import (
+    BundleDefaults,
+    EvidenceBundle,
+    EvidenceItem,
+    NodeScoreResult,
+    NodeSpec,
+    PromptBundle,
+    PromptBundleAdapter,
+    PromptBundleIO,
+    ScorerContext,
+    TaxonomyGraph,
+    TaxonomyNode,
+)
+from .evaluator import EvaluationResult, EvaluationSample, MainlineEvaluator, NodeMetrics
+from .policy import DetectionPath, GreedyCascadePolicy, InferenceResult, TopKCascadePolicy
+from .scorer import LLMNodeScorer, NodeScorer
 from .system import MainlineDetectorSystem, MainlineDetectionResult
 from .workflows import (
     EvaluationWorkflowConfig,
@@ -22,6 +38,27 @@ __all__ = [
     "AblationConfig",
     "apply_ablation_presets",
     "PromptArtifact",
+    "TaxonomyNode",
+    "TaxonomyGraph",
+    "NodeSpec",
+    "EvidenceItem",
+    "EvidenceBundle",
+    "BundleDefaults",
+    "PromptBundle",
+    "ScorerContext",
+    "NodeScoreResult",
+    "PromptBundleAdapter",
+    "PromptBundleIO",
+    "NodeScorer",
+    "LLMNodeScorer",
+    "DetectionPath",
+    "InferenceResult",
+    "GreedyCascadePolicy",
+    "TopKCascadePolicy",
+    "EvaluationSample",
+    "EvaluationResult",
+    "NodeMetrics",
+    "MainlineEvaluator",
     "MainlineDetectorSystem",
     "MainlineDetectionResult",
     "EvaluationWorkflowConfig",
