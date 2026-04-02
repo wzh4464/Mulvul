@@ -1,8 +1,8 @@
 # tests/test_contrastive_retriever.py
 """Tests for contrastive retrieval functionality."""
 import pytest
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
-from evoprompt.rag.retriever import CodeSimilarityRetriever
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.rag.retriever import CodeSimilarityRetriever
 
 
 def test_retriever_accepts_contrastive_flag():

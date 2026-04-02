@@ -11,18 +11,18 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.prompts.hierarchical import (
+from mulvul.prompts.hierarchical import (
     HierarchicalPrompt,
     PromptHierarchy,
     CWECategory,
     get_cwe_major_category
 )
-from evoprompt.evaluators.statistics import (
+from mulvul.evaluators.statistics import (
     DetectionStatistics,
     BatchStatistics,
     StatisticsCollector
 )
-from evoprompt.multiagent.agents import (
+from mulvul.multiagent.agents import (
     AgentConfig,
     AgentRole,
     DetectionAgent,

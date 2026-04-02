@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, "src")
 
 from tqdm import tqdm
-from evoprompt.llm.client import create_llm_client, load_env_vars
+from mulvul.llm.client import create_llm_client, load_env_vars
 
 # All CWE categories from Primevul
 CWE_CATEGORIES = [

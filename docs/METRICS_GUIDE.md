@@ -118,7 +118,7 @@ Vulnerable (100 samples): F1 = 0.95 ✅ (能准确检测漏洞!)
 
 ---
 
-## EvoPrompt中的实现
+## Mulvul中的实现
 
 ### 1. 自动计算三种F1
 

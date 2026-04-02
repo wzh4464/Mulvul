@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 import asyncio
 
-from evoprompt.detectors.scoring import (
+from mulvul.detectors.scoring import (
     ScoredPrediction,
     DetectionPath,
     SelectionStrategy,
@@ -12,23 +12,23 @@ from evoprompt.detectors.scoring import (
     ThresholdSelection,
     create_selection_strategy,
 )
-from evoprompt.detectors.parallel_hierarchical_detector import (
+from mulvul.detectors.parallel_hierarchical_detector import (
     ParallelHierarchicalDetector,
     ParallelDetectorConfig,
     HierarchicalPromptSet,
     NoOpEnhancer,
 )
-from evoprompt.meta.error_accumulator import (
+from mulvul.meta.error_accumulator import (
     ClassificationError,
     ErrorPattern,
     ErrorAccumulator,
     ErrorType,
 )
-from evoprompt.meta.prompt_tuner import (
+from mulvul.meta.prompt_tuner import (
     TuningResult,
     MetaLearningPromptTuner,
 )
-from evoprompt.detectors.hierarchical_coordinator import (
+from mulvul.detectors.hierarchical_coordinator import (
     HierarchicalDetectionCoordinator,
     CoordinatorConfig,
     DetectionResult,
@@ -423,7 +423,7 @@ class TestHierarchicalPromptSet:
     """Tests for HierarchicalPromptSet."""
     
     def test_from_three_layer_set(self):
-        from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+        from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
         
         base_set = ThreeLayerPromptFactory.create_default_prompt_set()
         hier_set = HierarchicalPromptSet.from_three_layer_set(base_set)
@@ -434,7 +434,7 @@ class TestHierarchicalPromptSet:
         assert "Benign" in hier_set.layer1_prompts
     
     def test_get_layer2_prompts_for_major(self):
-        from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+        from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
         
         base_set = ThreeLayerPromptFactory.create_default_prompt_set()
         hier_set = HierarchicalPromptSet.from_three_layer_set(base_set)

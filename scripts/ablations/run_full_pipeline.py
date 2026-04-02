@@ -35,15 +35,15 @@ from typing import Dict, List, Any, Optional, Tuple
 sys.path.insert(0, "src")
 
 from tqdm import tqdm
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.rag.retriever import MulVulRetriever
-from evoprompt.agents.hierarchical_detector import (
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.rag.retriever import MulVulRetriever
+from mulvul.agents.hierarchical_detector import (
     HierarchicalDetector, HierarchicalResult, LevelDetector,
     MAJOR_TO_MIDDLE, MIDDLE_TO_CWE, CWE_TO_MIDDLE, MIDDLE_TO_MAJOR,
     VALID_CWES, CWE_FALLBACK_MAP, MIN_CWE_SAMPLES
 )
-from evoprompt.agents.hierarchical_sampler import HierarchicalSampler, TrainingSample
-from evoprompt.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
+from mulvul.agents.hierarchical_sampler import HierarchicalSampler, TrainingSample
+from mulvul.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
 
 
 # ============================================================================

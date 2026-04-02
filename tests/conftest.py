@@ -11,10 +11,10 @@ from unittest.mock import Mock
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from evoprompt.llm.client import LLMClient
-from evoprompt.core.evaluator import Evaluator
-from evoprompt.data.dataset import Dataset
-from evoprompt.metrics.base import Metric
+from mulvul.llm.client import LLMClient
+from mulvul.core.evaluator import Evaluator
+from mulvul.data.dataset import Dataset
+from mulvul.metrics.base import Metric
 
 
 @pytest.fixture

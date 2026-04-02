@@ -1,4 +1,4 @@
-from evoprompt.mainline.artifacts import PromptArtifact
+from mulvul.mainline.artifacts import PromptArtifact
 
 
 def test_prompt_artifact_splits_levels():

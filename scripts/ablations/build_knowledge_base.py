@@ -15,7 +15,7 @@ from collections import defaultdict
 
 sys.path.insert(0, "src")
 
-from evoprompt.data.cwe_hierarchy import (
+from mulvul.data.cwe_hierarchy import (
     cwe_to_major, cwe_to_middle, extract_cwe_id,
     MAJOR_CATEGORIES, MIDDLE_CATEGORIES
 )

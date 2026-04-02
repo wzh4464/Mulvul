@@ -3,7 +3,7 @@
 测试并发批处理功能
 """
 
-from evoprompt.llm.client import sven_llm_init, sven_llm_query
+from mulvul.llm.client import sven_llm_init, sven_llm_query
 import time
 
 

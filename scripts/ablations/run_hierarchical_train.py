@@ -21,12 +21,12 @@ from collections import defaultdict
 
 sys.path.insert(0, "src")
 
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.rag.retriever import MulVulRetriever
-from evoprompt.agents.hierarchical_detector import HierarchicalDetector, HierarchicalResult
-from evoprompt.agents.hierarchical_sampler import HierarchicalSampler
-from evoprompt.agents.hierarchical_trainer import HierarchicalTrainer
-from evoprompt.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.rag.retriever import MulVulRetriever
+from mulvul.agents.hierarchical_detector import HierarchicalDetector, HierarchicalResult
+from mulvul.agents.hierarchical_sampler import HierarchicalSampler
+from mulvul.agents.hierarchical_trainer import HierarchicalTrainer
+from mulvul.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
 
 
 def load_jsonl(path: str):

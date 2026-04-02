@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run EvoPrompt tuning on the benchmark dataset stored in data/benchmark.json."""
+"""Run Mulvul tuning on the benchmark dataset stored in data/benchmark.json."""
 
 import argparse
 import json
@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Tuple
 # Ensure the package imports resolve when executed from project root
 sys.path.insert(0, "src")
 
-from evoprompt.workflows import VulnerabilityDetectionWorkflow
+from mulvul.workflows import VulnerabilityDetectionWorkflow
 
 
 def load_benchmark_entries(path: Path) -> List[Dict[str, Any]]:

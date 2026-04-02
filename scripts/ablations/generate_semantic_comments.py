@@ -15,7 +15,7 @@ import logging
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.llm.client import create_default_client
+from mulvul.llm.client import create_default_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

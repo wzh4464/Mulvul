@@ -3,7 +3,7 @@
 测试批量处理功能，验证batch_size=8的设置
 """
 
-from evoprompt.llm.client import sven_llm_init, sven_llm_query
+from mulvul.llm.client import sven_llm_init, sven_llm_query
 
 
 def test_batch_processing():

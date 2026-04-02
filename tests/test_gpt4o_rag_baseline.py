@@ -8,7 +8,7 @@ import asyncio
 
 def test_gpt4o_rag_prompt_constant():
     """GPT4O_RAG_PROMPT should be defined."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import GPT4O_RAG_PROMPT
+    from mulvul.baselines.gpt4o_rag_singlepass import GPT4O_RAG_PROMPT
     assert "{code_snippet}" in GPT4O_RAG_PROMPT
     assert "{packed_evidence_with_ids}" in GPT4O_RAG_PROMPT
     assert "JSON" in GPT4O_RAG_PROMPT
@@ -16,7 +16,7 @@ def test_gpt4o_rag_prompt_constant():
 
 def test_parse_baseline_response_json():
     """Should parse JSON response correctly."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import parse_baseline_response
+    from mulvul.baselines.gpt4o_rag_singlepass import parse_baseline_response
 
     response = '{"cwe": "CWE-120", "rationale": "Buffer overflow", "evidence_ids": ["VUL-1"]}'
     result = parse_baseline_response(response)
@@ -28,7 +28,7 @@ def test_parse_baseline_response_json():
 
 def test_parse_baseline_response_json_with_text():
     """Should extract JSON from response with surrounding text."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import parse_baseline_response
+    from mulvul.baselines.gpt4o_rag_singlepass import parse_baseline_response
 
     response = 'Here is my analysis:\n{"cwe": "CWE-787", "rationale": "Out-of-bounds write", "evidence_ids": ["VUL-2", "CLEAN-1"]}\nEnd of analysis.'
     result = parse_baseline_response(response)
@@ -40,7 +40,7 @@ def test_parse_baseline_response_json_with_text():
 
 def test_parse_baseline_response_fallback():
     """Should extract CWE from non-JSON response."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import parse_baseline_response
+    from mulvul.baselines.gpt4o_rag_singlepass import parse_baseline_response
 
     response = "This code has CWE-476 null pointer dereference"
     result = parse_baseline_response(response)
@@ -50,7 +50,7 @@ def test_parse_baseline_response_fallback():
 
 def test_parse_baseline_response_none():
     """Should return NONE for unrecognized responses."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import parse_baseline_response
+    from mulvul.baselines.gpt4o_rag_singlepass import parse_baseline_response
 
     response = "This code looks safe to me"
     result = parse_baseline_response(response)
@@ -60,7 +60,7 @@ def test_parse_baseline_response_none():
 
 def test_parse_baseline_response_empty():
     """Should handle empty response."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import parse_baseline_response
+    from mulvul.baselines.gpt4o_rag_singlepass import parse_baseline_response
 
     response = ""
     result = parse_baseline_response(response)
@@ -71,7 +71,7 @@ def test_parse_baseline_response_empty():
 
 def test_parse_baseline_response_none_in_json():
     """Should handle NONE in JSON response."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import parse_baseline_response
+    from mulvul.baselines.gpt4o_rag_singlepass import parse_baseline_response
 
     response = '{"cwe": "NONE", "rationale": "No vulnerability detected", "evidence_ids": []}'
     result = parse_baseline_response(response)
@@ -84,8 +84,8 @@ def test_parse_baseline_response_none_in_json():
 @pytest.mark.asyncio
 async def test_run_gpt4o_rag_singlepass_basic():
     """Basic integration test for run_gpt4o_rag_singlepass."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import run_gpt4o_rag_singlepass
-    from evoprompt.rag.retriever import RetrievalResult
+    from mulvul.baselines.gpt4o_rag_singlepass import run_gpt4o_rag_singlepass
+    from mulvul.rag.retriever import RetrievalResult
 
     # Create mock sample
     mock_sample = MagicMock()
@@ -137,9 +137,9 @@ async def test_run_gpt4o_rag_singlepass_with_cost_tracker():
     """Test that cost tracking works correctly."""
     import tempfile
     from pathlib import Path
-    from evoprompt.baselines.gpt4o_rag_singlepass import run_gpt4o_rag_singlepass
-    from evoprompt.utils.cost_tracker import CostTracker
-    from evoprompt.rag.retriever import RetrievalResult
+    from mulvul.baselines.gpt4o_rag_singlepass import run_gpt4o_rag_singlepass
+    from mulvul.utils.cost_tracker import CostTracker
+    from mulvul.rag.retriever import RetrievalResult
 
     # Create mock sample
     mock_sample = MagicMock()
@@ -183,8 +183,8 @@ async def test_run_gpt4o_rag_singlepass_with_cost_tracker():
 @pytest.mark.asyncio
 async def test_run_gpt4o_rag_singlepass_multiple_samples():
     """Test processing multiple samples."""
-    from evoprompt.baselines.gpt4o_rag_singlepass import run_gpt4o_rag_singlepass
-    from evoprompt.rag.retriever import RetrievalResult
+    from mulvul.baselines.gpt4o_rag_singlepass import run_gpt4o_rag_singlepass
+    from mulvul.rag.retriever import RetrievalResult
 
     # Create mock samples
     samples = []

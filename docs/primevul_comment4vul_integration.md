@@ -229,7 +229,7 @@ static int vt_disallocate(unsigned int vc_num)
 - ⏳ 集成 LLM 注释生成
 
 ### 长期
-- 在 EvoPrompt 框架中使用 NL AST 表示
+- 在 Mulvul 框架中使用 NL AST 表示
 - 评估 NL AST 对漏洞检测性能的提升
 - 优化注释生成 prompt
 

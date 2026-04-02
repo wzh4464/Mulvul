@@ -26,11 +26,11 @@ from datetime import datetime
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.multiagent.agents import create_detection_agent, create_meta_agent
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig, CoordinationStrategy
-from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.llm.client import load_env_vars, create_llm_client, create_meta_prompt_client
+from mulvul.multiagent.agents import create_detection_agent, create_meta_agent
+from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig, CoordinationStrategy
+from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.llm.client import load_env_vars, create_llm_client, create_meta_prompt_client
 
 
 def setup_environment():
@@ -323,7 +323,7 @@ def run_multiagent_demo(data_dir: str, output_dir: str):
 
 def main():
     """Main entry point."""
-    print("🧬 EvoPrompt: Multi-Agent Collaborative Evolution")
+    print("🧬 Mulvul: Multi-Agent Collaborative Evolution")
     print("=" * 70)
 
     # Setup environment

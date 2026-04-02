@@ -1,10 +1,10 @@
-# EvoPrompt 集成使用指南
+# Mulvul 集成使用指南
 
 ## 完整系统架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   EvoPrompt 完整系统                         │
+│                   Mulvul 完整系统                         │
 └─────────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┼───────────────────┐
@@ -37,9 +37,9 @@ uv run python scripts/ablations/demo_three_layer_detection.py
 ```
 
 ```python
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector
-from evoprompt.llm.client import create_llm_client
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector
+from mulvul.llm.client import create_llm_client
 
 # 1. 创建默认prompt
 prompt_set = ThreeLayerPromptFactory.create_default_prompt_set()
@@ -69,10 +69,10 @@ uv run python scripts/ablations/demo_rag_detection.py
 ```
 
 ```python
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
-from evoprompt.llm.client import create_llm_client
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.llm.client import create_llm_client
 
 # 1. 创建知识库
 kb = KnowledgeBaseBuilder.create_default_kb()
@@ -108,11 +108,11 @@ uv run python scripts/ablations/demo_multiagent_coevolution.py
 ```
 
 ```python
-from evoprompt.multiagent.agents import create_detection_agent, create_meta_agent
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator
-from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
-from evoprompt.evaluators.vulnerability import VulnerabilityEvaluator
-from evoprompt.data.dataset import PrimevulDataset
+from mulvul.multiagent.agents import create_detection_agent, create_meta_agent
+from mulvul.multiagent.coordinator import MultiAgentCoordinator
+from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
+from mulvul.evaluators.vulnerability import VulnerabilityEvaluator
+from mulvul.data.dataset import PrimevulDataset
 
 # 1. 创建数据集
 dataset = PrimevulDataset("data/primevul_1percent_sample/train.txt", "train")
@@ -151,9 +151,9 @@ print(f"Best prompt fitness: {best_prompt.fitness}")
 **适用**: 最佳性能、论文实验
 
 ```python
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.multiagent.coordinator import MultiAgentCoordinator
 
 # 1. 创建知识库
 kb = KnowledgeBaseBuilder.create_default_kb()
@@ -257,7 +257,7 @@ data/primevul_1percent_sample/
 ### 自定义数据集
 
 ```python
-from evoprompt.data.dataset import PrimevulDataset
+from mulvul.data.dataset import PrimevulDataset
 
 # 创建自定义数据集
 dataset = PrimevulDataset(
@@ -321,7 +321,7 @@ DETECTION_MODEL_NAME=gpt-4   # Detection Agent
 ### 层级准确率
 
 ```python
-from evoprompt.detectors.three_layer_detector import ThreeLayerEvaluator
+from mulvul.detectors.three_layer_detector import ThreeLayerEvaluator
 
 evaluator = ThreeLayerEvaluator(detector, dataset)
 metrics = evaluator.evaluate(sample_size=100)
@@ -347,7 +347,7 @@ print(f"Full Path Accuracy: {metrics['full_path_accuracy']:.1%}")
 
 ```bash
 # 检查API配置
-uv run python -c "from evoprompt.llm.client import load_env_vars; load_env_vars(); import os; print(os.getenv('API_KEY'))"
+uv run python -c "from mulvul.llm.client import load_env_vars; load_env_vars(); import os; print(os.getenv('API_KEY'))"
 
 # 测试API连接
 uv run python sven_llm_client.py

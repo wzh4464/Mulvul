@@ -7,11 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
-from evoprompt.llm.client import load_env_vars, create_llm_client
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.llm.client import load_env_vars, create_llm_client
 
 
 def test_basic_detection():
@@ -144,7 +144,7 @@ def test_scale_enhancement():
 
 def main():
     """主函数"""
-    print("🧪 EvoPrompt 快速测试")
+    print("🧪 Mulvul 快速测试")
     print("="*70)
 
     # 加载环境

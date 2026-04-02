@@ -3,10 +3,10 @@
 import pytest
 from unittest.mock import Mock
 
-from evoprompt.core.evaluator import Evaluator
-from evoprompt.data.dataset import Sample, Dataset
-from evoprompt.metrics.base import Metric
-from evoprompt.analysis import BanditAnalyzer
+from mulvul.core.evaluator import Evaluator
+from mulvul.data.dataset import Sample, Dataset
+from mulvul.metrics.base import Metric
+from mulvul.analysis import BanditAnalyzer
 
 
 class MockDataset(Dataset):

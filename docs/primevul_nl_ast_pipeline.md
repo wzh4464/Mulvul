@@ -67,14 +67,14 @@ ln -s ../../outputs/primevul_nl_ast/train_nl_ast.jsonl data/primevul_nl_ast/prim
 ln -s ../../outputs/primevul_nl_ast/test_nl_ast.jsonl data/primevul_nl_ast/primevul_test.jsonl
 ```
 
-### 3. 在 EvoPrompt 中使用 NL AST
+### 3. 在 Mulvul 中使用 NL AST
 
 #### 方式 A: 直接指定 NL AST 数据路径
 
 在你的配置文件或代码中：
 
 ```python
-from evoprompt.data.dataset import PrimevulDataset
+from mulvul.data.dataset import PrimevulDataset
 
 # 使用 NL AST 数据
 dataset = PrimevulDataset(
@@ -93,8 +93,8 @@ for sample in dataset.samples:
 对于训练集的均衡采样：
 
 ```python
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.data.sampler import BalancedCWESampler
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.data.sampler import BalancedCWESampler
 
 # 加载完整训练集（NL AST 版本）
 full_dataset = PrimevulDataset(
@@ -253,7 +253,7 @@ comment4vul/
 1. ✅ **已完成**: parserTool 集成和验证
 2. ✅ **已完成**: 小样本测试通过
 3. **待执行**: 运行全量数据集处理（train/dev/test）
-4. **待执行**: 在 EvoPrompt 进化实验中使用 NL AST
+4. **待执行**: 在 Mulvul 进化实验中使用 NL AST
 
 ## 文件位置参考
 

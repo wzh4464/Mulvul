@@ -23,15 +23,15 @@ from collections import defaultdict
 sys.path.insert(0, "src")
 
 from tqdm import tqdm
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.agents import MulVulDetector, DetectionResult
-from evoprompt.rag.retriever import MulVulRetriever
-from evoprompt.evaluators.multiclass_metrics import (
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.agents import MulVulDetector, DetectionResult
+from mulvul.rag.retriever import MulVulRetriever
+from mulvul.evaluators.multiclass_metrics import (
     MultiClassMetrics,
     RouterMetrics,
     recall_at_k,
 )
-from evoprompt.data.cwe_categories import map_cwe_to_major
+from mulvul.data.cwe_categories import map_cwe_to_major
 
 # Major category mapping
 CATEGORY_TO_MAJOR = {

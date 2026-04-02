@@ -1,8 +1,8 @@
-# EvoPrompt Project - Claude Development Notes
+# Mulvul Project - Claude Development Notes
 
 ## 项目概述
 
-EvoPrompt是一个专注于漏洞检测的prompt进化优化框架，使用进化算法自动优化安全代码分析的prompt性能。项目已完成现代化重构，专注于SVEN和Primevul数据集支持。
+Mulvul是一个专注于漏洞检测的prompt进化优化框架，使用进化算法自动优化安全代码分析的prompt性能。项目已完成现代化重构，专注于SVEN和Primevul数据集支持。
 
 ## 环境管理
 
@@ -20,8 +20,8 @@ uv run python sven_llm_client.py
 ## 项目结构
 
 ```
-EvoPrompt/
-├── src/evoprompt/           # 现代化包结构
+Mulvul/
+├── src/mulvul/           # 现代化包结构
 │   ├── core/               # 核心模块
 │   │   ├── evolution.py    # 进化算法引擎
 │   │   └── prompt_tracker.py # Prompt追踪系统
@@ -190,7 +190,7 @@ outputs/demo_primevul_1percent/demo_primevul_1pct_20250729_HHMMSS/
 1. **必须使用`uv run`**: 所有Python命令都通过uv执行
 2. **API密钥安全**: 确保.env文件不被提交到版本控制
 3. **环境配置**: 项目已配置好uv环境，直接使用即可
-4. **兼容性**: 保持与原EvoPrompt接口的向后兼容
+4. **兼容性**: 保持与原Mulvul接口的向后兼容
 
 在开发阶段，尽量少写 try/except，让异常直接抛出来，你能从 traceback 里快速定位。
 只有在你需要做 容错处理 或 对用户友好提示 的地方，再加上 try/except。

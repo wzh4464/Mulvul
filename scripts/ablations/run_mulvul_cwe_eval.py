@@ -22,10 +22,10 @@ from collections import defaultdict
 sys.path.insert(0, "src")
 
 from tqdm import tqdm
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.agents import MulVulDetector, DetectionResult
-from evoprompt.rag.retriever import MulVulRetriever
-from evoprompt.data.cwe_hierarchy import cwe_to_major, cwe_to_middle, extract_cwe_id
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.agents import MulVulDetector, DetectionResult
+from mulvul.rag.retriever import MulVulRetriever
+from mulvul.data.cwe_hierarchy import cwe_to_major, cwe_to_middle, extract_cwe_id
 
 
 def load_jsonl_data(data_file: str) -> List[Dict]:

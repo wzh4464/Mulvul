@@ -1,14 +1,14 @@
-# EvoPrompt 系统总览
+# Mulvul 系统总览
 
 ## 一句话介绍
 
-**EvoPrompt**: 基于Multi-Agent协同进化的三层层级漏洞检测系统，支持RAG增强和自动prompt优化
+**Mulvul**: 基于Multi-Agent协同进化的三层层级漏洞检测系统，支持RAG增强和自动prompt优化
 
 ## 核心特性
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    EvoPrompt 核心特性                        │
+│                    Mulvul 核心特性                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  🎯 三层层级检测                                              │
@@ -245,8 +245,8 @@ uv run python scripts/ablations/train_three_layer.py \
 ## 项目结构
 
 ```
-evoprompt/
-├── src/evoprompt/              # 核心代码
+mulvul/
+├── src/mulvul/              # 核心代码
 │   ├── prompts/                # Prompt定义
 │   ├── detectors/              # 检测器
 │   ├── rag/                    # RAG模块
@@ -277,7 +277,7 @@ evoprompt/
 
 ```bibtex
 @software{evoprompt2025,
-  title={EvoPrompt: Multi-Agent Coevolutionary Framework for Hierarchical Vulnerability Detection},
+  title={Mulvul: Multi-Agent Coevolutionary Framework for Hierarchical Vulnerability Detection},
   author={Your Name},
   year={2025},
   version={2.0}

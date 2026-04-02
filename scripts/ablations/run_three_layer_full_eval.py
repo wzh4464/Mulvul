@@ -24,10 +24,10 @@ from collections import defaultdict
 sys.path.insert(0, "src")
 
 from tqdm import tqdm
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector
-from evoprompt.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector
+from mulvul.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major
 
 # 上级分类映射
 CATEGORY_TO_MAJOR = {

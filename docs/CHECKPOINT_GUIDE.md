@@ -2,7 +2,7 @@
 
 ## 概述
 
-EvoPrompt 现在配备了完善的 checkpoint 机制，能够有效应对 API 不稳定、网络中断等问题，确保实验可以随时中断和恢复。
+Mulvul 现在配备了完善的 checkpoint 机制，能够有效应对 API 不稳定、网络中断等问题，确保实验可以随时中断和恢复。
 
 ## 核心特性
 
@@ -448,7 +448,7 @@ uv run python main.py \
 ### 编程式使用
 
 ```python
-from evoprompt.utils.checkpoint import (
+from mulvul.utils.checkpoint import (
     CheckpointManager,
     RetryManager,
     with_retry
@@ -503,7 +503,7 @@ if recovery.can_recover():
 
 ## 总结
 
-Checkpoint 机制为 EvoPrompt 提供了：
+Checkpoint 机制为 Mulvul 提供了：
 
 ✅ **可靠性** - 实验可随时中断和恢复
 ✅ **容错性** - API 失败自动重试

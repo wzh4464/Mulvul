@@ -2,7 +2,7 @@
 """验证语言检测功能的脚本"""
 
 from collections import Counter
-from src.evoprompt.data.dataset import PrimevulDataset
+from src.mulvul.data.dataset import PrimevulDataset
 
 def main():
     print("=" * 60)

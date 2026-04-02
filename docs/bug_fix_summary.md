@@ -62,7 +62,7 @@ New_line = Begin + original_expr[:-1] + " /* " + comment.strip() + " */" + origi
 - 保留原始条件
 - 将注释作为内联注释（/* comment */）添加
 
-### 2. src/evoprompt/utils/comment_generator.py
+### 2. src/mulvul/utils/comment_generator.py
 
 **优化 prompt**（Line 111-150）：
 - 要求 LLM 只生成单行注释

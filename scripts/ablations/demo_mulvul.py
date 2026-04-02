@@ -7,8 +7,8 @@ Tests the complete Router-Detector-Aggregator pipeline.
 import sys
 sys.path.insert(0, "src")
 
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.agents import MulVulDetector, DetectionResult
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.agents import MulVulDetector, DetectionResult
 
 
 def demo_mulvul():

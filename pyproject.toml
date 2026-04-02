@@ -84,11 +84,10 @@ Repository = "https://github.com/wzh4464/Mulvul.git"
 Issues = "https://github.com/wzh4464/Mulvul/issues"
 
 [project.scripts]
-mulvul = "evoprompt.cli:main"
-evoprompt = "evoprompt.cli:main"
+mulvul = "mulvul.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/evoprompt", "src/mulvul"]
+packages = ["src/mulvul"]
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -99,8 +98,8 @@ dependencies = [
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"
-test-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/evoprompt --cov=tests {args}"
-type-check = "mypy src/evoprompt"
+test-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/mulvul --cov=tests {args}"
+type-check = "mypy src/mulvul"
 
 [tool.hatch.envs.lint]
 dependencies = [
@@ -112,12 +111,12 @@ dependencies = [
 
 [tool.hatch.envs.lint.scripts]
 format = [
-    "black src/evoprompt tests",
-    "isort src/evoprompt tests",
+    "black src/mulvul tests",
+    "isort src/mulvul tests",
 ]
 lint = [
-    "flake8 src/evoprompt tests",
-    "mypy src/evoprompt",
+    "flake8 src/mulvul tests",
+    "mypy src/mulvul",
 ]
 check = [
     "format",
@@ -141,7 +140,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/evoprompt"]
+source = ["src/mulvul"]
 omit = [
     "*/tests/*",
     "*/test_*",
@@ -186,7 +185,7 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["evoprompt", "mulvul"]
+known_first_party = ["mulvul"]
 skip_glob = ["legacy/*"]
 
 [tool.flake8]

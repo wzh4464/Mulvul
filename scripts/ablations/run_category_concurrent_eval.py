@@ -15,9 +15,9 @@ from typing import Dict, List, Any
 
 sys.path.insert(0, "src")
 
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major
 
 
 def load_dataset_by_category(data_file: str) -> Dict[str, List[Dict]]:

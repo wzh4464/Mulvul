@@ -9,7 +9,7 @@ from collections import Counter
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.data.dataset import PrimevulDataset
+from mulvul.data.dataset import PrimevulDataset
 
 
 def generate_balanced_cwe_subset(

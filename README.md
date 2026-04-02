@@ -97,9 +97,9 @@ uv run python scripts/run_mainline_evaluation.py \
 
 ```
 Mulvul/
-├── src/evoprompt/mainline/   # First-class workflows and prompt artifacts
-├── src/evoprompt/agents/     # Reused router/detector building blocks
-├── src/evoprompt/rag/        # Retrieval components, only via ablations
+├── src/mulvul/mainline/   # First-class workflows and prompt artifacts
+├── src/mulvul/agents/     # Reused router/detector building blocks
+├── src/mulvul/rag/        # Retrieval components, only via ablations
 ├── scripts/ablations/        # Legacy experiments, demos, and utilities
 ├── scripts/run_mainline_evolution.py
 ├── scripts/run_mainline_evaluation.py
@@ -236,4 +236,4 @@ MIT License - see LICENSE file for details
 
 ---
 
-**Note**: Mulvul is the standalone vulnerability-detection-focused extraction of this workflow. The internal source tree still reuses the historical `evoprompt` package layout, with a `mulvul` compatibility export at the repo boundary.
+**Note**: Mulvul now uses `src/mulvul` as the canonical package namespace throughout the repository. Mainline workflows live at the top level, while older experiments stay under `scripts/ablations/`.

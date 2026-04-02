@@ -102,7 +102,7 @@
 ## 已创建文件
 
 ```
-EvoPrompt/
+Mulvul/
 ├── scripts/
 │   ├── preprocess_primevul_comment4vul.py  # 主预处理脚本 (480 行)
 │   └── test_preprocess_basic.py             # 基本测试脚本 (120 行)
@@ -183,8 +183,8 @@ uv run python scripts/ablations/preprocess_primevul_comment4vul.py \
   - 性能优化(缓存、内存管理)
 
 ### 长期
-- [ ] **EvoPrompt 集成**
-  - 在 EvoPrompt 框架中使用 NL AST
+- [ ] **Mulvul 集成**
+  - 在 Mulvul 框架中使用 NL AST
   - 评估 NL AST 对进化效果的影响
   - 设计 NL AST 特定的进化算子
 
@@ -252,4 +252,4 @@ static int vt_disallocate(unsigned int vc_num)
 
 本次实施成功完成了 PrimeVul 数据集与 comment4vul NL AST 技术的集成基础设施。创建的脚本和文档为后续工作提供了坚实基础。
 
-下一步的关键工作是配置 parserTool 依赖,完成完整的 NL AST 处理流程验证,然后可以开始集成 LLM 注释生成和 EvoPrompt 框架整合。
+下一步的关键工作是配置 parserTool 依赖,完成完整的 NL AST 处理流程验证,然后可以开始集成 LLM 注释生成和 Mulvul 框架整合。

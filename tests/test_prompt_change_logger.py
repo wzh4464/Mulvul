@@ -9,11 +9,11 @@ import pytest
 
 # Import detectors first so that detectors.__init__ -> hierarchical_coordinator
 # -> meta.prompt_tuner resolves before meta.__init__ is triggered.
-from evoprompt.detectors.parallel_hierarchical_detector import HierarchicalPromptSet  # noqa: F401
-from evoprompt.meta.prompt_tuner import MetaLearningPromptTuner
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
-from evoprompt.core.prompt_change_logger import PromptChangeLogger, PromptChangeRecord
-from evoprompt.utils.trace import compute_text_hash
+from mulvul.detectors.parallel_hierarchical_detector import HierarchicalPromptSet  # noqa: F401
+from mulvul.meta.prompt_tuner import MetaLearningPromptTuner
+from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
+from mulvul.core.prompt_change_logger import PromptChangeLogger, PromptChangeRecord
+from mulvul.utils.trace import compute_text_hash
 
 
 @pytest.fixture

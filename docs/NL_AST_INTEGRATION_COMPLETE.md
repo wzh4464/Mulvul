@@ -1,10 +1,10 @@
-# NL AST 集成到 EvoPrompt 进化算法 - 完成报告
+# NL AST 集成到 Mulvul 进化算法 - 完成报告
 
 ## 执行日期
 2025-11-17
 
 ## 概述
-成功将 comment4vul 的 Natural Language AST (NL AST) 集成到 EvoPrompt 进化算法框架,作为进化方向和漏洞检测的语义指引。采用**自动学习策略**,让进化算法自己发现 NL AST 的最佳使用方式。
+成功将 comment4vul 的 Natural Language AST (NL AST) 集成到 Mulvul 进化算法框架,作为进化方向和漏洞检测的语义指引。采用**自动学习策略**,让进化算法自己发现 NL AST 的最佳使用方式。
 
 ---
 
@@ -14,7 +14,7 @@
 
 #### 1.1 配置 parserTool 依赖 ✅
 **文件**:
-- `src/evoprompt/utils/parsertool_adapter.py` (新建)
+- `src/mulvul/utils/parsertool_adapter.py` (新建)
 - `docs/parsertool_setup.md` (新建)
 
 **成果**:
@@ -50,7 +50,7 @@ uv run python scripts/ablations/preprocess_primevul_comment4vul.py \
 ### 阶段 2: 基础集成
 
 #### 2.1 数据集加载器支持 NL AST ✅
-**文件**: `src/evoprompt/data/dataset.py`
+**文件**: `src/mulvul/data/dataset.py`
 
 **修改**:
 ```python
@@ -65,7 +65,7 @@ metadata = {
 **向后兼容**: 使用 `.get()` 方法,无 NL AST 时不会报错
 
 #### 2.2 Evaluator 支持 {nl_ast} 占位符 ✅
-**文件**: `src/evoprompt/core/evaluator.py`
+**文件**: `src/mulvul/core/evaluator.py`
 
 **新功能**:
 1. **显式占位符替换**:
@@ -88,7 +88,7 @@ if "{nl_ast}" in formatted and hasattr(sample, 'metadata'):
 ```
 
 #### 2.3 NL AST 感知的初始 Prompt 模板 ✅
-**文件**: `src/evoprompt/workflows/vulnerability_detection.py`
+**文件**: `src/mulvul/workflows/vulnerability_detection.py`
 
 **新增模板** (3个):
 ```python
@@ -109,8 +109,8 @@ nl_ast_prompts = [
 
 #### 3.1 更新进化算子 Meta-Prompts ✅
 **文件**:
-- `src/evoprompt/algorithms/genetic.py`
-- `src/evoprompt/algorithms/differential.py`
+- `src/mulvul/algorithms/genetic.py`
+- `src/mulvul/algorithms/differential.py`
 
 **Genetic Algorithm Crossover**:
 ```python
@@ -137,7 +137,7 @@ Create an improved version that:
 ## 📁 修改/新建文件清单
 
 ### 新建文件 (8个)
-1. `src/evoprompt/utils/parsertool_adapter.py` - Tree-sitter 适配器
+1. `src/mulvul/utils/parsertool_adapter.py` - Tree-sitter 适配器
 2. `docs/parsertool_setup.md` - 配置文档
 3. `docs/primevul_comment4vul_integration.md` - 集成指南
 4. `docs/IMPLEMENTATION_SUMMARY.md` - 第一阶段总结
@@ -147,11 +147,11 @@ Create an improved version that:
 8. `build/tree-sitter/` - 语言库构建目录
 
 ### 修改文件 (5个)
-1. `src/evoprompt/data/dataset.py` - 支持加载 NL AST
-2. `src/evoprompt/core/evaluator.py` - 支持 {nl_ast} 占位符
-3. `src/evoprompt/workflows/vulnerability_detection.py` - 新增 NL AST 模板
-4. `src/evoprompt/algorithms/genetic.py` - 更新 meta-prompts
-5. `src/evoprompt/algorithms/differential.py` - 更新 meta-prompts
+1. `src/mulvul/data/dataset.py` - 支持加载 NL AST
+2. `src/mulvul/core/evaluator.py` - 支持 {nl_ast} 占位符
+3. `src/mulvul/workflows/vulnerability_detection.py` - 新增 NL AST 模板
+4. `src/mulvul/algorithms/genetic.py` - 更新 meta-prompts
+5. `src/mulvul/algorithms/differential.py` - 更新 meta-prompts
 6. `scripts/ablations/preprocess_primevul_comment4vul.py` - 添加适配器支持
 
 ---
@@ -228,7 +228,7 @@ uv run python scripts/ablations/preprocess_primevul_comment4vul.py \
 
 ### 2. 运行进化实验
 ```python
-from evoprompt.workflows.vulnerability_detection import VulnerabilityDetectionWorkflow
+from mulvul.workflows.vulnerability_detection import VulnerabilityDetectionWorkflow
 
 config = {
     "data_path": "outputs/primevul_nl_ast/train_nl_ast.jsonl",  # 使用 NL AST 数据
@@ -410,7 +410,7 @@ uv run python run_primevul_1percent.py \
    - `docs/IMPLEMENTATION_SUMMARY.md` - 第一阶段实施总结
 
 2. **代码文档**:
-   - `src/evoprompt/utils/parsertool_adapter.py` - 适配器实现和自测试
+   - `src/mulvul/utils/parsertool_adapter.py` - 适配器实现和自测试
    - `scripts/ablations/preprocess_primevul_comment4vul.py` - 预处理脚本使用说明
 
 3. **外部资源**:
@@ -421,7 +421,7 @@ uv run python run_primevul_1percent.py \
 
 ## 🎉 结论
 
-NL AST 已成功集成到 EvoPrompt 进化算法框架!系统现在能够:
+NL AST 已成功集成到 Mulvul 进化算法框架!系统现在能够:
 1. 加载和处理 NL AST 数据
 2. 在 prompt 中使用语义代码结构
 3. 通过进化自动学习最优 NL AST 使用方式

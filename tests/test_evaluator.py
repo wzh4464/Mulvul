@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from evoprompt.core.evaluator import Evaluator, EvaluationResult
+from mulvul.core.evaluator import Evaluator, EvaluationResult
 
 
 class TestEvaluator:

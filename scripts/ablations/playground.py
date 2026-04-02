@@ -13,15 +13,15 @@ from dotenv import load_dotenv
 # 添加src路径
 sys.path.insert(0, "src")
 
-from evoprompt.data.cwe_categories import (
+from mulvul.data.cwe_categories import (
     map_cwe_to_major,
     canonicalize_category,
     CWE_MAJOR_CATEGORIES,
 )
-from evoprompt.llm.client import create_default_client
-from evoprompt.llm.async_client import AsyncLLMClient
+from mulvul.llm.client import create_default_client
+from mulvul.llm.async_client import AsyncLLMClient
 import asyncio
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 
 
 def load_sampling_stats(stats_file: str) -> Dict[str, Any]:

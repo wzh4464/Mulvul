@@ -1,5 +1,5 @@
 ###
-# File: ./EvoPrompt/mlops.py
+# File: ./Mulvul/mlops.py
 # Created Date: Monday, September 29th 2025
 # Author: Zihan
 # -----
@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any
 
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 
 DEFAULT_TEMPLATE = """你是一个静态分析分类助手。
 任务：基于给定的代码片段，从下列 Category 列表中选出所有适用的类别；若无匹配，返回 ["None"]。

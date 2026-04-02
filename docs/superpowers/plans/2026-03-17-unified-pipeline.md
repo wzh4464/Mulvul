@@ -6,7 +6,7 @@
 
 **Architecture:** main.py gains a `--mode` flag that selects the detection strategy. All modes share: data loading, sampling, checkpoint/recovery, result saving. Each mode plugs in a different `DetectionStrategy` that implements `evaluate(prompt, samples) -> predictions`. Evolution remains the outer loop wrapping any strategy.
 
-**Tech Stack:** Python 3.11, sklearn, OpenAI-compatible LLM API, existing evoprompt modules
+**Tech Stack:** Python 3.11, sklearn, OpenAI-compatible LLM API, existing mulvul modules
 
 ---
 
@@ -38,12 +38,12 @@ main.py --mode {flat,hierarchical,mulvul,baseline,coevolution}
 | File | Responsibility | Status |
 |------|---------------|--------|
 | `main.py` | CLI, data loading, evolution loop, result saving | Modify |
-| `src/evoprompt/strategies/__init__.py` | Strategy protocol + factory | Create |
-| `src/evoprompt/strategies/flat.py` | Current 11-class flat classification | Create (extract from main.py) |
-| `src/evoprompt/strategies/hierarchical.py` | 3-layer cascade wrapper | Create (wraps existing ThreeLayerDetector) |
-| `src/evoprompt/strategies/mulvul.py` | Router→Detector→Aggregator wrapper | Create (wraps existing agents/) |
-| `src/evoprompt/strategies/baseline.py` | Zero-shot single-pass | Create (wraps existing baselines/) |
-| `src/evoprompt/strategies/coevolution.py` | Multi-agent collaborative | Create (wraps existing multiagent/) |
+| `src/mulvul/strategies/__init__.py` | Strategy protocol + factory | Create |
+| `src/mulvul/strategies/flat.py` | Current 11-class flat classification | Create (extract from main.py) |
+| `src/mulvul/strategies/hierarchical.py` | 3-layer cascade wrapper | Create (wraps existing ThreeLayerDetector) |
+| `src/mulvul/strategies/mulvul.py` | Router→Detector→Aggregator wrapper | Create (wraps existing agents/) |
+| `src/mulvul/strategies/baseline.py` | Zero-shot single-pass | Create (wraps existing baselines/) |
+| `src/mulvul/strategies/coevolution.py` | Multi-agent collaborative | Create (wraps existing multiagent/) |
 | `tests/test_strategies.py` | Strategy interface tests | Create |
 
 ## Key Design Decisions
@@ -58,8 +58,8 @@ main.py --mode {flat,hierarchical,mulvul,baseline,coevolution}
 ### Task 1: Define Strategy Protocol and Extract FlatStrategy
 
 **Files:**
-- Create: `src/evoprompt/strategies/__init__.py`
-- Create: `src/evoprompt/strategies/flat.py`
+- Create: `src/mulvul/strategies/__init__.py`
+- Create: `src/mulvul/strategies/flat.py`
 - Create: `tests/test_strategies.py`
 - Modify: `main.py`
 
@@ -67,7 +67,7 @@ main.py --mode {flat,hierarchical,mulvul,baseline,coevolution}
 
 ```python
 # tests/test_strategies.py
-from evoprompt.strategies import DetectionStrategy
+from mulvul.strategies import DetectionStrategy
 
 def test_strategy_protocol():
     """DetectionStrategy defines predict_batch and get_ground_truth."""
@@ -78,9 +78,9 @@ def test_strategy_protocol():
 - [ ] **Step 2: Create strategy protocol**
 
 ```python
-# src/evoprompt/strategies/__init__.py
+# src/mulvul/strategies/__init__.py
 from typing import Protocol, List, Dict, Any, Tuple
-from evoprompt.data.dataset import Sample
+from mulvul.data.dataset import Sample
 
 class DetectionStrategy(Protocol):
     """Interface for all detection strategies."""
@@ -106,7 +106,7 @@ Run: `uv run python -m pytest tests/test_strategies.py -v`
 # tests/test_strategies.py (append)
 def test_flat_strategy_implements_protocol():
     """FlatStrategy implements DetectionStrategy."""
-    from evoprompt.strategies.flat import FlatStrategy
+    from mulvul.strategies.flat import FlatStrategy
     from unittest.mock import MagicMock
     client = MagicMock()
     strategy = FlatStrategy(client)
@@ -116,13 +116,13 @@ def test_flat_strategy_implements_protocol():
 
 - [ ] **Step 5: Extract FlatStrategy from main.py**
 
-Move `batch_predict()` logic and ground truth mapping from `PrimeVulLayer1Pipeline` into `src/evoprompt/strategies/flat.py`. Keep main.py calling `self.strategy.predict_batch()` and `self.strategy.get_ground_truth()`.
+Move `batch_predict()` logic and ground truth mapping from `PrimeVulLayer1Pipeline` into `src/mulvul/strategies/flat.py`. Keep main.py calling `self.strategy.predict_batch()` and `self.strategy.get_ground_truth()`.
 
 - [ ] **Step 6: Update main.py to use FlatStrategy**
 
 ```python
 # In PrimeVulLayer1Pipeline.__init__():
-from evoprompt.strategies.flat import FlatStrategy
+from mulvul.strategies.flat import FlatStrategy
 self.strategy = FlatStrategy(self.llm_client)
 ```
 
@@ -139,7 +139,7 @@ Run: `uv run python main.py --max-generations 1 --batch-size 8 --balance-mode la
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/evoprompt/strategies/ tests/test_strategies.py main.py
+git add src/mulvul/strategies/ tests/test_strategies.py main.py
 git commit -m "refactor: extract FlatStrategy from main.py pipeline"
 ```
 
@@ -148,7 +148,7 @@ git commit -m "refactor: extract FlatStrategy from main.py pipeline"
 ### Task 2: Add HierarchicalStrategy (3-Layer Detection)
 
 **Files:**
-- Create: `src/evoprompt/strategies/hierarchical.py`
+- Create: `src/mulvul/strategies/hierarchical.py`
 - Modify: `tests/test_strategies.py`
 - Modify: `main.py` (add `--mode` arg)
 
@@ -156,7 +156,7 @@ git commit -m "refactor: extract FlatStrategy from main.py pipeline"
 
 ```python
 def test_hierarchical_strategy():
-    from evoprompt.strategies.hierarchical import HierarchicalStrategy
+    from mulvul.strategies.hierarchical import HierarchicalStrategy
     from unittest.mock import MagicMock
     client = MagicMock()
     strategy = HierarchicalStrategy(client)
@@ -165,7 +165,7 @@ def test_hierarchical_strategy():
 
 - [ ] **Step 2: Implement HierarchicalStrategy**
 
-Wraps `ThreeLayerDetector` from `src/evoprompt/detectors/three_layer_detector.py`. Maps its 3-layer output to the 11-class label space.
+Wraps `ThreeLayerDetector` from `src/mulvul/detectors/three_layer_detector.py`. Maps its 3-layer output to the 11-class label space.
 
 - [ ] **Step 3: Add `--mode` CLI arg to main.py**
 
@@ -176,7 +176,7 @@ parser.add_argument("--mode", choices=["flat", "hierarchical", "mulvul", "baseli
 
 Strategy factory in `__init__`:
 ```python
-from evoprompt.strategies import create_strategy
+from mulvul.strategies import create_strategy
 self.strategy = create_strategy(config["mode"], self.llm_client, config)
 ```
 
@@ -189,13 +189,13 @@ self.strategy = create_strategy(config["mode"], self.llm_client, config)
 ### Task 3: Add MulVulStrategy (Router→Detectors→Aggregator)
 
 **Files:**
-- Create: `src/evoprompt/strategies/mulvul.py`
+- Create: `src/mulvul/strategies/mulvul.py`
 - Modify: `tests/test_strategies.py`
 
 - [ ] **Step 1: Write test**
 - [ ] **Step 2: Implement MulVulStrategy**
 
-Wraps `MulVulDetector` from `src/evoprompt/agents/mulvul.py`. Uses `RouterAgent` → parallel `DetectorAgent` → `DecisionAggregator`.
+Wraps `MulVulDetector` from `src/mulvul/agents/mulvul.py`. Uses `RouterAgent` → parallel `DetectorAgent` → `DecisionAggregator`.
 
 - [ ] **Step 3: Test with `--mode mulvul`**
 - [ ] **Step 4: Commit**
@@ -205,7 +205,7 @@ Wraps `MulVulDetector` from `src/evoprompt/agents/mulvul.py`. Uses `RouterAgent`
 ### Task 4: Add BaselineStrategy (Zero-Shot)
 
 **Files:**
-- Create: `src/evoprompt/strategies/baseline.py`
+- Create: `src/mulvul/strategies/baseline.py`
 - Modify: `tests/test_strategies.py`
 
 - [ ] **Step 1: Write test**
@@ -221,7 +221,7 @@ Single LLM call, no evolution. When `--mode baseline`, skip evolution loop entir
 ### Task 5: Add CoevolutionStrategy (Multi-Agent)
 
 **Files:**
-- Create: `src/evoprompt/strategies/coevolution.py`
+- Create: `src/mulvul/strategies/coevolution.py`
 - Modify: `tests/test_strategies.py`
 
 - [ ] **Step 1: Write test**
@@ -237,7 +237,7 @@ Uses `MultiAgentCoordinator` with `DetectionAgent` + `MetaAgent`. Replaces `Prom
 ### Task 6: Add `--enable-rag` Flag
 
 **Files:**
-- Modify: `src/evoprompt/strategies/flat.py` (and others)
+- Modify: `src/mulvul/strategies/flat.py` (and others)
 - Modify: `main.py`
 
 - [ ] **Step 1: Write test for RAG-augmented prediction**

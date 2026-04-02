@@ -14,12 +14,12 @@
 
 | 文件/目录 | 功能 |
 |----------|------|
-| `src/evoprompt/rag/` | **RAG模块** - 知识库和检索器 |
-| `src/evoprompt/rag/knowledge_base.py` | 知识库定义和构建 |
-| `src/evoprompt/rag/retriever.py` | 相似度检索器 |
-| `src/evoprompt/rag/__init__.py` | RAG模块导出 |
-| `src/evoprompt/detectors/rag_three_layer_detector.py` | **RAG检测器** - 集成RAG的三层检测 |
-| `src/evoprompt/detectors/__init__.py` | 检测器模块导出 |
+| `src/mulvul/rag/` | **RAG模块** - 知识库和检索器 |
+| `src/mulvul/rag/knowledge_base.py` | 知识库定义和构建 |
+| `src/mulvul/rag/retriever.py` | 相似度检索器 |
+| `src/mulvul/rag/__init__.py` | RAG模块导出 |
+| `src/mulvul/detectors/rag_three_layer_detector.py` | **RAG检测器** - 集成RAG的三层检测 |
+| `src/mulvul/detectors/__init__.py` | 检测器模块导出 |
 
 ### 📖 文档
 
@@ -82,8 +82,8 @@
 ### 3. 三层检测
 
 **实现位置**:
-- 基础: `src/evoprompt/detectors/three_layer_detector.py`
-- RAG版: `src/evoprompt/detectors/rag_three_layer_detector.py`
+- 基础: `src/mulvul/detectors/three_layer_detector.py`
+- RAG版: `src/mulvul/detectors/rag_three_layer_detector.py`
 
 **功能**:
 - Layer 1: 大类分类
@@ -110,7 +110,7 @@
 ## 📊 完整文件结构
 
 ```
-evoprompt/
+mulvul/
 │
 ├── 📖 文档
 │   ├── START_HERE.md                    ⭐⭐⭐ 入口文档
@@ -139,7 +139,7 @@ evoprompt/
 │   │   └── demo_multiagent_coevolution.py ⭐  训练演示
 │
 ├── 📦 核心代码
-│   └── src/evoprompt/
+│   └── src/mulvul/
 │       ├── prompts/
 │       │   └── hierarchical_three_layer.py   # 三层prompt定义
 │       ├── detectors/
@@ -250,17 +250,17 @@ evoprompt/
 ### 按功能查找
 
 **想了解RAG**:
-- 代码: `src/evoprompt/rag/`
+- 代码: `src/mulvul/rag/`
 - 文档: `RAG_README.md`
 - 演示: `scripts/ablations/demo_rag_detection.py`
 
 **想了解三层检测**:
-- 代码: `src/evoprompt/detectors/three_layer_detector.py`
+- 代码: `src/mulvul/detectors/three_layer_detector.py`
 - 文档: `THREE_LAYER_README.md`
 - 演示: `scripts/ablations/demo_three_layer_detection.py`
 
 **想了解训练**:
-- 代码: `src/evoprompt/multiagent/`
+- 代码: `src/mulvul/multiagent/`
 - 文档: `MULTIAGENT_README.md`
 - 演示: `scripts/ablations/demo_multiagent_coevolution.py`
 
@@ -319,8 +319,8 @@ evoprompt/
 
 ### 核心模块
 
-1. `src/evoprompt/rag/` - RAG功能
-2. `src/evoprompt/detectors/rag_three_layer_detector.py` - RAG检测器
+1. `src/mulvul/rag/` - RAG功能
+2. `src/mulvul/detectors/rag_three_layer_detector.py` - RAG检测器
 
 ---
 

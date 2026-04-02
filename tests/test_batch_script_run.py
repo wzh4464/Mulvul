@@ -14,7 +14,7 @@ import random
 # 添加src路径
 sys.path.insert(0, 'src')
 
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 
 def create_mock_data(temp_dir: Path):
     """创建模拟的Primevul数据用于测试"""
@@ -163,7 +163,7 @@ def test_batch_integration():
                 evaluate_on_dataset, 
                 sample_wise_feedback_training
             )
-            from evoprompt.data.dataset import PrimevulDataset
+            from mulvul.data.dataset import PrimevulDataset
             
             # 5. 测试数据集加载
             print(f"\n📊 测试数据集加载...")

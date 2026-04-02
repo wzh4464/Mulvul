@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import pytest
 
-from evoprompt.prompts.contract import (
+from mulvul.prompts.contract import (
     PromptContract,
     PromptContractValidator,
 )
-from evoprompt.core.baseline import (
+from mulvul.core.baseline import (
     BaselineConfig,
     BaselineManager,
     BaselineSnapshot,
@@ -172,7 +172,7 @@ class TestPromptContractValidation:
 
     def test_all_seed_prompts_pass_contract(self):
         """Validate all prompts from seed_prompts.py."""
-        from evoprompt.prompts.seed_prompts import (
+        from mulvul.prompts.seed_prompts import (
             LAYER1_SEED_PROMPTS,
             LAYER2_SEED_PROMPTS,
             LAYER3_SEED_PROMPTS,
@@ -211,10 +211,10 @@ class TestPromptContractValidation:
 
     def test_all_hierarchical_prompts_pass_contract(self):
         """Validate HierarchicalPromptSet prompts."""
-        from evoprompt.detectors.parallel_hierarchical_detector import (  # noqa: E501
+        from mulvul.detectors.parallel_hierarchical_detector import (  # noqa: E501
             HierarchicalPromptSet,
         )
-        from evoprompt.prompts.hierarchical_three_layer import (
+        from mulvul.prompts.hierarchical_three_layer import (
             ThreeLayerPromptFactory,
         )
 

@@ -1,6 +1,6 @@
 import json
 
-from evoprompt.data.sampler import BalancedSampler
+from mulvul.data.sampler import BalancedSampler
 
 
 def _write_jsonl(path, items):

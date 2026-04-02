@@ -6,9 +6,9 @@ import json
 import pytest
 from pathlib import Path
 
-from evoprompt.llm.stub import DeterministicStubClient
-from evoprompt.llm.cache import ResponseCache
-from evoprompt.llm.runtime import LLMRuntime, LLMRuntimeConfig
+from mulvul.llm.stub import DeterministicStubClient
+from mulvul.llm.cache import ResponseCache
+from mulvul.llm.runtime import LLMRuntime, LLMRuntimeConfig
 
 
 class TestDeterministicStubClient:

@@ -22,7 +22,7 @@ This design covers supplementary experiments for paper revision addressing revie
 
 ## Section 1: Contrastive Retriever Extension
 
-### 1.1 KnowledgeBase Changes (`src/evoprompt/rag/knowledge_base.py`)
+### 1.1 KnowledgeBase Changes (`src/mulvul/rag/knowledge_base.py`)
 
 ```python
 @dataclass
@@ -40,7 +40,7 @@ class KnowledgeBase:
 - Add `add_clean_example(code, description)` method
 - Add `build_clean_pool_from_dataset(dataset, max_samples)` to sample benign code from training data
 
-### 1.2 Retriever Changes (`src/evoprompt/rag/retriever.py`)
+### 1.2 Retriever Changes (`src/mulvul/rag/retriever.py`)
 
 ```python
 class CodeSimilarityRetriever:
@@ -79,7 +79,7 @@ Description: Properly bounds-checked buffer operation
 
 ## Section 2: Cost Tracking
 
-### 2.1 New `CostTracker` class (`src/evoprompt/utils/cost_tracker.py`)
+### 2.1 New `CostTracker` class (`src/mulvul/utils/cost_tracker.py`)
 
 ```python
 @dataclass

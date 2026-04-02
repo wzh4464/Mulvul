@@ -1,1 +1,1 @@
-"""Legacy experiment and ablation scripts for EvoPrompt."""
+"""Legacy experiment and ablation scripts for Mulvul."""

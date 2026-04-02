@@ -14,13 +14,13 @@ from datetime import datetime
 # 添加src路径
 sys.path.insert(0, "src")
 
-from evoprompt.data.sampler import sample_primevul_1percent
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.core.prompt_tracker import PromptTracker
-from evoprompt.algorithms.differential import DifferentialEvolution
-from evoprompt.algorithms.base import Population
-from evoprompt.core.evaluator import Evaluator
-from evoprompt.metrics.base import AccuracyMetric
+from mulvul.data.sampler import sample_primevul_1percent
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.core.prompt_tracker import PromptTracker
+from mulvul.algorithms.differential import DifferentialEvolution
+from mulvul.algorithms.base import Population
+from mulvul.core.evaluator import Evaluator
+from mulvul.metrics.base import AccuracyMetric
 
 
 class MockLLMClient:

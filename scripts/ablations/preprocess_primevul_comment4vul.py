@@ -55,8 +55,8 @@ def setup_comment4vul_imports(use_adapter: bool = False):
             if str(src_path) not in sys.path:
                 sys.path.insert(0, str(src_path))
 
-            from evoprompt.utils import parsertool_adapter as ps
-            from evoprompt.utils.parsertool_adapter import Lang
+            from mulvul.utils import parsertool_adapter as ps
+            from mulvul.utils.parsertool_adapter import Lang
 
             # Verify installation
             if not ps.verify_installation():
@@ -90,8 +90,8 @@ def setup_comment4vul_imports(use_adapter: bool = False):
             if str(src_path) not in sys.path:
                 sys.path.insert(0, str(src_path))
 
-            from evoprompt.utils import parsertool_adapter as ps
-            from evoprompt.utils.parsertool_adapter import Lang
+            from mulvul.utils import parsertool_adapter as ps
+            from mulvul.utils.parsertool_adapter import Lang
 
             if not ps.verify_installation():
                 logger.error("tree-sitter adapter verification failed")
@@ -114,7 +114,7 @@ Neither parserTool nor tree-sitter adapter available.
 
 Option 1 (Recommended): Install tree-sitter adapter
   uv add tree-sitter
-  uv run python -c "from evoprompt.utils.parsertool_adapter import build_languages; build_languages()"
+  uv run python -c "from mulvul.utils.parsertool_adapter import build_languages; build_languages()"
 
 Option 2: Setup parserTool
   Download from: https://drive.google.com/file/d/1JMQbWIgN6GRGRAXW7UdYzD7OVScBK-Fq/view

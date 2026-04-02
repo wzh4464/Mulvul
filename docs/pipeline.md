@@ -1,4 +1,4 @@
-EvoPrompt Pipeline & Capabilities Overview
+Mulvul Pipeline & Capabilities Overview
 
 1. Core Capabilities
 - Evolutionary prompt optimization for vulnerability detection tasks
@@ -11,14 +11,14 @@ EvoPrompt Pipeline & Capabilities Overview
 
 2. Data & Preprocessing Pipeline
 - PrimeVul raw JSONL under `data/primevul/primevul/`
-  - `PrimevulDataset` (src/evoprompt/data/dataset.py) loads JSONL or tab-separated files
+  - `PrimevulDataset` (src/mulvul/data/dataset.py) loads JSONL or tab-separated files
   - Infers language (`lang`) from filename/heuristics, attaches CWE/CVE metadata
   - Optionally attaches NL AST / cleaned code from comment4vul outputs (via `nl_ast` metadata)
-- Balanced sampling utilities (src/evoprompt/data/sampler.py)
+- Balanced sampling utilities (src/mulvul/data/sampler.py)
   - `BalancedSampler.sample_primevul_balanced` for target / CWE major / layer1-balanced subsamples
   - `sample_primevul_1percent` helper: 1% balanced sample, train/dev split, saves JSONL + TSV
   - Sampling stats written to `sampling_stats.json` alongside generated train/dev files
-- CWE taxonomy helpers (src/evoprompt/data/cwe_categories.py, cwe_layer1.py, cwe_research_concepts.py)
+- CWE taxonomy helpers (src/mulvul/data/cwe_categories.py, cwe_layer1.py, cwe_research_concepts.py)
   - Map concrete CWE IDs to
     - Old major categories (for binary/major classification)
     - Layer-1 root categories used by `main.py` pipeline
@@ -28,7 +28,7 @@ EvoPrompt Pipeline & Capabilities Overview
   - Outputs enriched JSONL that feeds back into `PrimevulDataset` via `nl_ast` metadata
 
 3. LLM Client & Concurrency Pipeline
-- SVEN-style HTTP client (src/evoprompt/llm/client.py)
+- SVEN-style HTTP client (src/mulvul/llm/client.py)
   - `SVENLLMClient`: chat-completions over configurable API_BASE_URL / MODEL_NAME / API_KEY
   - Automatic .env loading (`load_env_vars`), primary + backup endpoints, retry with backoff
   - `generate` for single prompt, `batch_generate` for batched prompts with optional concurrency
@@ -36,22 +36,22 @@ EvoPrompt Pipeline & Capabilities Overview
 - OpenAI-compatible client
   - `OpenAICompatibleClient`: uses `openai` Python SDK over arbitrary base_url/model
   - Same generate / batch_generate interface, with simple batching and (optional) concurrency
-- Async helper (src/evoprompt/llm/async_client.py)
+- Async helper (src/mulvul/llm/async_client.py)
   - Utilities to run multiple LLM calls concurrently when needed
 - High-level factory
   - `create_llm_client(llm_type=...)` used by workflows (supports "sven", "openai", etc.)
 
 4. Core Evolution Pipeline (Library Layer)
 - Datasets & Metrics
-  - `Dataset` / `PrimevulDataset` / `BenchmarkDataset` / `TextClassificationDataset` in src/evoprompt/data/dataset.py
-  - Metrics in src/evoprompt/metrics/base.py: Accuracy, F1, Precision, Recall, ROUGE, BLEU
-- Evaluator (src/evoprompt/core/evaluator.py)
+  - `Dataset` / `PrimevulDataset` / `BenchmarkDataset` / `TextClassificationDataset` in src/mulvul/data/dataset.py
+  - Metrics in src/mulvul/metrics/base.py: Accuracy, F1, Precision, Recall, ROUGE, BLEU
+- Evaluator (src/mulvul/core/evaluator.py)
   - Formats prompts with `{input}` (and optionally `{nl_ast}` + static-analysis hints)
   - Optional static analysis enhancement:
-    - `BanditAnalyzer` (src/evoprompt/analysis/bandit_analyzer.py) via `AnalysisCache`
+    - `BanditAnalyzer` (src/mulvul/analysis/bandit_analyzer.py) via `AnalysisCache`
     - Injects summary of static-analysis results into prompts when enabled
   - Evaluates prompts over dataset, logs filled prompt instances to file if configured
-- Evolution algorithms (src/evoprompt/algorithms)
+- Evolution algorithms (src/mulvul/algorithms)
   - Base types in base.py: `Individual`, `Population`, `EvolutionAlgorithm`
   - `DifferentialEvolution` (differential.py)
     - Initializes population from initial prompts
@@ -59,15 +59,15 @@ EvoPrompt Pipeline & Capabilities Overview
     - Tracks fitness history and returns best prompt + final population
   - `GeneticAlgorithm` (genetic.py)
     - Tournament selection, crossover, mutation over prompt strings
-- Evolution engine (src/evoprompt/core/evolution.py)
+- Evolution engine (src/mulvul/core/evolution.py)
   - `EvolutionEngine`: thin wrapper that wires `EvolutionAlgorithm`, `Evaluator`, `LLMClient`
   - Legacy APE/GA/DE wrappers for older SVEN-style code
-- Prompt tracking (src/evoprompt/core/prompt_tracker.py)
+- Prompt tracking (src/mulvul/core/prompt_tracker.py)
   - `PromptTracker` records `PromptSnapshot` events to `prompt_evolution.jsonl`
   - Maintains best-per-generation and global best; writes `best_prompts.txt` & `experiment_summary.json`
 
 5. Vulnerability Detection Workflows
-- Generic vulnerability detection workflow (src/evoprompt/workflows/vulnerability_detection.py)
+- Generic vulnerability detection workflow (src/mulvul/workflows/vulnerability_detection.py)
   - `VulnerabilityDetectionWorkflow` orchestrates end-to-end runs for PrimeVul/SVEN/benchmark data
   - Data preparation (`prepare_data`):
     - For dataset="primevul": converts JSONL to tab-separated dev/test via `prepare_primevul_data`
@@ -85,7 +85,7 @@ EvoPrompt Pipeline & Capabilities Overview
   - Convenience entry: `run_vulnerability_detection_workflow` helper
 
 6. CWE Research Concepts Workflow
-- CWE 10-class research concept pipeline (src/evoprompt/workflows/cwe_research_concepts.py)
+- CWE 10-class research concept pipeline (src/mulvul/workflows/cwe_research_concepts.py)
   - `CWEConceptEvaluator`: maps CWE lists to concept IDs / names and parses model responses
   - `CWEConceptWorkflow`: mirrors VulnerabilityDetectionWorkflow but for 10-class labels
     - Saves filled prompts and evolution artifacts under `outputs/cwe_research_concepts/`
@@ -130,11 +130,11 @@ EvoPrompt Pipeline & Capabilities Overview
   - Runs `VulnerabilityDetectionWorkflow` with configurable DE/GA and LLM type
 - SVEN-style usage
   - `data/vul_detection/` stores SVEN-processed datasets
-  - `CONCURRENT_USAGE.md` documents how to run EvoPrompt with high-concurrency SVEN clients
+  - `CONCURRENT_USAGE.md` documents how to run Mulvul with high-concurrency SVEN clients
   - Tests like `tests/test_batch_processing.py` illustrate direct use of `sven_llm_init` and `sven_llm_query`
 
 9. Static Analysis & NL AST Integration
-- Static analysis (src/evoprompt/analysis/)
+- Static analysis (src/mulvul/analysis/)
   - `BanditAnalyzer` wraps Bandit CLI, maps test IDs to CWE IDs
   - `AnalysisCache` deduplicates analyses across runs
   - `AnalysisResult` / `Vulnerability` provide structured outputs and summaries
@@ -147,7 +147,7 @@ EvoPrompt Pipeline & Capabilities Overview
     - Or append a "Natural Language AST" section automatically when configured
 
 10. Checkpoint, Retry, and Recovery Pipeline
-- Checkpoint utilities (src/evoprompt/utils/checkpoint.py)
+- Checkpoint utilities (src/mulvul/utils/checkpoint.py)
   - `CheckpointManager`: generation/batch-level state saving + dual JSON + pickle-backed full state
   - `BatchCheckpointer`: per-batch results with predictions, ground truths, batch analysis, prompt
   - `ExperimentRecovery`: detection and restoration of interrupted experiments, with recovery logs
@@ -156,9 +156,9 @@ EvoPrompt Pipeline & Capabilities Overview
   - main.py Layer-1 pipeline is the reference implementation of these utilities
 
 11. CLI & Utilities
-- CLI entrypoint (src/evoprompt/cli.py)
+- CLI entrypoint (src/mulvul/cli.py)
   - Placeholder for future unified CLI (currently minimal)
-- Utility helpers (src/evoprompt/utils)
+- Utility helpers (src/mulvul/utils)
   - `response_parsing.py`: shared label parsing (`extract_vulnerability_label`, `extract_cwe_major`)
   - `text.py`: `safe_format` and truncation helpers for prompts
   - `parsertool_adapter.py`: bridge to external comment4vul/parserTool stack

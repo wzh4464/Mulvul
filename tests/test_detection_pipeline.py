@@ -1,6 +1,6 @@
 """Tests for unified detection pipeline."""
 import asyncio
-from evoprompt.detectors.pipeline import (
+from mulvul.detectors.pipeline import (
     DetectionContext,
     PipelineStep,
     CodeEnhancementStep,
@@ -12,19 +12,19 @@ from evoprompt.detectors.pipeline import (
     SequentialStrategy,
     ParallelStrategy,
 )
-from evoprompt.detectors.scoring import (
+from mulvul.detectors.scoring import (
     ScoredPrediction,
     DetectionPath,
     MaxConfidenceSelection,
 )
-from evoprompt.llm.stub import DeterministicStubClient
-from evoprompt.prompts.prompt_set import PromptSet
-from evoprompt.prompts.template import (
+from mulvul.llm.stub import DeterministicStubClient
+from mulvul.prompts.prompt_set import PromptSet
+from mulvul.prompts.template import (
     PromptTemplate,
     PromptSection,
     PromptMetadata,
 )
-from evoprompt.detectors.parallel_hierarchical_detector import (
+from mulvul.detectors.parallel_hierarchical_detector import (
     NoOpEnhancer,
 )
 

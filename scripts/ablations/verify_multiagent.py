@@ -12,7 +12,7 @@ print("=" * 60)
 # Test imports
 print("\n1. Testing imports...")
 try:
-    from evoprompt.prompts.hierarchical import (
+    from mulvul.prompts.hierarchical import (
         HierarchicalPrompt,
         PromptHierarchy,
         CWECategory,
@@ -24,7 +24,7 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from evoprompt.evaluators.statistics import (
+    from mulvul.evaluators.statistics import (
         DetectionStatistics,
         BatchStatistics,
         StatisticsCollector
@@ -35,7 +35,7 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from evoprompt.optimization.meta_optimizer import (
+    from mulvul.optimization.meta_optimizer import (
         MetaOptimizer,
         OptimizationContext
     )
@@ -45,7 +45,7 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from evoprompt.multiagent.agents import (
+    from mulvul.multiagent.agents import (
         DetectionAgent,
         MetaAgent,
         AgentRole,
@@ -59,7 +59,7 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from evoprompt.multiagent.coordinator import (
+    from mulvul.multiagent.coordinator import (
         MultiAgentCoordinator,
         CoordinatorConfig,
         CoordinationStrategy
@@ -70,7 +70,7 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
+    from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
     print("   ✅ Coevolutionary algorithm")
 except Exception as e:
     print(f"   ❌ Coevolutionary algorithm: {e}")

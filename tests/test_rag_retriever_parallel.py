@@ -3,14 +3,14 @@
 import pytest
 from unittest.mock import MagicMock
 
-from evoprompt.rag.retriever import (
+from mulvul.rag.retriever import (
     CodeSimilarityRetriever,
     RetrievalResult,
     _resolve_major_category,
     _resolve_middle_category,
 )
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
-from evoprompt.prompts.hierarchical_three_layer import MajorCategory, MiddleCategory
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.prompts.hierarchical_three_layer import MajorCategory, MiddleCategory
 
 
 def _make_kb_with_examples() -> KnowledgeBase:

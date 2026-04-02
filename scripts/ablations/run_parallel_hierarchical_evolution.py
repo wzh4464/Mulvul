@@ -24,17 +24,17 @@ from tqdm import tqdm
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from evoprompt.llm.client import create_default_client
-from evoprompt.algorithms.genetic import GeneticAlgorithm
-from evoprompt.algorithms.base import Individual
-from evoprompt.prompts import (
+from mulvul.llm.client import create_default_client
+from mulvul.algorithms.genetic import GeneticAlgorithm
+from mulvul.algorithms.base import Individual
+from mulvul.prompts import (
     load_seeds_for_ga,
     get_task_context,
     LAYER1_SEED_PROMPTS,
 )
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.data.sampler import sample_primevul_1percent
-from evoprompt.utils.text import safe_format
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.data.sampler import sample_primevul_1percent
+from mulvul.utils.text import safe_format
 
 
 # =============================================================================

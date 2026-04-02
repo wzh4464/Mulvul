@@ -58,7 +58,7 @@
 ## 📁 项目结构
 
 ```
-src/evoprompt/
+src/mulvul/
 ├── multiagent/              # Multi-agent框架
 │   ├── agents.py           # Detection Agent + Meta Agent
 │   └── coordinator.py      # 协调器
@@ -119,7 +119,7 @@ uv run python scripts/ablations/demo_multiagent_coevolution.py
 负责使用Prompt检测漏洞:
 
 ```python
-from evoprompt.multiagent.agents import create_detection_agent
+from mulvul.multiagent.agents import create_detection_agent
 
 # 创建Detection Agent (GPT-4)
 detection_agent = create_detection_agent(
@@ -139,7 +139,7 @@ predictions = detection_agent.detect(
 负责分析性能并优化Prompt:
 
 ```python
-from evoprompt.multiagent.agents import create_meta_agent
+from mulvul.multiagent.agents import create_meta_agent
 
 # 创建Meta Agent (Claude 4.5)
 meta_agent = create_meta_agent(
@@ -161,7 +161,7 @@ improved_prompt = meta_agent.improve_prompt(
 协调两个Agent的协作:
 
 ```python
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
+from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
 
 # 配置协调器
 config = CoordinatorConfig(
@@ -190,7 +190,7 @@ improved_prompt, stats = coordinator.collaborative_improve(
 协同进化算法集成所有组件:
 
 ```python
-from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
+from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
 
 algorithm = CoevolutionaryAlgorithm(
     config={
@@ -213,7 +213,7 @@ results = algorithm.evolve(initial_prompts=initial_prompts)
 系统收集详细的统计信息用于Meta-agent优化:
 
 ```python
-from evoprompt.evaluators.statistics import DetectionStatistics
+from mulvul.evaluators.statistics import DetectionStatistics
 
 stats = DetectionStatistics()
 
@@ -316,8 +316,8 @@ outputs/multiagent_coevolution/multiagent_coevo_YYYYMMDD_HHMMSS/
 ### 自定义Detection Agent
 
 ```python
-from evoprompt.llm.client import create_llm_client
-from evoprompt.multiagent.agents import DetectionAgent, AgentConfig, AgentRole
+from mulvul.llm.client import create_llm_client
+from mulvul.multiagent.agents import DetectionAgent, AgentConfig, AgentRole
 
 # 使用自定义模型
 custom_client = create_llm_client(llm_type="your-model")
@@ -334,7 +334,7 @@ detection_agent = DetectionAgent(custom_config, custom_client)
 ### 层级化Prompt
 
 ```python
-from evoprompt.prompts.hierarchical import PromptHierarchy, CWECategory
+from mulvul.prompts.hierarchical import PromptHierarchy, CWECategory
 
 hierarchy = PromptHierarchy()
 hierarchy.initialize_with_defaults()
@@ -405,7 +405,7 @@ for ind in population.individuals:
 ## 📚 参考文献
 
 - APE: Large Language Models are Human-Level Prompt Engineers
-- EvoPrompt: Automatic Prompt Optimization
+- Mulvul: Automatic Prompt Optimization
 - Multi-agent Collaboration (论文热点)
 
 ## 🤝 贡献

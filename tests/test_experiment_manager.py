@@ -5,7 +5,7 @@ import json
 import pytest
 from pathlib import Path
 
-from evoprompt.core.experiment import (
+from mulvul.core.experiment import (
     ExperimentConfig,
     ExperimentManager,
     ArtifactStore,

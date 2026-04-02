@@ -1,13 +1,13 @@
 """Tests for adaptive MulVul detector routing."""
 
-from evoprompt.agents.base import (
+from mulvul.agents.base import (
     BENIGN_CATEGORY,
     UNKNOWN_CATEGORY,
     DetectionResult,
     RoutingResult,
 )
-from evoprompt.agents.mulvul import MulVulDetector
-from evoprompt.agents.router_agent import RouterAgent
+from mulvul.agents.mulvul import MulVulDetector
+from mulvul.agents.router_agent import RouterAgent
 
 
 class StubLLMClient:

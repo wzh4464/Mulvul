@@ -19,25 +19,25 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.prompts.hierarchical_three_layer import (
+from mulvul.prompts.hierarchical_three_layer import (
     ThreeLayerPromptFactory,
     ThreeLayerPromptSet,
 )
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector, ThreeLayerEvaluator
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.detectors.parallel_hierarchical_detector import (
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector, ThreeLayerEvaluator
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.detectors.parallel_hierarchical_detector import (
     ParallelHierarchicalDetector,
     create_parallel_detector,
 )
-from evoprompt.rag.knowledge_base import KnowledgeBase, KnowledgeBaseBuilder
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.llm.client import load_env_vars, create_llm_client
-from evoprompt.llm.async_client import AsyncLLMClient
-from evoprompt.multiagent.agents import create_detection_agent, create_meta_agent
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
-from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
-from evoprompt.utils.trace import TraceManager, TraceConfig, trace_enabled_from_env
-from evoprompt.core.prompt_change_logger import PromptChangeLogger
+from mulvul.rag.knowledge_base import KnowledgeBase, KnowledgeBaseBuilder
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.llm.client import load_env_vars, create_llm_client
+from mulvul.llm.async_client import AsyncLLMClient
+from mulvul.multiagent.agents import create_detection_agent, create_meta_agent
+from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
+from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
+from mulvul.utils.trace import TraceManager, TraceConfig, trace_enabled_from_env
+from mulvul.core.prompt_change_logger import PromptChangeLogger
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ def load_or_build_knowledge_base(args):
         )
         if needs_clean and len(kb.clean_examples) == 0:
             print("   🧹 Building clean pool for contrastive retrieval...")
-            from evoprompt.rag.knowledge_base import build_clean_pool_from_dataset
+            from mulvul.rag.knowledge_base import build_clean_pool_from_dataset
             train_dataset = PrimevulDataset(args.train_file, "train")
             build_clean_pool_from_dataset(kb, train_dataset, max_samples=500, seed=42)
             print(f"   ✅ Added {len(kb.clean_examples)} clean examples")
@@ -140,7 +140,7 @@ def load_or_build_knowledge_base(args):
         print(f"   📂 Source: Dataset ({args.kb_samples_per_category} samples/category)")
         dataset = PrimevulDataset(args.train_file, "train")
 
-        from evoprompt.rag.knowledge_base import create_knowledge_base_from_dataset
+        from mulvul.rag.knowledge_base import create_knowledge_base_from_dataset
         import tempfile
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
@@ -292,8 +292,8 @@ def run_parallel_evaluation(detector, dataset, args):
 
     复用三层评估口径，便于和串行检测器对齐对比。
     """
-    from evoprompt.prompts.hierarchical_three_layer import get_full_path
-    from evoprompt.evaluators.multiclass_metrics import MultiClassMetrics
+    from mulvul.prompts.hierarchical_three_layer import get_full_path
+    from mulvul.evaluators.multiclass_metrics import MultiClassMetrics
 
     all_samples = dataset.get_samples()
 
@@ -428,7 +428,7 @@ def run_training(initial_prompt_set, detector, dataset, kb, args, trace_manager:
 
     # 创建agents
     print("   🤖 Creating agents...")
-    from evoprompt.llm.client import OpenAICompatibleClient
+    from mulvul.llm.client import OpenAICompatibleClient
     detection_llm = OpenAICompatibleClient(
         api_base=os.getenv("API_BASE_URL"),
         api_key=os.getenv("API_KEY"),
@@ -642,7 +642,7 @@ def filter_cwe_labeled_samples(dataset, max_samples=None):
     Returns list of samples that have CWE metadata and can be resolved
     to a full path in the three-layer hierarchy.
     """
-    from evoprompt.prompts.hierarchical_three_layer import get_full_path
+    from mulvul.prompts.hierarchical_three_layer import get_full_path
 
     all_samples = dataset.get_samples()
     valid = []
@@ -666,7 +666,7 @@ def compute_baseline_metrics(results: list) -> dict:
 
     Matches the MulVul evaluation pipeline so numbers are directly comparable.
     """
-    from evoprompt.evaluators.multiclass_metrics import MultiClassMetrics
+    from mulvul.evaluators.multiclass_metrics import MultiClassMetrics
 
     # Multi-class CWE metrics
     cwe_metrics = MultiClassMetrics()
@@ -868,8 +868,8 @@ async def run_clean_pool_sensitivity(samples, kb, llm_client, args) -> dict:
     Args:
         samples: Pre-filtered list of CWE-labeled samples to evaluate.
     """
-    from evoprompt.utils.cost_tracker import CostTracker
-    from evoprompt.rag.retriever import CodeSimilarityRetriever
+    from mulvul.utils.cost_tracker import CostTracker
+    from mulvul.rag.retriever import CodeSimilarityRetriever
 
     fractions = [0.1, 0.25, 0.5, 1.0]
     all_results = {}
@@ -986,7 +986,7 @@ def run_pairing_evolution(
 
     Returns dict with best_fitness, generation stats, and eval Macro-F1.
     """
-    from evoprompt.llm.client import OpenAICompatibleClient
+    from mulvul.llm.client import OpenAICompatibleClient
 
     pairing = f"{generator_model}_to_{executor_model}"
     print(f"\n{'='*60}")
@@ -1182,7 +1182,7 @@ def _make_balanced_dataset(dataset, max_total=200):
     where vulnerable and benign samples are interleaved.
     """
     import random as _rng
-    from evoprompt.data.dataset import Dataset, Sample
+    from mulvul.data.dataset import Dataset, Sample
 
     all_samples = dataset.get_samples()
     vuln = [s for s in all_samples if str(s.target) == '1']
@@ -1531,8 +1531,8 @@ def main():
         print(f"   Baseline model: {baseline_model}")
 
         if args.method == 'gpt4o_rag_singlepass':
-            from evoprompt.utils.cost_tracker import CostTracker
-            from evoprompt.rag.retriever import CodeSimilarityRetriever
+            from mulvul.utils.cost_tracker import CostTracker
+            from mulvul.rag.retriever import CodeSimilarityRetriever
 
             cost_dir = Path(args.output_dir) / "cost"
             cost_dir.mkdir(parents=True, exist_ok=True)
@@ -1555,8 +1555,8 @@ def main():
             return 0
 
         elif args.method == 'single_agent_tool_rag':
-            from evoprompt.utils.cost_tracker import CostTracker
-            from evoprompt.rag.retriever import CodeSimilarityRetriever
+            from mulvul.utils.cost_tracker import CostTracker
+            from mulvul.rag.retriever import CodeSimilarityRetriever
 
             cost_dir = Path(args.output_dir) / "cost"
             cost_dir.mkdir(parents=True, exist_ok=True)

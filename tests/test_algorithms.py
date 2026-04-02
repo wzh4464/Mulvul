@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, patch
 import numpy as np
 
-from evoprompt.algorithms.base import (
+from mulvul.algorithms.base import (
     Individual, Population, EvolutionAlgorithm
 )
 
@@ -140,7 +140,7 @@ class TestEvolutionAlgorithm:
         
         # Mock evaluator to return different scores
         def mock_evaluate(prompt):
-            from evoprompt.core.evaluator import EvaluationResult
+            from mulvul.core.evaluator import EvaluationResult
             scores = {"Prompt 1": 0.8, "Prompt 2": 0.9, "Prompt 3": 0.7}
             return EvaluationResult(scores.get(prompt, 0.5))
             

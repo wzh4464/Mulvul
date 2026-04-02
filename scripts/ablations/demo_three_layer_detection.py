@@ -20,19 +20,19 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.prompts.hierarchical_three_layer import (
+from mulvul.prompts.hierarchical_three_layer import (
     ThreeLayerPromptSet,
     ThreeLayerPromptFactory,
     MajorCategory,
     MiddleCategory,
     get_full_path,
 )
-from evoprompt.detectors.three_layer_detector import (
+from mulvul.detectors.three_layer_detector import (
     ThreeLayerDetector,
     ThreeLayerEvaluator,
 )
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.llm.client import load_env_vars, create_llm_client
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.llm.client import load_env_vars, create_llm_client
 
 
 def setup_environment():
@@ -62,7 +62,7 @@ def demonstrate_three_layer_structure():
         print(f"   - {major.value}")
 
     print(f"\nLayer 2 (Middle Categories): {len(list(MiddleCategory))} categories")
-    from evoprompt.prompts.hierarchical_three_layer import MAJOR_TO_MIDDLE
+    from mulvul.prompts.hierarchical_three_layer import MAJOR_TO_MIDDLE
 
     for major, middles in MAJOR_TO_MIDDLE.items():
         print(f"   {major.value}:")
@@ -70,7 +70,7 @@ def demonstrate_three_layer_structure():
             print(f"      - {middle.value}")
 
     print(f"\nLayer 3 (CWE IDs): Mapped from middle categories")
-    from evoprompt.prompts.hierarchical_three_layer import MIDDLE_TO_CWE
+    from mulvul.prompts.hierarchical_three_layer import MIDDLE_TO_CWE
 
     # Show a few examples
     examples = list(MIDDLE_TO_CWE.items())[:5]

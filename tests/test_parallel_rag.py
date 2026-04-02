@@ -6,15 +6,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from dataclasses import dataclass, field
 from typing import List
 
-from evoprompt.detectors.parallel_hierarchical_detector import (
+from mulvul.detectors.parallel_hierarchical_detector import (
     ParallelHierarchicalDetector,
     ParallelDetectorConfig,
     HierarchicalPromptSet,
     NoOpEnhancer,
 )
-from evoprompt.detectors.scoring import DetectionPath
-from evoprompt.rag.retriever import CodeSimilarityRetriever, RetrievalResult
-from evoprompt.rag.knowledge_base import CodeExample
+from mulvul.detectors.scoring import DetectionPath
+from mulvul.rag.retriever import CodeSimilarityRetriever, RetrievalResult
+from mulvul.rag.knowledge_base import CodeExample
 
 
 class StubRetriever:
@@ -58,7 +58,7 @@ class StubRetriever:
 
 def _make_prompt_set() -> HierarchicalPromptSet:
     """Create a minimal prompt set for testing."""
-    from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+    from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
     base = ThreeLayerPromptFactory.create_default_prompt_set()
     return HierarchicalPromptSet.from_three_layer_set(base)
 

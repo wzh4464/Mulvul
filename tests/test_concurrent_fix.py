@@ -15,7 +15,7 @@ def test_openai_client_concurrent():
     """测试OpenAI客户端并发功能"""
     print("🧪 测试OpenAI客户端并发功能...")
     
-    from evoprompt.llm.client import create_default_client
+    from mulvul.llm.client import create_default_client
     import time
     
     client = create_default_client()

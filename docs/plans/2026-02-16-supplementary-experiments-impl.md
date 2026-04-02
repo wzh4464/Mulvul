@@ -6,14 +6,14 @@
 
 **Architecture:** Integrated extension of existing codebase - modify `KnowledgeBase` and `CodeSimilarityRetriever` for contrastive retrieval, add `CostTracker` utility, extend `train_three_layer.py` with new `--method` options.
 
-**Tech Stack:** Python 3.11, asyncio, aiohttp, existing EvoPrompt infrastructure
+**Tech Stack:** Python 3.11, asyncio, aiohttp, existing Mulvul infrastructure
 
 ---
 
 ## Task 1: Add Clean Pool to KnowledgeBase
 
 **Files:**
-- Modify: `src/evoprompt/rag/knowledge_base.py`
+- Modify: `src/mulvul/rag/knowledge_base.py`
 - Test: `tests/test_knowledge_base_clean_pool.py`
 
 **Step 1: Write the failing test**
@@ -21,7 +21,7 @@
 ```python
 # tests/test_knowledge_base_clean_pool.py
 import pytest
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
 
 
 def test_knowledge_base_has_clean_examples_field():
@@ -88,7 +88,7 @@ Expected: FAIL with "AttributeError: 'KnowledgeBase' object has no attribute 'cl
 
 **Step 3: Write minimal implementation**
 
-Modify `src/evoprompt/rag/knowledge_base.py`:
+Modify `src/mulvul/rag/knowledge_base.py`:
 
 ```python
 # Add to KnowledgeBase dataclass (after line 75):
@@ -176,7 +176,7 @@ Expected: PASS (4 tests)
 **Step 5: Commit**
 
 ```bash
-git add tests/test_knowledge_base_clean_pool.py src/evoprompt/rag/knowledge_base.py
+git add tests/test_knowledge_base_clean_pool.py src/mulvul/rag/knowledge_base.py
 git commit -m "feat: add clean_examples field to KnowledgeBase for contrastive retrieval"
 ```
 
@@ -185,7 +185,7 @@ git commit -m "feat: add clean_examples field to KnowledgeBase for contrastive r
 ## Task 2: Add Clean Pool Builder Function
 
 **Files:**
-- Modify: `src/evoprompt/rag/knowledge_base.py`
+- Modify: `src/mulvul/rag/knowledge_base.py`
 - Test: `tests/test_knowledge_base_clean_pool.py`
 
 **Step 1: Write the failing test**
@@ -196,7 +196,7 @@ Add to `tests/test_knowledge_base_clean_pool.py`:
 def test_build_clean_pool_from_dataset():
     """Should build clean pool from dataset benign samples."""
     from unittest.mock import MagicMock
-    from evoprompt.rag.knowledge_base import build_clean_pool_from_dataset
+    from mulvul.rag.knowledge_base import build_clean_pool_from_dataset
 
     # Mock dataset with benign samples
     mock_dataset = MagicMock()
@@ -232,7 +232,7 @@ Expected: FAIL with "ImportError: cannot import name 'build_clean_pool_from_data
 
 **Step 3: Write minimal implementation**
 
-Add to `src/evoprompt/rag/knowledge_base.py` (at end of file):
+Add to `src/mulvul/rag/knowledge_base.py` (at end of file):
 
 ```python
 def build_clean_pool_from_dataset(
@@ -282,7 +282,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/evoprompt/rag/knowledge_base.py tests/test_knowledge_base_clean_pool.py
+git add src/mulvul/rag/knowledge_base.py tests/test_knowledge_base_clean_pool.py
 git commit -m "feat: add build_clean_pool_from_dataset function"
 ```
 
@@ -291,7 +291,7 @@ git commit -m "feat: add build_clean_pool_from_dataset function"
 ## Task 3: Add Contrastive Retrieval to CodeSimilarityRetriever
 
 **Files:**
-- Modify: `src/evoprompt/rag/retriever.py`
+- Modify: `src/mulvul/rag/retriever.py`
 - Test: `tests/test_contrastive_retriever.py`
 
 **Step 1: Write the failing test**
@@ -299,8 +299,8 @@ git commit -m "feat: add build_clean_pool_from_dataset function"
 ```python
 # tests/test_contrastive_retriever.py
 import pytest
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
-from evoprompt.rag.retriever import CodeSimilarityRetriever
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.rag.retriever import CodeSimilarityRetriever
 
 
 def test_retriever_accepts_contrastive_flag():
@@ -374,7 +374,7 @@ Expected: FAIL with "TypeError: __init__() got an unexpected keyword argument 'c
 
 **Step 3: Write minimal implementation**
 
-Modify `src/evoprompt/rag/retriever.py`:
+Modify `src/mulvul/rag/retriever.py`:
 
 ```python
 # Modify __init__ (around line 69):
@@ -496,7 +496,7 @@ Expected: PASS (4 tests)
 **Step 5: Commit**
 
 ```bash
-git add src/evoprompt/rag/retriever.py tests/test_contrastive_retriever.py
+git add src/mulvul/rag/retriever.py tests/test_contrastive_retriever.py
 git commit -m "feat: add contrastive retrieval with clean pool subsampling"
 ```
 
@@ -505,7 +505,7 @@ git commit -m "feat: add contrastive retrieval with clean pool subsampling"
 ## Task 4: Create CostTracker Class
 
 **Files:**
-- Create: `src/evoprompt/utils/cost_tracker.py`
+- Create: `src/mulvul/utils/cost_tracker.py`
 - Test: `tests/test_cost_tracker.py`
 
 **Step 1: Write the failing test**
@@ -520,7 +520,7 @@ from pathlib import Path
 
 def test_cost_tracker_creates_file():
     """CostTracker should create JSONL output file."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "cost.jsonl"
@@ -544,7 +544,7 @@ def test_cost_tracker_creates_file():
 
 def test_cost_tracker_accumulates_calls():
     """Multiple LLM calls should accumulate."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "cost.jsonl"
@@ -564,7 +564,7 @@ def test_cost_tracker_accumulates_calls():
 
 def test_cost_tracker_records_time():
     """Total time should be tracked."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "cost.jsonl"
@@ -580,11 +580,11 @@ def test_cost_tracker_records_time():
 **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_cost_tracker.py -v`
-Expected: FAIL with "ModuleNotFoundError: No module named 'evoprompt.utils.cost_tracker'"
+Expected: FAIL with "ModuleNotFoundError: No module named 'mulvul.utils.cost_tracker'"
 
 **Step 3: Write minimal implementation**
 
-Create `src/evoprompt/utils/cost_tracker.py`:
+Create `src/mulvul/utils/cost_tracker.py`:
 
 ```python
 """Cost tracking for LLM and retrieval calls."""
@@ -722,7 +722,7 @@ Expected: PASS (3 tests)
 **Step 5: Commit**
 
 ```bash
-git add src/evoprompt/utils/cost_tracker.py tests/test_cost_tracker.py
+git add src/mulvul/utils/cost_tracker.py tests/test_cost_tracker.py
 git commit -m "feat: add CostTracker for LLM and retrieval call accounting"
 ```
 
@@ -896,7 +896,7 @@ async def run_gpt4o_rag_singlepass(
     args
 ) -> List[Dict]:
     """Run GPT-4o + RAG single-pass baseline."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
     import re
 
     results = []
@@ -986,7 +986,7 @@ In main() function, add method dispatch:
 ```python
 # After dataset loading:
 if args.method == 'gpt4o_rag_singlepass':
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     cost_dir = Path(args.output_dir) / "cost"
     cost_dir.mkdir(parents=True, exist_ok=True)
@@ -1127,7 +1127,7 @@ async def run_single_agent_tool_rag(
 
 ```python
 elif args.method == 'single_agent_tool_rag':
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     cost_dir = Path(args.output_dir) / "cost"
     cost_dir.mkdir(parents=True, exist_ok=True)
@@ -1176,7 +1176,7 @@ async def run_clean_pool_sensitivity(
     args
 ) -> Dict:
     """Run clean pool sensitivity experiment."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     fractions = [0.1, 0.25, 0.5, 1.0]
     results = {}
@@ -1290,7 +1290,7 @@ from collections import Counter
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.data.dataset import PrimevulDataset
+from mulvul.data.dataset import PrimevulDataset
 
 
 def generate_balanced_cwe_subset(

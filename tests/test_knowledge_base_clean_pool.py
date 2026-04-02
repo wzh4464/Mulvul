@@ -2,7 +2,7 @@
 """Tests for KnowledgeBase clean_examples field (contrastive retrieval support)."""
 
 import pytest
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
 
 
 def test_knowledge_base_has_clean_examples_field():
@@ -65,7 +65,7 @@ def test_save_and_load_with_clean_examples():
 def test_build_clean_pool_from_dataset():
     """Should build clean pool from dataset benign samples."""
     from unittest.mock import MagicMock
-    from evoprompt.rag.knowledge_base import build_clean_pool_from_dataset
+    from mulvul.rag.knowledge_base import build_clean_pool_from_dataset
 
     # Mock dataset with benign samples
     mock_dataset = MagicMock()

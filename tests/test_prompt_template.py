@@ -5,12 +5,12 @@ import json
 import pytest
 from pathlib import Path
 
-from evoprompt.prompts.template import (
+from mulvul.prompts.template import (
     PromptSection,
     PromptMetadata,
     PromptTemplate,
 )
-from evoprompt.prompts.prompt_set import PromptSet
+from mulvul.prompts.prompt_set import PromptSet
 
 
 class TestPromptSection:
@@ -339,7 +339,7 @@ class TestPromptSet:
 
     def test_migration_from_three_layer_prompt_set(self):
         """Convert ThreeLayerPromptSet to PromptSet."""
-        from evoprompt.prompts.hierarchical_three_layer import (
+        from mulvul.prompts.hierarchical_three_layer import (
             ThreeLayerPromptFactory,
         )
 
@@ -360,10 +360,10 @@ class TestPromptSet:
 
     def test_migration_from_hierarchical_prompt_set(self):
         """Convert HierarchicalPromptSet to PromptSet."""
-        from evoprompt.detectors.parallel_hierarchical_detector import (
+        from mulvul.detectors.parallel_hierarchical_detector import (
             HierarchicalPromptSet,
         )
-        from evoprompt.prompts.hierarchical_three_layer import (
+        from mulvul.prompts.hierarchical_three_layer import (
             ThreeLayerPromptFactory,
         )
 

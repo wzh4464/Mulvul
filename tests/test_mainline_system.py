@@ -1,5 +1,5 @@
-from evoprompt.mainline.artifacts import PromptArtifact
-from evoprompt.mainline.system import MainlineDetectorSystem
+from mulvul.mainline.artifacts import PromptArtifact
+from mulvul.mainline.system import MainlineDetectorSystem
 
 
 class StubLLMClient:

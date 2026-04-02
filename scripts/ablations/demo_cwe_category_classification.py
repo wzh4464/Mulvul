@@ -21,12 +21,12 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.multiagent.agents import create_detection_agent, create_meta_agent
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig, CoordinationStrategy
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.llm.client import load_env_vars, create_llm_client, create_meta_prompt_client
-from evoprompt.evaluators.cwe_category_evaluator import CWECategoryEvaluator
-from evoprompt.prompts.hierarchical import CWECategory
+from mulvul.multiagent.agents import create_detection_agent, create_meta_agent
+from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig, CoordinationStrategy
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.llm.client import load_env_vars, create_llm_client, create_meta_prompt_client
+from mulvul.evaluators.cwe_category_evaluator import CWECategoryEvaluator
+from mulvul.prompts.hierarchical import CWECategory
 
 
 def setup_environment():
@@ -155,7 +155,7 @@ def run_category_demo(data_dir: str, output_dir: str, max_samples: int = 100):
         if hasattr(s, 'metadata') and 'cwe' in s.metadata:
             cwes = s.metadata['cwe']
             if cwes:
-                from evoprompt.prompts.hierarchical import get_cwe_major_category
+                from mulvul.prompts.hierarchical import get_cwe_major_category
                 cat = get_cwe_major_category(cwes[0])
                 cat_name = cat.value if cat else "Unknown"
                 category_counts[cat_name] = category_counts.get(cat_name, 0) + 1

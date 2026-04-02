@@ -12,10 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
-from evoprompt.llm.client import load_env_vars, create_llm_client
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.llm.client import load_env_vars, create_llm_client
 
 
 def setup_environment():
@@ -184,7 +184,7 @@ def compare_with_without_rag(llm_client, kb):
     print("\n⚖️  Comparing RAG vs Non-RAG Detection")
     print("=" * 70)
 
-    from evoprompt.detectors.three_layer_detector import ThreeLayerDetector
+    from mulvul.detectors.three_layer_detector import ThreeLayerDetector
 
     prompt_set = ThreeLayerPromptFactory.create_default_prompt_set()
 

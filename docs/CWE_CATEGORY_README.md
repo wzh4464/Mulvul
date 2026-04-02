@@ -136,9 +136,9 @@ Category:
 ### 使用CWE大类评估器
 
 ```python
-from evoprompt.evaluators.cwe_category_evaluator import CWECategoryEvaluator
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.llm.client import create_llm_client
+from mulvul.evaluators.cwe_category_evaluator import CWECategoryEvaluator
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.llm.client import create_llm_client
 
 # 创建数据集
 dataset = PrimevulDataset("data/primevul_1percent_sample/dev.txt", "dev")
@@ -236,7 +236,7 @@ for i, (sample, pred) in enumerate(zip(samples[:10], predictions[:10])):
 
 ```python
 from collections import Counter
-from evoprompt.prompts.hierarchical import get_cwe_major_category
+from mulvul.prompts.hierarchical import get_cwe_major_category
 
 # 统计数据集中各类别的数量
 samples = dataset.get_samples(None)  # 全部样本
@@ -266,7 +266,7 @@ print(Counter(categories))
 ## 📚 相关文件
 
 ```
-src/evoprompt/
+src/mulvul/
 ├── evaluators/
 │   └── cwe_category_evaluator.py  # ✨ 大类分类评估器
 ├── prompts/

@@ -18,7 +18,7 @@ parserTool 是 comment4vul 项目使用的 Tree-sitter AST 解析工具封装。
 下载后解压到项目目录:
 ```bash
 # 假设下载到 ~/Downloads/parserTool.zip
-cd /Volumes/Mac_Ext/link_cache/codes/EvoPrompt
+cd /Volumes/Mac_Ext/link_cache/codes/Mulvul
 unzip ~/Downloads/parserTool.zip -d comment4vul/
 ```
 
@@ -60,11 +60,11 @@ pip install tree-sitter tree-sitter-c tree-sitter-cpp
 
 ### 步骤 2: 创建 parserTool 适配器
 
-我们提供了一个兼容层 `src/evoprompt/utils/parsertool_adapter.py`,可以使用标准 tree-sitter 包实现相同功能。
+我们提供了一个兼容层 `src/mulvul/utils/parsertool_adapter.py`,可以使用标准 tree-sitter 包实现相同功能。
 
 ```python
 # 使用适配器
-from evoprompt.utils.parsertool_adapter import parse_c_code, Lang
+from mulvul.utils.parsertool_adapter import parse_c_code, Lang
 
 code = "int main() { return 0; }"
 ast = parse_c_code(code, Lang.C)
@@ -74,7 +74,7 @@ ast = parse_c_code(code, Lang.C)
 
 ```python
 # 运行一次即可
-uv run python -c "from evoprompt.utils.parsertool_adapter import build_languages; build_languages()"
+uv run python -c "from mulvul.utils.parsertool_adapter import build_languages; build_languages()"
 ```
 
 ## 选项 3: 手动配置 Tree-sitter
@@ -164,7 +164,7 @@ uv run python scripts/ablations/test_preprocess_basic.py
 uv add tree-sitter
 
 # 2. 构建语言库 (一次性)
-uv run python -c "from evoprompt.utils.parsertool_adapter import build_languages; build_languages()"
+uv run python -c "from mulvul.utils.parsertool_adapter import build_languages; build_languages()"
 
 # 3. 测试
 uv run python scripts/test_parsertool_config.py --mode adapter

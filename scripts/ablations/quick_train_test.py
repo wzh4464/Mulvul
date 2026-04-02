@@ -14,12 +14,12 @@ print("="*70, flush=True)
 # Test imports
 print("\n✅ Step 1: Testing imports...", flush=True)
 try:
-    from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-    from evoprompt.multiagent.agents import create_detection_agent, create_meta_agent
-    from evoprompt.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
-    from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
-    from evoprompt.data.dataset import PrimevulDataset
-    from evoprompt.llm.client import load_env_vars
+    from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+    from mulvul.multiagent.agents import create_detection_agent, create_meta_agent
+    from mulvul.multiagent.coordinator import MultiAgentCoordinator, CoordinatorConfig
+    from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
+    from mulvul.data.dataset import PrimevulDataset
+    from mulvul.llm.client import load_env_vars
     print("   ✅ All imports successful", flush=True)
 except Exception as e:
     print(f"   ❌ Import failed: {e}", flush=True)

@@ -1,4 +1,4 @@
-# EvoPrompt 快速开始指南
+# Mulvul 快速开始指南
 
 ## 系统架构
 
@@ -58,7 +58,7 @@ uv run python scripts/ablations/test_quick.py
 
 **预期输出**:
 ```
-🧪 EvoPrompt 快速测试
+🧪 Mulvul 快速测试
 ======================================================================
 ✅ 环境配置:
    Model: Qwen/Qwen3-Coder-480B-A35B-Instruct

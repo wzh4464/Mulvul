@@ -14,8 +14,8 @@ from typing import Any, Dict, Optional
 # Ensure src/ is importable when launched from the repo root.
 sys.path.insert(0, "src")
 
-from evoprompt.data.sampler import sample_primevul_1percent
-from evoprompt.workflows import VulnerabilityDetectionWorkflow
+from mulvul.data.sampler import sample_primevul_1percent
+from mulvul.workflows import VulnerabilityDetectionWorkflow
 
 
 def parse_args() -> argparse.Namespace:

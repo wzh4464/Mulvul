@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 
 logger = logging.getLogger(__name__)
 

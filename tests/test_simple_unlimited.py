@@ -12,7 +12,7 @@ def test_simple():
     instruction = """Create a detailed security analysis prompt that includes at least 5 phases of analysis. Make it comprehensive but not excessive."""
     
     try:
-        from evoprompt.llm.client import create_default_client
+        from mulvul.llm.client import create_default_client
         client = create_default_client()
         
         print("测试无max_tokens限制...")

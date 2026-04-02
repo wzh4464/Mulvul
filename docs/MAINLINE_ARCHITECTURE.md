@@ -7,8 +7,8 @@ Mulvul should be read as a repository with exactly two first-class workflows.
 Goal: evolve the best prompt for every router/detector stage.
 
 Code path:
-- `src/evoprompt/mainline/workflows.py`
-- `src/evoprompt/agents/hierarchical_trainer.py`
+- `src/mulvul/mainline/workflows.py`
+- `src/mulvul/agents/hierarchical_trainer.py`
 - `scripts/run_mainline_evolution.py`
 
 Output:
@@ -26,8 +26,8 @@ Design rule:
 Goal: load the evolved prompt bundle and evaluate end-to-end vulnerability detection.
 
 Code path:
-- `src/evoprompt/mainline/system.py`
-- `src/evoprompt/mainline/workflows.py`
+- `src/mulvul/mainline/system.py`
+- `src/mulvul/mainline/workflows.py`
 - `scripts/run_mainline_evaluation.py`
 
 Design rule:
@@ -46,12 +46,12 @@ Current ablation examples:
 - `topk-router`: route top-k majors/middles instead of greedy top-1
 
 Existing code that should be treated as ablation or legacy material:
-- `src/evoprompt/agents/mulvul.py`
-- `src/evoprompt/agents/router_agent.py`
-- `src/evoprompt/agents/detector_agent.py`
-- `src/evoprompt/detectors/rag_three_layer_detector.py`
-- `src/evoprompt/detectors/topk_three_layer_detector.py`
-- `src/evoprompt/detectors/parallel_hierarchical_detector.py`
+- `src/mulvul/agents/mulvul.py`
+- `src/mulvul/agents/router_agent.py`
+- `src/mulvul/agents/detector_agent.py`
+- `src/mulvul/detectors/rag_three_layer_detector.py`
+- `src/mulvul/detectors/topk_three_layer_detector.py`
+- `src/mulvul/detectors/parallel_hierarchical_detector.py`
 - `main.py`
 - `scripts/ablations/train_three_layer.py`
 - `scripts/ablations/run_full_pipeline.py`

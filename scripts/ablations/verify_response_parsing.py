@@ -19,9 +19,9 @@ from typing import Dict, List, Optional
 # Ensure src/ is importable when running as a script.
 sys.path.insert(0, "src")
 
-from evoprompt.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.utils.response_parsing import (
+from mulvul.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.utils.response_parsing import (
     extract_cwe_major,
     extract_vulnerability_label,
 )

@@ -16,16 +16,16 @@ from typing import List
 # 添加src路径
 sys.path.insert(0, "src")
 
-from evoprompt.data.sampler import sample_primevul_1percent
-from evoprompt.core.prompt_tracker import PromptTracker
-from evoprompt.algorithms.base import Population
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.data.cwe_categories import (
+from mulvul.data.sampler import sample_primevul_1percent
+from mulvul.core.prompt_tracker import PromptTracker
+from mulvul.algorithms.base import Population
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.data.cwe_categories import (
     CWE_MAJOR_CATEGORIES,
     map_cwe_to_major,
     canonicalize_category,
 )
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 
 
 def setup_logging():
@@ -47,7 +47,7 @@ def setup_logging():
 def check_api_configuration():
     """检查API配置（ChatAnywhere）"""
     # 加载.env文件中的环境变量
-    from src.evoprompt.llm.client import load_env_vars
+    from src.mulvul.llm.client import load_env_vars
 
     load_env_vars()
 
@@ -464,7 +464,7 @@ def run_concurrent_evolution_with_feedback(config: dict, sample_data_dir: str):
         json.dump(config, f, indent=2, ensure_ascii=False)
 
     # 创建LLM客户端 - 支持并发批处理
-    from evoprompt.llm.client import create_default_client
+    from mulvul.llm.client import create_default_client
 
     llm_client = create_default_client()
     if hasattr(llm_client, "max_concurrency"):
@@ -508,7 +508,7 @@ def run_concurrent_evolution_with_feedback(config: dict, sample_data_dir: str):
 
     try:
         # 初始化种群
-        from evoprompt.algorithms.base import Individual
+        from mulvul.algorithms.base import Individual
 
         population_individuals = [Individual(prompt) for prompt in initial_prompts]
         population = Population(population_individuals)

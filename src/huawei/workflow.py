@@ -11,14 +11,14 @@ from datetime import datetime
 try:
     from .dataset import HuaweiDataset
     from .prompt_manager import HuaweiPromptManager
-    from ..evoprompt.core.evolution import EvolutionEngine
-    from ..evoprompt.core.evaluator import Evaluator
-    from ..evoprompt.core.prompt_tracker import PromptTracker, EvolutionLogger
-    from ..evoprompt.algorithms.differential import DifferentialEvolution
-    from ..evoprompt.algorithms.genetic import GeneticAlgorithm
-    from ..evoprompt.llm.client import create_llm_client
-    from ..evoprompt.metrics.base import AccuracyMetric
-    from ..evoprompt.utils.text import safe_format
+    from ..mulvul.core.evolution import EvolutionEngine
+    from ..mulvul.core.evaluator import Evaluator
+    from ..mulvul.core.prompt_tracker import PromptTracker, EvolutionLogger
+    from ..mulvul.algorithms.differential import DifferentialEvolution
+    from ..mulvul.algorithms.genetic import GeneticAlgorithm
+    from ..mulvul.llm.client import create_llm_client
+    from ..mulvul.metrics.base import AccuracyMetric
+    from ..mulvul.utils.text import safe_format
 except ImportError:
     # 处理直接运行时的导入问题
     import sys
@@ -26,14 +26,14 @@ except ImportError:
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from huawei.dataset import HuaweiDataset
     from huawei.prompt_manager import HuaweiPromptManager
-    from evoprompt.core.evolution import EvolutionEngine
-    from evoprompt.core.evaluator import Evaluator
-    from evoprompt.core.prompt_tracker import PromptTracker, EvolutionLogger
-    from evoprompt.algorithms.differential import DifferentialEvolution
-    from evoprompt.algorithms.genetic import GeneticAlgorithm
-    from evoprompt.llm.client import create_llm_client
-    from evoprompt.metrics.base import AccuracyMetric
-    from evoprompt.utils.text import safe_format
+    from mulvul.core.evolution import EvolutionEngine
+    from mulvul.core.evaluator import Evaluator
+    from mulvul.core.prompt_tracker import PromptTracker, EvolutionLogger
+    from mulvul.algorithms.differential import DifferentialEvolution
+    from mulvul.algorithms.genetic import GeneticAlgorithm
+    from mulvul.llm.client import create_llm_client
+    from mulvul.metrics.base import AccuracyMetric
+    from mulvul.utils.text import safe_format
 
 logger = logging.getLogger(__name__)
 

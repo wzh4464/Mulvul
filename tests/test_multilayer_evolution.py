@@ -1,17 +1,17 @@
 """Tests for multi-layer evolution."""
-from evoprompt.algorithms.multilayer_evolution import (
+from mulvul.algorithms.multilayer_evolution import (
     MultiLayerIndividual,
     MultiLayerPopulation,
     MultiLayerFitness,
     MultiLayerEvolution,
 )
-from evoprompt.prompts.prompt_set import PromptSet
-from evoprompt.prompts.template import (
+from mulvul.prompts.prompt_set import PromptSet
+from mulvul.prompts.template import (
     PromptTemplate,
     PromptSection,
     PromptMetadata,
 )
-from evoprompt.llm.stub import DeterministicStubClient
+from mulvul.llm.stub import DeterministicStubClient
 
 
 def _make_prompt_set():

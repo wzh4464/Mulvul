@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.mainline.ablations import list_supported_ablations  # noqa: E402
-from evoprompt.mainline.workflows import (  # noqa: E402
+from mulvul.mainline.ablations import list_supported_ablations  # noqa: E402
+from mulvul.mainline.workflows import (  # noqa: E402
     EvaluationWorkflowConfig,
     run_evaluation_workflow,
 )

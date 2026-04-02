@@ -5,7 +5,7 @@ import tempfile
 import shutil
 from pathlib import Path
 
-from evoprompt.analysis import (
+from mulvul.analysis import (
     BanditAnalyzer,
     AnalysisCache,
     AnalysisResult,

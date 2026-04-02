@@ -87,7 +87,7 @@ def test_sven_client_concurrent_support():
         print("   ✅ sven_llm_query支持concurrent参数")
 
         # 检查默认值（从兼容函数）
-        from evoprompt.llm.client import llm_query
+        from mulvul.llm.client import llm_query
 
         sig2 = inspect.signature(llm_query)
         concurrent_param = sig2.parameters.get("concurrent")

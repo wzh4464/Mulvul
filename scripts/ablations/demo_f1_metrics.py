@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.evaluators.multiclass_metrics import (
+from mulvul.evaluators.multiclass_metrics import (
     MultiClassMetrics,
     compare_averaging_methods,
     print_averaging_comparison,
@@ -258,7 +258,7 @@ def main():
    - 反映整体表现
    - ℹ️  可作为辅助指标
 
-在EvoPrompt系统中:
+在Mulvul系统中:
 - 所有评估默认计算三种F1
 - 重点关注Macro-F1
 - 结果中会标注推荐指标 ⭐

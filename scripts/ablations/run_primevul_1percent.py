@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-在Primevul数据集的1%均衡样本上运行EvoPrompt，记录完整的prompt更新过程
+在Primevul数据集的1%均衡样本上运行Mulvul，记录完整的prompt更新过程
 """
 
 import os
@@ -13,10 +13,10 @@ from datetime import datetime
 # 添加src路径
 sys.path.insert(0, "src")
 
-from evoprompt.data.sampler import sample_primevul_1percent
-from evoprompt.workflows import VulnerabilityDetectionWorkflow
-from evoprompt.algorithms.differential import DifferentialEvolution
-from evoprompt.algorithms.base import Population
+from mulvul.data.sampler import sample_primevul_1percent
+from mulvul.workflows import VulnerabilityDetectionWorkflow
+from mulvul.algorithms.differential import DifferentialEvolution
+from mulvul.algorithms.base import Population
 
 
 def setup_logging():
@@ -38,7 +38,7 @@ def setup_logging():
 def check_api_key():
     """检查API密钥（SVEN风格配置）"""
     # 加载.env文件中的环境变量
-    from src.evoprompt.llm.client import load_env_vars
+    from src.mulvul.llm.client import load_env_vars
 
     load_env_vars()
 
@@ -440,7 +440,7 @@ def analyze_results(exp_dir: Path):
 
 def main():
     """主函数"""
-    print("🧬 Primevul 1%数据 EvoPrompt 进化实验")
+    print("🧬 Primevul 1%数据 Mulvul 进化实验")
     print("=" * 60)
 
     # 设置日志

@@ -1,8 +1,8 @@
-# EvoPrompt Main Entry - 使用指南
+# Mulvul Main Entry - 使用指南
 
 ## 概述
 
-`main.py` 是 EvoPrompt 项目的统一入口，专门用于 PrimeVul 数据集的 Layer-1 并发漏洞分类任务。
+`main.py` 是 Mulvul 项目的统一入口，专门用于 PrimeVul 数据集的 Layer-1 并发漏洞分类任务。
 
 ### 核心特性
 
@@ -48,7 +48,7 @@ uv run python main.py \
 ## 目录结构
 
 ```
-EvoPrompt/
+Mulvul/
 ├── main.py                          # 统一入口脚本
 ├── init/                            # 初始化目录
 │   └── layer1_prompts.txt          # 初始 prompts（10个）

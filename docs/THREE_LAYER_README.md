@@ -107,9 +107,9 @@ uv run python scripts/ablations/demo_three_layer_detection.py
 ### 2. 单次检测示例
 
 ```python
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector
-from evoprompt.llm.client import create_llm_client
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector
+from mulvul.llm.client import create_llm_client
 
 # 创建默认prompt集
 prompt_set = ThreeLayerPromptFactory.create_default_prompt_set()
@@ -220,7 +220,7 @@ for cwe, details in results:
 ### 层级准确率
 
 ```python
-from evoprompt.detectors.three_layer_detector import ThreeLayerEvaluator
+from mulvul.detectors.three_layer_detector import ThreeLayerEvaluator
 
 evaluator = ThreeLayerEvaluator(detector, dataset)
 metrics = evaluator.evaluate(sample_size=100)
@@ -259,8 +259,8 @@ print(f"Full Path Accuracy: {metrics['full_path_accuracy']:.1%}")
 使用检索增强生成提高检测准确性:
 
 ```python
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
 
 # 创建知识库
 kb = KnowledgeBaseBuilder.create_default_kb()
@@ -312,7 +312,7 @@ print(details.get('enhanced_code'))
 ### 自定义Prompt
 
 ```python
-from evoprompt.prompts.hierarchical_three_layer import (
+from mulvul.prompts.hierarchical_three_layer import (
     ThreeLayerPromptSet,
     MajorCategory,
     MiddleCategory
@@ -355,8 +355,8 @@ prompt_set = ThreeLayerPromptSet.from_dict(data)
 (待实现功能)
 
 ```python
-from evoprompt.multiagent.agents import create_meta_agent
-from evoprompt.optimization.three_layer_optimizer import ThreeLayerOptimizer
+from mulvul.multiagent.agents import create_meta_agent
+from mulvul.optimization.three_layer_optimizer import ThreeLayerOptimizer
 
 # 创建Meta Agent
 meta_agent = create_meta_agent(model_name="claude-4.5")
@@ -480,7 +480,7 @@ improved_prompt2_memory = optimizer.optimize_layer2(
 ## 📁 文件结构
 
 ```
-src/evoprompt/
+src/mulvul/
 ├── prompts/
 │   └── hierarchical_three_layer.py  # ✨ 三层prompt定义
 ├── detectors/
@@ -493,10 +493,10 @@ scripts/
 
 ```python
 #!/usr/bin/env python3
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector, ThreeLayerEvaluator
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.llm.client import create_llm_client
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector, ThreeLayerEvaluator
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.llm.client import create_llm_client
 
 # 1. 创建prompt集
 prompt_set = ThreeLayerPromptFactory.create_default_prompt_set()

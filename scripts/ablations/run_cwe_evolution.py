@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-from src.evoprompt.workflows.cwe_research_concepts import run_cwe_rc_workflow
+from src.mulvul.workflows.cwe_research_concepts import run_cwe_rc_workflow
 
 
 def main():

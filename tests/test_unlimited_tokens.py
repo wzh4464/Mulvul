@@ -33,7 +33,7 @@ Enhanced prompt:
     print("=" * 60)
     
     try:
-        from evoprompt.llm.client import create_default_client
+        from mulvul.llm.client import create_default_client
         client = create_default_client()
         
         print("🚀 正在生成无限制长度的prompt...")

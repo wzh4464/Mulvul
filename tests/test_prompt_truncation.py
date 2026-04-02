@@ -59,7 +59,7 @@ Improved prompt:
     test_values = [100, 250, 500, 1000]
     
     try:
-        from evoprompt.llm.client import create_default_client
+        from mulvul.llm.client import create_default_client
         client = create_default_client()
         
         for max_tokens in test_values:

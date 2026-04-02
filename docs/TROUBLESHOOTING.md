@@ -126,7 +126,7 @@ coevo_config = {
 ```
 
 #### 检查Meta Agent输出
-在`src/evoprompt/optimization/meta_optimizer.py`添加debug:
+在`src/mulvul/optimization/meta_optimizer.py`添加debug:
 ```python
 def optimize_prompt(self, context, optimization_type="improve"):
     meta_prompt = self._create_improvement_meta_prompt(context)
@@ -214,7 +214,7 @@ Error: Rate limit exceeded
 **解决方案:**
 
 #### 添加延时
-在`src/evoprompt/llm/client.py`的batch_generate中:
+在`src/mulvul/llm/client.py`的batch_generate中:
 ```python
 # 在API调用之间添加延时
 import time

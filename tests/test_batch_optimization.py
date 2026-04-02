@@ -53,7 +53,7 @@ def test_llm_client_batch_support():
     print("🤖 测试LLM客户端批处理支持...")
     
     try:
-        from evoprompt.llm.client import create_default_client
+        from mulvul.llm.client import create_default_client
         
         # 创建客户端
         client = create_default_client()

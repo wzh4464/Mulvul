@@ -203,7 +203,7 @@ uv run python run_primevul_1percent.py
 
 ### 3. **多格式支持**
 - JSONL格式(保留元数据)
-- Tab格式(适配EvoPrompt)
+- Tab格式(适配Mulvul)
 - JSON格式(统计信息)
 
 ### 4. **实时监控**

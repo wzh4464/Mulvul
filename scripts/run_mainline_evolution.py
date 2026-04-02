@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evoprompt.mainline.workflows import (  # noqa: E402
+from mulvul.mainline.workflows import (  # noqa: E402
     EvolutionWorkflowConfig,
     run_evolution_workflow,
 )

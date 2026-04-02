@@ -7,7 +7,7 @@ from pathlib import Path
 
 def test_cost_tracker_creates_file():
     """CostTracker should create JSONL output file."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "cost.jsonl"
@@ -31,7 +31,7 @@ def test_cost_tracker_creates_file():
 
 def test_cost_tracker_accumulates_calls():
     """Multiple LLM calls should accumulate."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "cost.jsonl"
@@ -51,7 +51,7 @@ def test_cost_tracker_accumulates_calls():
 
 def test_cost_tracker_records_time():
     """Total time should be tracked."""
-    from evoprompt.utils.cost_tracker import CostTracker
+    from mulvul.utils.cost_tracker import CostTracker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = Path(tmpdir) / "cost.jsonl"

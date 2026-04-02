@@ -1,4 +1,4 @@
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 
 
 def test_safe_format_preserves_braces_in_value():

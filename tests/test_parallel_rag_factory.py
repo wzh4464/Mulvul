@@ -3,16 +3,16 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from evoprompt.detectors.parallel_hierarchical_detector import (
+from mulvul.detectors.parallel_hierarchical_detector import (
     ParallelHierarchicalDetector,
     create_parallel_detector,
 )
-from evoprompt.detectors.hierarchical_coordinator import (
+from mulvul.detectors.hierarchical_coordinator import (
     HierarchicalDetectionCoordinator,
     create_coordinator,
 )
-from evoprompt.rag.knowledge_base import KnowledgeBase, KnowledgeBaseBuilder
-from evoprompt.rag.retriever import CodeSimilarityRetriever
+from mulvul.rag.knowledge_base import KnowledgeBase, KnowledgeBaseBuilder
+from mulvul.rag.retriever import CodeSimilarityRetriever
 
 
 def _make_mock_llm() -> AsyncMock:

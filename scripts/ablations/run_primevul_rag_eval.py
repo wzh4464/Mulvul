@@ -19,10 +19,10 @@ from typing import Dict, List, Any, Optional
 
 sys.path.insert(0, "src")
 
-from evoprompt.llm.client import create_llm_client, load_env_vars
-from evoprompt.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major, canonicalize_category
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
-from evoprompt.rag.retriever import CodeSimilarityRetriever
+from mulvul.llm.client import create_llm_client, load_env_vars
+from mulvul.data.cwe_categories import CWE_MAJOR_CATEGORIES, map_cwe_to_major, canonicalize_category
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.rag.retriever import CodeSimilarityRetriever
 
 
 def build_kb_from_primevul(

@@ -4,7 +4,7 @@
 
 ### 1. 新增多分类评估模块
 
-**文件**: `src/evoprompt/evaluators/multiclass_metrics.py`
+**文件**: `src/mulvul/evaluators/multiclass_metrics.py`
 
 **功能**:
 - ✅ `ClassMetrics`: 单个类别的TP/FP/TN/FN和P/R/F1
@@ -18,7 +18,7 @@
 
 **使用示例**:
 ```python
-from evoprompt.evaluators.multiclass_metrics import MultiClassMetrics
+from mulvul.evaluators.multiclass_metrics import MultiClassMetrics
 
 metrics = MultiClassMetrics()
 for pred, actual in predictions:
@@ -37,7 +37,7 @@ metrics.print_report()
 
 ### 2. 更新三层检测评估器
 
-**文件**: `src/evoprompt/detectors/three_layer_detector.py`
+**文件**: `src/mulvul/detectors/three_layer_detector.py`
 
 **改进**:
 - ✅ 集成`MultiClassMetrics`
@@ -132,7 +132,7 @@ uv run python scripts/ablations/demo_f1_metrics.py
 - ✅ Macro/Weighted/Micro F1的定义和公式
 - ✅ 为什么在漏洞检测中必须使用Macro-F1
 - ✅ 实际案例对比
-- ✅ EvoPrompt中的实现
+- ✅ Mulvul中的实现
 - ✅ 论文报告建议
 - ✅ 相关文献
 
@@ -179,8 +179,8 @@ uv run python scripts/ablations/train_three_layer.py --eval-samples 50
 ### 在代码中使用
 
 ```python
-from evoprompt.detectors.three_layer_detector import ThreeLayerDetector, ThreeLayerEvaluator
-from evoprompt.data.dataset import PrimevulDataset
+from mulvul.detectors.three_layer_detector import ThreeLayerDetector, ThreeLayerEvaluator
+from mulvul.data.dataset import PrimevulDataset
 
 # 创建检测器
 detector = ThreeLayerDetector(...)
@@ -229,9 +229,9 @@ layer3_macro_f1 = metrics["layer3"]["macro_f1"]
 
 ### 代码
 
-- `src/evoprompt/evaluators/multiclass_metrics.py` - 多分类指标模块 ⭐
-- `src/evoprompt/detectors/three_layer_detector.py` - 更新的评估器
-- `src/evoprompt/evaluators/__init__.py` - 导出模块
+- `src/mulvul/evaluators/multiclass_metrics.py` - 多分类指标模块 ⭐
+- `src/mulvul/detectors/three_layer_detector.py` - 更新的评估器
+- `src/mulvul/evaluators/__init__.py` - 导出模块
 
 ### 脚本
 

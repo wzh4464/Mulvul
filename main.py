@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EvoPrompt Main Entry - PrimeVul Layer-1 并发漏洞分类
+Mulvul Main Entry - PrimeVul Layer-1 并发漏洞分类
 
 功能:
 1. 从 init/ 文件夹读取初始化 prompts
@@ -25,24 +25,24 @@ from string import Template
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from evoprompt.data.sampler import sample_primevul_1percent
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.data.cwe_categories import (
+from mulvul.data.sampler import sample_primevul_1percent
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.data.cwe_categories import (
     CWE_MAJOR_CATEGORIES,
     canonicalize_category,
     map_cwe_to_major,
     CATEGORY_DESCRIPTIONS_BLOCK,
 )
-from evoprompt.strategies import create_strategy
-from evoprompt.llm.client import create_default_client, create_meta_prompt_client
-from evoprompt.algorithms.base import Individual, Population
-from evoprompt.utils.checkpoint import (
+from mulvul.strategies import create_strategy
+from mulvul.llm.client import create_default_client, create_meta_prompt_client
+from mulvul.algorithms.base import Individual, Population
+from mulvul.utils.checkpoint import (
     CheckpointManager,
     RetryManager,
     BatchCheckpointer,
     ExperimentRecovery,
 )
-from evoprompt.utils.text import safe_format
+from mulvul.utils.text import safe_format
 from sklearn.metrics import classification_report, confusion_matrix
 import numpy as np
 
@@ -545,9 +545,9 @@ class PrimeVulLayer1Pipeline:
         )
 
         if config.get("enable_rag"):
-            from evoprompt.strategies.rag_wrapper import RAGStrategyWrapper
-            from evoprompt.rag.knowledge_base import KnowledgeBase, KnowledgeBaseBuilder
-            from evoprompt.rag.retriever import CodeSimilarityRetriever
+            from mulvul.strategies.rag_wrapper import RAGStrategyWrapper
+            from mulvul.rag.knowledge_base import KnowledgeBase, KnowledgeBaseBuilder
+            from mulvul.rag.retriever import CodeSimilarityRetriever
             from pathlib import Path as _Path
 
             kb_path = _Path(config.get("sample_dir", ".")) / "knowledge_base.json"
@@ -563,7 +563,7 @@ class PrimeVulLayer1Pipeline:
             print(f"  [RAG] Strategy wrapped with RAG retrieval (vuln_top_k=2, clean_top_k=1)")
 
         if config.get("enable_meta"):
-            from evoprompt.strategies.meta_wrapper import MetaEvolutionWrapper
+            from mulvul.strategies.meta_wrapper import MetaEvolutionWrapper
             self.prompt_evolver = MetaEvolutionWrapper(self.prompt_evolver, self.meta_llm_client, config)
             print(f"  [Meta] Prompt evolver wrapped with error accumulation + meta-learning")
 
@@ -1292,7 +1292,7 @@ def main():
 
     import argparse
 
-    parser = argparse.ArgumentParser(description="EvoPrompt Main - PrimeVul Layer-1 并发漏洞分类")
+    parser = argparse.ArgumentParser(description="Mulvul Main - PrimeVul Layer-1 并发漏洞分类")
     parser.add_argument("--mode", choices=["flat", "hierarchical", "mulvul", "baseline", "coevolution"],
                        default="flat", help="检测策略: flat=11类平铺, hierarchical=三层级联, mulvul=路由+检测+聚合, baseline=零样本, coevolution=多智能体协同")
     parser.add_argument("--batch-size", type=int, default=16, help="每个 batch 的样本数")

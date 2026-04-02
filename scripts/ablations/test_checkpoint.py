@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, "src")
 
-from evoprompt.utils.checkpoint import (
+from mulvul.utils.checkpoint import (
     CheckpointManager,
     RetryManager,
     BatchCheckpointer,

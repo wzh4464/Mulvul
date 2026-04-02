@@ -29,7 +29,7 @@ Layer 3: CWE (带示例增强)
 存储每个类别的代码示例:
 
 ```python
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
 
 # 创建默认知识库 (包含预置示例)
 kb = KnowledgeBaseBuilder.create_default_kb()
@@ -44,7 +44,7 @@ print(f"Middle categories: {stats['middle_categories']}")
 kb.save("knowledge_base.json")
 
 # 加载知识库
-from evoprompt.rag.knowledge_base import KnowledgeBase
+from mulvul.rag.knowledge_base import KnowledgeBase
 kb = KnowledgeBase.load("knowledge_base.json")
 ```
 
@@ -53,7 +53,7 @@ kb = KnowledgeBase.load("knowledge_base.json")
 检索最相似的代码示例:
 
 ```python
-from evoprompt.rag.retriever import create_retriever
+from mulvul.rag.retriever import create_retriever
 
 # 创建词汇相似度检索器 (快速)
 retriever = create_retriever(kb, retriever_type="lexical")
@@ -73,9 +73,9 @@ print(f"Formatted text:\n{result.formatted_text}")
 集成检索和检测:
 
 ```python
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.llm.client import create_llm_client
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.llm.client import create_llm_client
 
 # 创建prompt集
 prompt_set = ThreeLayerPromptFactory.create_default_prompt_set()
@@ -119,10 +119,10 @@ uv run python scripts/ablations/demo_rag_detection.py
 ### 2. 单次检测示例
 
 ```python
-from evoprompt.rag.knowledge_base import KnowledgeBaseBuilder
-from evoprompt.detectors.rag_three_layer_detector import RAGThreeLayerDetector
-from evoprompt.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
-from evoprompt.llm.client import create_llm_client
+from mulvul.rag.knowledge_base import KnowledgeBaseBuilder
+from mulvul.detectors.rag_three_layer_detector import RAGThreeLayerDetector
+from mulvul.prompts.hierarchical_three_layer import ThreeLayerPromptFactory
+from mulvul.llm.client import create_llm_client
 
 # 1. 创建知识库
 kb = KnowledgeBaseBuilder.create_default_kb()
@@ -155,8 +155,8 @@ print(f"Classification path: {details['layer1']} → {details['layer2']} → {de
 ### 3. 从数据集构建知识库
 
 ```python
-from evoprompt.data.dataset import PrimevulDataset
-from evoprompt.rag.knowledge_base import create_knowledge_base_from_dataset
+from mulvul.data.dataset import PrimevulDataset
+from mulvul.rag.knowledge_base import create_knowledge_base_from_dataset
 
 # 加载数据集
 dataset = PrimevulDataset("data/primevul_1percent_sample/train.txt", "train")
@@ -387,8 +387,8 @@ RAG检索几乎不增加延迟!
 ### 自定义知识库
 
 ```python
-from evoprompt.rag.knowledge_base import KnowledgeBase, CodeExample
-from evoprompt.prompts.hierarchical_three_layer import MajorCategory
+from mulvul.rag.knowledge_base import KnowledgeBase, CodeExample
+from mulvul.prompts.hierarchical_three_layer import MajorCategory
 
 kb = KnowledgeBase()
 
@@ -444,8 +444,8 @@ for layer in [1, 2, 3]:
 ### 在进化算法中使用RAG
 
 ```python
-from evoprompt.algorithms.coevolution import CoevolutionaryAlgorithm
-from evoprompt.multiagent.coordinator import MultiAgentCoordinator
+from mulvul.algorithms.coevolution import CoevolutionaryAlgorithm
+from mulvul.multiagent.coordinator import MultiAgentCoordinator
 
 # 创建RAG检测器
 rag_detector = RAGThreeLayerDetector(...)
@@ -530,12 +530,12 @@ detector = RAGThreeLayerDetector(..., top_k=3)
 ## 文件结构
 
 ```
-src/evoprompt/rag/
+src/mulvul/rag/
 ├── __init__.py                 # RAG模块导出
 ├── knowledge_base.py           # 知识库定义
 └── retriever.py                # 检索器实现
 
-src/evoprompt/detectors/
+src/mulvul/detectors/
 └── rag_three_layer_detector.py # RAG检测器
 
 scripts/

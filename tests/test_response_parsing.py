@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from evoprompt.utils.response_parsing import (
+from mulvul.utils.response_parsing import (
     extract_cwe_major,
     extract_vulnerability_label,
 )

@@ -1,8 +1,8 @@
-# 🚀 从这里开始 - EvoPrompt
+# 🚀 从这里开始 - Mulvul
 
 ## 欢迎!
 
-你现在看到的是 **EvoPrompt v2.0** - 基于Multi-Agent协同进化的三层层级漏洞检测系统。
+你现在看到的是 **Mulvul v2.0** - 基于Multi-Agent协同进化的三层层级漏洞检测系统。
 
 ## 系统特点
 
@@ -34,7 +34,7 @@ uv run python scripts/ablations/test_quick.py
 
 **预期输出**:
 ```
-🧪 EvoPrompt 快速测试
+🧪 Mulvul 快速测试
 ======================================================================
 ✅ 环境配置:
    Model: Qwen/Qwen3-Coder-480B-A35B-Instruct
@@ -380,7 +380,7 @@ uv run python scripts/ablations/train_three_layer.py \
 
 **准备好了吗？**
 
-开始使用 EvoPrompt:
+开始使用 Mulvul:
 
 ```bash
 # 第一步: 快速测试
