@@ -1,196 +1,145 @@
-# Mulvul Project - Claude Development Notes
+# CLAUDE.md
 
-## 项目概述
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Mulvul是一个专注于漏洞检测的prompt进化优化框架，使用进化算法自动优化安全代码分析的prompt性能。项目已完成现代化重构，专注于SVEN和Primevul数据集支持。
+## Project Overview
 
-## 环境管理
+Mulvul is a prompt evolution framework for vulnerability detection. It uses evolutionary algorithms to optimize LLM prompts that classify code vulnerabilities through a three-level hierarchical cascade: Major categories (5) -> Middle categories (14) -> specific CWE IDs (100+).
 
-**重要**: 所有Python命令都使用`uv run`来执行，项目已配置好uv环境管理。
+The project has exactly **two first-class workflows**:
+1. **Prompt Evolution** — train stage-specific prompts for each router/detector level
+2. **Frozen Evaluation** — load the evolved prompt artifact and measure end-to-end detection
 
-```bash
-# 所有Python脚本都通过uv运行
-uv run python script_name.py
+Everything else (RAG, parallel scoring, top-k routing) is an ablation layered on top of this baseline.
 
-# 示例
-uv run python demo_primevul_1percent.py
-uv run python sven_llm_client.py
-```
+## Build & Run
 
-## 项目结构
-
-```
-Mulvul/
-├── src/mulvul/           # 现代化包结构
-│   ├── core/               # 核心模块
-│   │   ├── evolution.py    # 进化算法引擎
-│   │   └── prompt_tracker.py # Prompt追踪系统
-│   ├── algorithms/         # 算法实现
-│   │   ├── genetic.py      # 遗传算法
-│   │   └── differential.py # 差分进化算法
-│   ├── llm/               # LLM客户端
-│   │   └── client.py      # SVEN兼容的LLM客户端
-│   ├── data/              # 数据处理
-│   │   ├── dataset.py     # 数据集处理
-│   │   └── sampler.py     # 均衡采样器
-│   └── evaluators/        # 评估器
-│       └── vulnerability.py # 漏洞检测评估
-├── data/                  # 数据文件
-├── outputs/               # 实验输出
-├── sven_llm_client.py    # SVEN风格LLM客户端
-├── demo_primevul_1percent.py # 1%数据演示
-└── pyproject.toml        # 现代化配置
-```
-
-## API配置
-
-项目现在使用ModelScope API，通过`.env`文件管理配置：
+All Python commands use `uv run`. The project uses `uv` for environment management with `hatchling` as build backend.
 
 ```bash
-# .env文件内容 - ModelScope配置
-API_BASE_URL=https://api-inference.modelscope.cn/v1/
-API_KEY=your-api-key-here
-BACKUP_API_BASE_URL=https://newapi.aicohere.org/v1
-MODEL_NAME=Qwen/Qwen3-Coder-480B-A35B-Instruct
+# Install dependencies
+uv sync
+
+# Run mainline evolution (train prompts)
+uv run python scripts/run_mainline_evolution.py \
+  --train-file data/primevul/primevul/primevul_train.jsonl \
+  --output-dir outputs/mainline/evolution
+
+# Run mainline evaluation (test frozen prompts)
+uv run python scripts/run_mainline_evaluation.py \
+  --eval-file data/primevul/primevul/primevul_valid.jsonl \
+  --prompts-path outputs/mainline/evolution/prompt_artifact.json
+
+# With ablations
+uv run python scripts/run_mainline_evaluation.py \
+  --eval-file data/primevul/primevul/primevul_valid.jsonl \
+  --prompts-path outputs/mainline/evolution/prompt_artifact.json \
+  --ablation rag --ablation parallel
+
+# CLI entry point (installed as `mulvul` command)
+uv run mulvul evolve --train-file <path> --output-dir <path>
+uv run mulvul evaluate --eval-file <path> --prompts-path <path>
 ```
 
-### ModelScope集成优势
-- ✅ OpenAI兼容API格式
-- ✅ 支持Qwen大模型系列
-- ✅ 更稳定的服务质量
-- ✅ 代码生成专用模型
+## Tests
 
-## SVEN LLM客户端集成
-
-项目已实现与SVEN submodule一致的LLM API调用：
-
-### API配置一致性
-- ✅ 相同的环境变量名：`API_BASE_URL`, `API_KEY`, `BACKUP_API_BASE_URL`, `MODEL_NAME`
-- ✅ 相同的默认值：主API使用`https://newapi.pockgo.com/v1`，备用API使用`https://newapi.aicohere.org/v1`
-- ✅ 相同的模型配置：默认使用`kimi-k2-code`模型
-- ✅ 相同的.env文件加载逻辑
-
-### 调用接口一致性
-```python
-# SVEN风格的客户端初始化
-client = sven_llm_init()
-
-# SVEN风格的查询接口  
-result = sven_llm_query(prompt, client, task=True, temperature=0.1)
-
-# 批量查询支持
-results = sven_llm_query([prompt1, prompt2], client, task=True)
-```
-
-### 功能特性对齐
-- ✅ 主API失败自动切换到备用API
-- ✅ 支持任务导向的响应截断（task=True时只取第一段）
-- ✅ 批量处理和进度显示
-- ✅ 错误处理和重试机制
-- ✅ 速率限制和延时控制
-
-## 核心功能
-
-### 1. 漏洞检测专用
-- ✅ SVEN数据集：9种CWE类型支持
-- ✅ Primevul数据集：24,000+漏洞样本
-- ✅ 均衡采样：智能处理不平衡数据集
-- ✅ 代码安全分析：专门的提示词优化
-
-### 2. 现代化架构
-- ✅ src/包结构：现代Python包管理
-- ✅ pyproject.toml：标准化配置
-- ✅ uv包管理：高效依赖管理
-- ✅ 类型提示：完整的类型支持
-
-### 3. SVEN兼容性
-- ✅ API调用一致性：与SVEN submodule完全兼容
-- ✅ 环境变量加载：自动.env文件处理
-- ✅ 主/备用API：自动故障切换
-- ✅ 批量处理：高效的并发查询
-
-## 常用命令
-
-### 测试ModelScope集成
 ```bash
-# 运行ModelScope集成演示
-uv run python test_modelscope_demo.py
+# Run all tests
+uv run pytest tests/
 
-# 运行完整测试（需要绑定阿里云账户）
-uv run python test_modelscope.py
+# Run a single test file
+uv run pytest tests/test_mainline_system.py
+
+# Run a specific test
+uv run pytest tests/test_mainline_system.py::TestMainlineDetectorSystem::test_detect
+
+# Response parsing tests require opt-in (they hit a real LLM)
+RUN_RESPONSE_PARSING_TESTS=1 uv run pytest tests/test_response_parsing.py
+
+# Markers: slow, integration, unit, asyncio
+uv run pytest -m "not slow"
 ```
 
-### 运行1%数据演示
+## Lint & Type Check
+
 ```bash
-uv run python demo_primevul_1percent.py
-```
-
-### 测试采样功能
-```bash
-uv run python test_primevul_1percent.py
-```
-
-### 运行完整进化实验
-```bash
-# 现在使用SVEN风格的API配置，从.env文件自动加载
-uv run python run_primevul_1percent.py
-```
-
-### 环境变量配置验证
-脚本会自动检查SVEN风格的API配置：
-```
-✅ SVEN风格API配置检查通过:
-   API_BASE_URL: https://newapi.pockgo.com/v1
-   MODEL_NAME: kimi-k2-code
-   API_KEY: sk-dqKjXVx...
-```
-
-## 开发和测试
-
-### Lint和类型检查
-```bash
-# 需要确认项目具体使用的工具
 uv run ruff check src/
 uv run mypy src/
 ```
 
-### 运行测试
-```bash
-uv run pytest tests/
+Formatting uses black (line-length 88) and isort (profile "black"). Flake8 ignores E203 and W503.
+
+## API Configuration
+
+LLM access is configured via `.env` file (loaded automatically by `mulvul.llm.client.load_env_vars()`):
+
+```env
+API_BASE_URL=https://api-inference.modelscope.cn/v1/
+API_KEY=your-key-here
+BACKUP_API_BASE_URL=https://newapi.aicohere.org/v1
+MODEL_NAME=Qwen/Qwen3-Coder-480B-A35B-Instruct
 ```
 
-## 文件生成位置
+The client auto-falls back to `BACKUP_API_BASE_URL` if the primary fails.
 
-实验结果默认保存在`outputs/`目录：
+## Architecture
+
+### Three-Level Hierarchy
+
+Defined in `src/mulvul/data/cwe_hierarchy.py` and `src/mulvul/agents/hierarchical_detector.py`:
+
 ```
-outputs/demo_primevul_1percent/demo_primevul_1pct_20250729_HHMMSS/
-├── experiment_summary.json      # 实验总结
-├── prompt_evolution.jsonl       # 完整进化记录
-├── best_prompts.txt            # 最佳prompt历史
-├── top_prompts.txt             # 适应度排行榜
-└── llm_call_history.json       # LLM调用历史
+Major (5): Memory, Injection, Logic, Input, Crypto  (+Benign for classification)
+  └─ Middle (14): Buffer Errors, Memory Management, Injection, Concurrency Issues, ...
+       └─ CWE (100+): CWE-119, CWE-416, CWE-476, ...
 ```
 
-## 关键特性
+Mappings: `MAJOR_TO_MIDDLE`, `MIDDLE_TO_CWE` (forward), `CWE_TO_MIDDLE`, `MIDDLE_TO_MAJOR` (reverse).
 
-1. **现代化架构**: 使用pyproject.toml和src/包结构
-2. **SVEN兼容**: 与submodule sven保持一致的API调用方式
-3. **完整追踪**: 详细记录每次prompt更新过程
-4. **均衡采样**: 智能处理数据不平衡问题
-5. **多格式支持**: JSONL、Tab、JSON多种输出格式
+### Detection Cascade (`src/mulvul/mainline/system.py`)
 
-## 扩展性
+`MainlineDetectorSystem` runs a router-detector cascade:
+1. Score all 5+1 major detectors on the code sample
+2. If top confidence < `decision_threshold`, return Benign
+3. For top-k major candidates, score their child middle detectors
+4. For top-k middle candidates, score their child CWE detectors
+5. Build all candidate `DetectionPath`s (major * middle * cwe confidence), pick the best
 
-- 支持多种数据集(Primevul、SVEN、自定义)
-- 支持多种进化算法(DE、GA、可扩展)
-- 支持多种评估指标(准确率、F1分数、自定义)
+Each detector is a `LevelDetector` that fills a prompt template with code, calls the LLM, and parses a confidence ranking from the response.
 
-## 注意事项
+### Prompt Artifacts (`src/mulvul/mainline/artifacts.py`)
 
-1. **必须使用`uv run`**: 所有Python命令都通过uv执行
-2. **API密钥安全**: 确保.env文件不被提交到版本控制
-3. **环境配置**: 项目已配置好uv环境，直接使用即可
-4. **兼容性**: 保持与原Mulvul接口的向后兼容
+`PromptArtifact` stores stage-specific prompts keyed by prefix:
+- `major_Memory`, `major_Injection`, ... (router prompts)
+- `middle_Buffer Errors`, ... (middle prompts)
+- `cwe_CWE-119`, ... (CWE prompts)
 
-在开发阶段，尽量少写 try/except，让异常直接抛出来，你能从 traceback 里快速定位。
-只有在你需要做 容错处理 或 对用户友好提示 的地方，再加上 try/except。
+Serialized as `prompt_artifact.json`. Evolution produces it, evaluation consumes it.
+
+### Key Module Roles
+
+| Module | Purpose |
+|---|---|
+| `mainline/workflows.py` | Orchestrates the two workflows end-to-end |
+| `mainline/system.py` | Frozen evaluation cascade (`MainlineDetectorSystem`) |
+| `mainline/artifacts.py` | `PromptArtifact` load/save |
+| `mainline/ablations.py` | Named ablation configs (rag, parallel, topk-router) |
+| `agents/hierarchical_trainer.py` | `HierarchicalTrainer` — trains prompts per level with feedback |
+| `agents/hierarchical_detector.py` | `LevelDetector` — single-level detector with hierarchy maps |
+| `agents/hierarchical_sampler.py` | `HierarchicalSampler` — 1:1:1 balanced sampling by level |
+| `llm/client.py` | `LLMClient` ABC, `SVENLLMClient`, `create_llm_client()` factory |
+| `rag/retriever.py` | `MulVulRetriever` — code similarity retrieval (ablation only) |
+| `data/cwe_hierarchy.py` | Canonical hierarchy mappings and helper functions |
+| `cli.py` | CLI entry point with `evolve` and `evaluate` subcommands |
+
+### Script Layout
+
+- `scripts/run_mainline_evolution.py` and `scripts/run_mainline_evaluation.py` — the two mainline entry points
+- `scripts/ablations/` — legacy experiments, demos, preprocessing, plotting (not the default interface)
+
+## Design Rules
+
+- When adding code, ask: does it improve stage-prompt evolution or frozen evaluation? If neither, it belongs under `scripts/ablations/`, not the mainline.
+- Training produces **stage-specific** prompts (one per major/middle/CWE), not a single collapsed prompt.
+- Evaluation consumes the exact `prompt_artifact.json` shape produced by evolution.
+- Avoid `try/except` during development — let exceptions propagate with full tracebacks. Only add error handling for user-facing tolerance or graceful fallback.
