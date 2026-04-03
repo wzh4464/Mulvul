@@ -174,11 +174,16 @@ class CoevolutionaryTrainer:
         migration_rate: float = 0.1,
         max_workers: int = 8,
     ) -> Dict[str, str]:
-        """Run the full coevolutionary loop and return best prompts."""
+        """Run the full coevolutionary loop and return best prompts.
 
-        self._init_populations(population_size)
+        Automatically resumes from the latest checkpoint if one exists in
+        ``output_dir``.  A checkpoint is saved after every generation so
+        long-running jobs can survive interruptions.
+        """
 
-        for gen in range(n_rounds):
+        start_gen = self._try_restore_checkpoint(population_size)
+
+        for gen in range(start_gen, n_rounds):
             self.log.emit(
                 "generation_start",
                 {"generation": gen, "population_size": population_size},
@@ -249,6 +254,9 @@ class CoevolutionaryTrainer:
                 },
             )
 
+            self._save_checkpoint(gen + 1, n_rounds, population_size)
+
+        self.log.close()
         return self.best_prompts
 
     def save_best_prompts(self, path: str | None = None) -> None:
@@ -261,6 +269,100 @@ class CoevolutionaryTrainer:
         }
         with save_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+
+    # ------------------------------------------------------------------
+    # Checkpoint save / restore
+    # ------------------------------------------------------------------
+
+    def _checkpoint_path(self) -> Path:
+        return Path(self.output_dir) / "checkpoint.json"
+
+    def _save_checkpoint(
+        self, next_gen: int, total_rounds: int, population_size: int
+    ) -> None:
+        """Persist full trainer state so training can resume after interruption."""
+        populations_data: Dict[str, Any] = {}
+        for key, pop in self.populations.items():
+            populations_data[key] = {
+                "node_key": pop.node_key,
+                "stage": pop.stage,
+                "individuals": [
+                    {
+                        "prompt": ind.prompt,
+                        "node_fitness": ind.node_fitness,
+                        "cascade_fitness": ind.cascade_fitness,
+                        "generation": ind.generation,
+                        "origin": ind.origin,
+                    }
+                    for ind in pop.individuals
+                ],
+            }
+
+        checkpoint = {
+            "next_generation": next_gen,
+            "total_rounds": total_rounds,
+            "population_size": population_size,
+            "best_prompts": dict(self.best_prompts),
+            "best_scores": {k: round(v, 8) for k, v in self.best_scores.items()},
+            "populations": populations_data,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        tmp_path = self._checkpoint_path().with_suffix(".tmp")
+        with tmp_path.open("w", encoding="utf-8") as f:
+            json.dump(checkpoint, f, indent=2, ensure_ascii=False)
+        tmp_path.rename(self._checkpoint_path())
+
+        self.log.emit(
+            "checkpoint_saved",
+            {"next_generation": next_gen, "total_rounds": total_rounds},
+        )
+
+    def _try_restore_checkpoint(self, population_size: int) -> int:
+        """Restore from checkpoint if available. Returns the generation to start from."""
+        ckpt_path = self._checkpoint_path()
+        if not ckpt_path.exists():
+            self._init_populations(population_size)
+            return 0
+
+        with ckpt_path.open("r", encoding="utf-8") as f:
+            checkpoint = json.load(f)
+
+        next_gen = checkpoint["next_generation"]
+        self.best_prompts = checkpoint["best_prompts"]
+        self.best_scores = {k: float(v) for k, v in checkpoint["best_scores"].items()}
+
+        for key, pop_data in checkpoint["populations"].items():
+            individuals = [
+                PromptIndividual(
+                    prompt=ind["prompt"],
+                    node_fitness=ind["node_fitness"],
+                    cascade_fitness=ind["cascade_fitness"],
+                    generation=ind["generation"],
+                    origin=ind["origin"],
+                )
+                for ind in pop_data["individuals"]
+            ]
+            self.populations[key] = NodePopulation(
+                node_key=pop_data["node_key"],
+                stage=pop_data["stage"],
+                individuals=individuals,
+            )
+
+        self.log.emit(
+            "checkpoint_restored",
+            {
+                "resumed_from_generation": next_gen,
+                "node_count": len(self.populations),
+                "best_prompts_count": len(self.best_prompts),
+            },
+        )
+        logger.info(
+            "Restored checkpoint: resuming from generation %d (%d nodes)",
+            next_gen,
+            len(self.populations),
+        )
+        return next_gen
 
     # ------------------------------------------------------------------
     # Initialisation helpers

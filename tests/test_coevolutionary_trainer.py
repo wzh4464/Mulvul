@@ -314,3 +314,55 @@ class TestErrorRouting:
                "true_middle": None, "pred_middle": None,
                "true_cwe": None, "pred_cwe": None}
         assert trainer._route_error_to_node(err) is None
+
+
+class TestCheckpointResuming:
+    def test_checkpoint_created_after_generation(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer.train_all_levels(n_rounds=1, n_samples_per_class=2, population_size=2)
+        assert (tmp_path / "checkpoint.json").exists()
+        ckpt = json.loads((tmp_path / "checkpoint.json").read_text())
+        assert ckpt["next_generation"] == 1
+        assert "populations" in ckpt
+        assert "best_prompts" in ckpt
+
+    def test_resume_from_checkpoint_skips_completed_generations(self, tmp_path):
+        # Run 1 generation
+        trainer1 = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer1.train_all_levels(n_rounds=1, n_samples_per_class=2, population_size=2)
+        prompts_after_gen1 = dict(trainer1.best_prompts)
+
+        # Resume and run 1 more generation (total 2)
+        trainer2 = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer2.train_all_levels(n_rounds=2, n_samples_per_class=2, population_size=2)
+
+        # Should have the same keys
+        assert set(trainer2.best_prompts.keys()) == set(prompts_after_gen1.keys())
+
+        # Log should contain checkpoint_restored event
+        log_lines = (tmp_path / "evolution.jsonl").read_text().strip().split("\n")
+        events = [json.loads(line)["event"] for line in log_lines]
+        assert "checkpoint_restored" in events
+
+    def test_no_checkpoint_starts_fresh(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer.train_all_levels(n_rounds=1, n_samples_per_class=2, population_size=2)
+        log_lines = (tmp_path / "evolution.jsonl").read_text().strip().split("\n")
+        events = [json.loads(line)["event"] for line in log_lines]
+        assert "checkpoint_restored" not in events
