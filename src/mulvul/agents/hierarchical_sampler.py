@@ -12,8 +12,11 @@ from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
 from dataclasses import dataclass
 
-from .hierarchical_detector import (
-    MAJOR_TO_MIDDLE, MIDDLE_TO_CWE, CWE_TO_MIDDLE, MIDDLE_TO_MAJOR
+from mulvul.data.cwe_hierarchy import (
+    CWE_TO_MIDDLE,
+    MAJOR_TO_MIDDLE,
+    MIDDLE_TO_CWE,
+    MIDDLE_TO_MAJOR,
 )
 
 

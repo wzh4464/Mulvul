@@ -112,3 +112,80 @@ def test_mainline_evaluator_aggregates_policy_outputs():
     assert result.cost_metrics["avg_nodes_scored_per_sample"] == 1.0
     assert result.node_metrics["major_Memory"].tp == 1
     assert result.node_metrics["major_Memory"].tn == 1
+
+
+def test_mainline_evaluator_skips_benign_samples_for_middle_and_cwe_accuracy():
+    artifact = PromptArtifact.from_mapping(
+        {
+            "prompts": {
+                "major_Memory": "major-memory",
+                "middle_Buffer Errors": "middle-buffer",
+                "cwe_CWE-120": "cwe-120",
+            }
+        }
+    )
+    bundle = PromptBundleAdapter.from_artifact(artifact, allow_partial=True)
+    memory_accept = _node_result("major_Memory", "Memory", "accept", 0.91)
+    benign_reject = _node_result("major_Memory", "Memory", "reject", 0.10, predicted="Benign")
+
+    evaluator = MainlineEvaluator()
+    policy = DummyPolicy(
+        {
+            "vuln": InferenceResult(
+                prediction="Memory",
+                best_path=DetectionPath(
+                    node_ids=["major_Memory"],
+                    stage_results=[memory_accept],
+                    final_label="Memory",
+                    score=0.91,
+                ),
+                candidate_paths=[
+                    DetectionPath(
+                        node_ids=["major_Memory"],
+                        stage_results=[memory_accept],
+                        final_label="Memory",
+                        score=0.91,
+                    )
+                ],
+                stage_results={"major": [memory_accept], "middle": [], "cwe": []},
+                nodes_scored=1,
+                nodes_skipped=2,
+            ),
+            "benign": InferenceResult(
+                prediction="Benign",
+                best_path=None,
+                candidate_paths=[],
+                stage_results={"major": [benign_reject], "middle": [], "cwe": []},
+                nodes_scored=1,
+                nodes_skipped=2,
+            ),
+        }
+    )
+
+    result = evaluator.evaluate(
+        bundle,
+        DummyScorer(),
+        policy,
+        [
+            EvaluationSample(
+                sample_id="1",
+                code="vuln",
+                major_label="Memory",
+                middle_label="Buffer Errors",
+                cwe_label="CWE-120",
+                final_label="CWE-120",
+            ),
+            EvaluationSample(
+                sample_id="2",
+                code="benign",
+                major_label=None,
+                middle_label=None,
+                cwe_label=None,
+                final_label="Benign",
+            ),
+        ],
+    )
+
+    assert result.end_to_end_metrics["major_accuracy"] == 1.0
+    assert result.end_to_end_metrics["middle_accuracy"] == 0.0
+    assert result.end_to_end_metrics["cwe_accuracy"] == 0.0

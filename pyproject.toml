@@ -33,6 +33,7 @@ dependencies = [
     "dotenv>=0.9.9",
     "jsonlines>=3.1.0",
     "matplotlib>=3.9.4",
+    "mypy>=1.17.0",
     "numpy>=1.23.3",
     "openai>=1.0.0",
     "pandas>=2.1.0",
@@ -232,6 +233,8 @@ easse = { git = "https://github.com/feralvam/easse.git" }
 
 [dependency-groups]
 dev = [
+    "black>=25.1.0",
+    "isort>=6.0.1",
     "pytest>=8.4.1",
     "pytest-timeout>=2.4.0",
 ]

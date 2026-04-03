@@ -1,182 +1,239 @@
-"""Hierarchical CWE category mapping for MulVul.
+"""Canonical CWE taxonomy for the MulVul mainline.
 
-Three-level hierarchy:
-- Major (5): Memory, Injection, Logic, Input, Crypto
-- Middle (10): Buffer Errors, Memory Management, etc.
-- CWE (119+): Specific CWE IDs
+This module is the only source of truth for the executable mainline hierarchy.
+All forward mappings are defined here. Reverse mappings are derived from the
+forward definitions and must not be maintained separately elsewhere.
 """
 
-from typing import Dict, List, Optional, Tuple
+from __future__ import annotations
+
 import re
+from typing import Iterable
 
-# Major categories (for Router)
-MAJOR_CATEGORIES = ["Memory", "Injection", "Logic", "Input", "Crypto", "Benign"]
+BENIGN_LABEL = "Benign"
+UNKNOWN_LABEL = "Unknown"
+DEFAULT_MAJOR_LABEL = "Logic"
+DEFAULT_MIDDLE_LABEL = "Other"
 
-# Middle categories (for Detector output)
-MIDDLE_CATEGORIES = [
-    "Buffer Errors",
-    "Memory Management",
-    "Pointer Dereference",
-    "Integer Errors",
-    "Injection",
-    "Concurrency Issues",
-    "Path Traversal",
-    "Cryptography Issues",
-    "Information Exposure",
-    "Resource Management",
-    "Access Control",
-    "Input Validation",
-    "Other",
-    "Benign",
-]
-
-# Middle -> Major mapping
-MIDDLE_TO_MAJOR: Dict[str, str] = {
-    "Buffer Errors": "Memory",
-    "Memory Management": "Memory",
-    "Pointer Dereference": "Memory",
-    "Integer Errors": "Memory",
-    "Injection": "Injection",
-    "Concurrency Issues": "Logic",
-    "Path Traversal": "Input",
-    "Cryptography Issues": "Crypto",
-    "Information Exposure": "Logic",
-    "Resource Management": "Logic",
-    "Access Control": "Logic",
-    "Input Validation": "Input",
-    "Other": "Logic",
-    "Benign": "Benign",
+# Forward mappings are the only hand-maintained taxonomy definitions.
+MAJOR_TO_MIDDLE: dict[str, list[str]] = {
+    "Memory": [
+        "Buffer Errors",
+        "Memory Management",
+        "Pointer Dereference",
+        "Integer Errors",
+    ],
+    "Injection": ["Injection"],
+    "Logic": [
+        "Concurrency Issues",
+        "Information Exposure",
+        "Resource Management",
+        "Access Control",
+        "Other",
+    ],
+    "Input": ["Path Traversal", "Input Validation"],
+    "Crypto": ["Cryptography Issues"],
 }
 
-# CWE -> Middle mapping (comprehensive for Primevul)
-CWE_TO_MIDDLE: Dict[int, str] = {
-    # Buffer Errors
-    119: "Buffer Errors",  # Improper Restriction of Operations within the Bounds of a Memory Buffer
-    120: "Buffer Errors",  # Classic Buffer Overflow
-    121: "Buffer Errors",  # Stack-based Buffer Overflow
-    122: "Buffer Errors",  # Heap-based Buffer Overflow
-    125: "Buffer Errors",  # Out-of-bounds Read
-    131: "Buffer Errors",  # Incorrect Calculation of Buffer Size
-    787: "Buffer Errors",  # Out-of-bounds Write
-    805: "Buffer Errors",  # Buffer Access with Incorrect Length Value
-
-    # Memory Management
-    416: "Memory Management",  # Use After Free
-    415: "Memory Management",  # Double Free
-    401: "Memory Management",  # Missing Release of Memory after Effective Lifetime
-    772: "Memory Management",  # Missing Release of Resource after Effective Lifetime
-
-    # Pointer Dereference
-    476: "Pointer Dereference",  # NULL Pointer Dereference
-    617: "Pointer Dereference",  # Reachable Assertion
-
-    # Integer Errors
-    190: "Integer Errors",  # Integer Overflow or Wraparound
-    191: "Integer Errors",  # Integer Underflow
-    189: "Integer Errors",  # Numeric Errors
-    369: "Integer Errors",  # Divide By Zero
-
-    # Injection
-    74: "Injection",   # Injection
-    77: "Injection",   # Command Injection
-    78: "Injection",   # OS Command Injection
-    79: "Injection",   # Cross-site Scripting (XSS)
-    89: "Injection",   # SQL Injection
-    94: "Injection",   # Code Injection
-
-    # Concurrency Issues
-    362: "Concurrency Issues",  # Race Condition
-    667: "Concurrency Issues",  # Improper Locking
-
-    # Path Traversal
-    22: "Path Traversal",  # Path Traversal
-    59: "Path Traversal",  # Improper Link Resolution Before File Access
-
-    # Cryptography Issues
-    310: "Cryptography Issues",  # Cryptographic Issues
-    311: "Cryptography Issues",  # Missing Encryption of Sensitive Data
-    312: "Cryptography Issues",  # Cleartext Storage of Sensitive Information
-    326: "Cryptography Issues",  # Inadequate Encryption Strength
-    327: "Cryptography Issues",  # Use of a Broken or Risky Cryptographic Algorithm
-    330: "Cryptography Issues",  # Use of Insufficiently Random Values
-    254: "Cryptography Issues",  # Security Features
-
-    # Information Exposure
-    200: "Information Exposure",  # Information Exposure
-    209: "Information Exposure",  # Information Exposure Through an Error Message
-
-    # Resource Management
-    399: "Resource Management",  # Resource Management Errors
-    400: "Resource Management",  # Uncontrolled Resource Consumption
-    770: "Resource Management",  # Allocation of Resources Without Limits
-    835: "Resource Management",  # Loop with Unreachable Exit Condition
-
-    # Access Control
-    264: "Access Control",  # Permissions, Privileges, and Access Controls
-    284: "Access Control",  # Improper Access Control
-    269: "Access Control",  # Improper Privilege Management
-
-    # Input Validation
-    20: "Input Validation",  # Improper Input Validation
-    703: "Input Validation",  # Improper Check or Handling of Exceptional Conditions
+MIDDLE_TO_CWE: dict[str, list[str]] = {
+    "Buffer Errors": [
+        "CWE-119",
+        "CWE-120",
+        "CWE-121",
+        "CWE-122",
+        "CWE-125",
+        "CWE-131",
+        "CWE-787",
+        "CWE-805",
+    ],
+    "Memory Management": [
+        "CWE-401",
+        "CWE-415",
+        "CWE-416",
+        "CWE-772",
+    ],
+    "Pointer Dereference": ["CWE-476", "CWE-617"],
+    "Integer Errors": ["CWE-189", "CWE-190", "CWE-191", "CWE-369"],
+    "Injection": ["CWE-74", "CWE-77", "CWE-78", "CWE-79", "CWE-89", "CWE-94"],
+    "Concurrency Issues": ["CWE-362", "CWE-667"],
+    "Information Exposure": ["CWE-200", "CWE-209"],
+    "Resource Management": ["CWE-399", "CWE-400", "CWE-770", "CWE-835"],
+    "Access Control": ["CWE-264", "CWE-269", "CWE-284"],
+    "Path Traversal": ["CWE-22", "CWE-59"],
+    "Input Validation": ["CWE-20", "CWE-703"],
+    "Cryptography Issues": [
+        "CWE-254",
+        "CWE-310",
+        "CWE-311",
+        "CWE-312",
+        "CWE-326",
+        "CWE-327",
+        "CWE-330",
+    ],
+    "Other": [],
 }
 
-# CWE descriptions for prompts
-CWE_DESCRIPTIONS: Dict[int, str] = {
-    119: "Buffer overflow - operations exceed memory buffer bounds",
-    120: "Classic buffer overflow - copying data without bounds checking",
-    125: "Out-of-bounds read - reading beyond allocated memory",
-    787: "Out-of-bounds write - writing beyond allocated memory",
-    416: "Use after free - accessing memory after it has been freed",
-    415: "Double free - freeing memory that was already freed",
-    476: "NULL pointer dereference - accessing memory through null pointer",
-    190: "Integer overflow - arithmetic operation exceeds integer limits",
-    362: "Race condition - concurrent access to shared resource",
-    78: "OS command injection - executing arbitrary system commands",
-    89: "SQL injection - executing arbitrary SQL queries",
-    22: "Path traversal - accessing files outside intended directory",
-    200: "Information exposure - leaking sensitive data",
-    20: "Improper input validation - insufficient validation of user input",
+
+def _derive_middle_to_major(
+    major_to_middle: dict[str, list[str]],
+) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for major, middles in major_to_middle.items():
+        for middle in middles:
+            mapping[middle] = major
+    return mapping
+
+
+def _derive_cwe_to_middle(
+    middle_to_cwe: dict[str, list[str]],
+) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for middle, cwes in middle_to_cwe.items():
+        for cwe in cwes:
+            mapping[cwe] = middle
+    return mapping
+
+
+MIDDLE_TO_MAJOR: dict[str, str] = _derive_middle_to_major(MAJOR_TO_MIDDLE)
+CWE_TO_MIDDLE: dict[str, str] = _derive_cwe_to_middle(MIDDLE_TO_CWE)
+
+MAJOR_CATEGORIES = [*MAJOR_TO_MIDDLE.keys(), BENIGN_LABEL]
+MIDDLE_CATEGORIES = list(MIDDLE_TO_CWE.keys())
+
+# CWE descriptions for prompts and docs.
+CWE_DESCRIPTIONS: dict[str, str] = {
+    "CWE-20": "Improper input validation - insufficient validation of user input",
+    "CWE-22": "Path traversal - accessing files outside intended directory",
+    "CWE-78": "OS command injection - executing arbitrary system commands",
+    "CWE-89": "SQL injection - executing arbitrary SQL queries",
+    "CWE-119": "Buffer overflow - operations exceed memory buffer bounds",
+    "CWE-120": "Classic buffer overflow - copying data without bounds checking",
+    "CWE-125": "Out-of-bounds read - reading beyond allocated memory",
+    "CWE-190": "Integer overflow - arithmetic operation exceeds integer limits",
+    "CWE-200": "Information exposure - leaking sensitive data",
+    "CWE-362": "Race condition - concurrent access to shared resource",
+    "CWE-415": "Double free - freeing memory that was already freed",
+    "CWE-416": "Use after free - accessing memory after it has been freed",
+    "CWE-476": "NULL pointer dereference - accessing memory through null pointer",
+    "CWE-787": "Out-of-bounds write - writing beyond allocated memory",
 }
 
 _CWE_REGEX = re.compile(r"CWE-(\d+)")
 
 
-def extract_cwe_id(cwe_str: str) -> Optional[int]:
-    """Extract CWE ID from string like 'CWE-119'."""
-    m = _CWE_REGEX.search(str(cwe_str))
-    return int(m.group(1)) if m else None
+def extract_cwe_id(cwe_str: str | int) -> int | None:
+    """Extract a numeric CWE ID from inputs like ``CWE-119`` or ``119``."""
+
+    if isinstance(cwe_str, int):
+        return cwe_str
+    match = _CWE_REGEX.search(str(cwe_str))
+    return int(match.group(1)) if match else None
 
 
-def cwe_to_middle(cwe_codes: List[str]) -> str:
-    """Map CWE codes to middle category."""
+def normalize_cwe_label(cwe: str | int) -> str | None:
+    """Normalize a CWE value to the canonical ``CWE-<id>`` label."""
+
+    cwe_id = extract_cwe_id(cwe)
+    return f"CWE-{cwe_id}" if cwe_id is not None else None
+
+
+def cwe_to_middle(cwe_codes: Iterable[str | int]) -> str:
+    """Map a collection of CWE codes to a middle category."""
+
     for code in cwe_codes:
-        cwe_id = extract_cwe_id(code)
-        if cwe_id and cwe_id in CWE_TO_MIDDLE:
-            return CWE_TO_MIDDLE[cwe_id]
-    return "Other"
+        label = normalize_cwe_label(code)
+        if label and label in CWE_TO_MIDDLE:
+            return CWE_TO_MIDDLE[label]
+    return DEFAULT_MIDDLE_LABEL
 
 
-def cwe_to_major(cwe_codes: List[str]) -> str:
-    """Map CWE codes to major category."""
+def cwe_to_major(cwe_codes: Iterable[str | int]) -> str:
+    """Map a collection of CWE codes to a major category."""
+
     middle = cwe_to_middle(cwe_codes)
-    return MIDDLE_TO_MAJOR.get(middle, "Logic")
+    return MIDDLE_TO_MAJOR.get(middle, DEFAULT_MAJOR_LABEL)
 
 
 def middle_to_major(middle: str) -> str:
-    """Map middle category to major category."""
-    return MIDDLE_TO_MAJOR.get(middle, "Logic")
+    """Map a middle category to its major parent."""
+
+    return MIDDLE_TO_MAJOR.get(middle, DEFAULT_MAJOR_LABEL)
 
 
-def get_cwes_for_major(major: str) -> List[int]:
-    """Get all CWE IDs that belong to a major category."""
-    cwes = []
-    for cwe_id, middle in CWE_TO_MIDDLE.items():
-        if MIDDLE_TO_MAJOR.get(middle) == major:
-            cwes.append(cwe_id)
+def get_cwes_for_major(major: str) -> list[str]:
+    """Get all canonical CWE labels that belong to a major category."""
+
+    cwes: list[str] = []
+    for middle in MAJOR_TO_MIDDLE.get(major, []):
+        cwes.extend(MIDDLE_TO_CWE.get(middle, []))
     return cwes
 
 
-def get_cwes_for_middle(middle: str) -> List[int]:
-    """Get all CWE IDs that belong to a middle category."""
-    return [cwe_id for cwe_id, m in CWE_TO_MIDDLE.items() if m == middle]
+def get_cwes_for_middle(middle: str) -> list[str]:
+    """Get all canonical CWE labels that belong to a middle category."""
+
+    return list(MIDDLE_TO_CWE.get(middle, []))
+
+
+def validate_taxonomy() -> list[str]:
+    """Return invariant violations for the canonical taxonomy."""
+
+    errors: list[str] = []
+
+    if BENIGN_LABEL in MAJOR_TO_MIDDLE:
+        errors.append("Benign must not appear as a major node with descendants.")
+    if BENIGN_LABEL in MIDDLE_TO_CWE:
+        errors.append("Benign must not appear as a middle node with descendants.")
+
+    seen_middles: dict[str, str] = {}
+    for major, middles in MAJOR_TO_MIDDLE.items():
+        for middle in middles:
+            previous = seen_middles.get(middle)
+            if previous and previous != major:
+                errors.append(
+                    f"Middle category {middle!r} is assigned to multiple majors: "
+                    f"{previous!r}, {major!r}"
+                )
+            seen_middles[middle] = major
+
+    orphan_middles = sorted(set(MIDDLE_TO_CWE) - set(seen_middles))
+    if orphan_middles:
+        errors.append(
+            "Middle categories are missing a major parent: "
+            + ", ".join(orphan_middles)
+        )
+
+    seen_cwes: dict[str, str] = {}
+    for middle, cwes in MIDDLE_TO_CWE.items():
+        for cwe in cwes:
+            previous = seen_cwes.get(cwe)
+            if previous and previous != middle:
+                errors.append(
+                    f"CWE {cwe!r} is assigned to multiple middles: "
+                    f"{previous!r}, {middle!r}"
+                )
+            seen_cwes[cwe] = middle
+
+    reverse_middle_errors = [
+        middle
+        for middle, major in MIDDLE_TO_MAJOR.items()
+        if middle not in seen_middles or seen_middles[middle] != major
+    ]
+    if reverse_middle_errors:
+        errors.append(
+            "Reverse middle-to-major mapping is inconsistent for: "
+            + ", ".join(sorted(reverse_middle_errors))
+        )
+
+    reverse_cwe_errors = [
+        cwe
+        for cwe, middle in CWE_TO_MIDDLE.items()
+        if cwe not in seen_cwes or seen_cwes[cwe] != middle
+    ]
+    if reverse_cwe_errors:
+        errors.append(
+            "Reverse cwe-to-middle mapping is inconsistent for: "
+            + ", ".join(sorted(reverse_cwe_errors))
+        )
+
+    return errors

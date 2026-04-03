@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from mulvul.rag.retriever import MulVulRetriever
 
 from .ablations import AblationConfig
 from .artifacts import PromptArtifact
 from .bundle import NodeScoreResult, PromptBundle, PromptBundleAdapter
+from .policy import DetectionPath as V2DetectionPath
 from .policy import (
-    DetectionPath as V2DetectionPath,
     GreedyCascadePolicy,
+    InferenceResult,
     RetrieverEvidenceProvider,
     TopKCascadePolicy,
 )
@@ -36,9 +37,9 @@ class DetectionPath:
 
     major: str
     major_confidence: float
-    middle: str
+    middle: str | None
     middle_confidence: float
-    cwe: str
+    cwe: str | None
     cwe_confidence: float
     score: float
 
@@ -49,8 +50,8 @@ class MainlineDetectionResult:
 
     prediction: str
     major: str
-    middle: str
-    cwe: str
+    middle: str | None
+    cwe: str | None
     score: float
     stage_scores: Dict[str, List[StageScore]] = field(default_factory=dict)
     candidate_paths: List[DetectionPath] = field(default_factory=list)
@@ -98,7 +99,7 @@ class MainlineDetectorSystem:
 
     def __init__(
         self,
-        llm_client,
+        llm_client: Any,
         artifact: PromptArtifact | PromptBundle,
         ablations: AblationConfig | None = None,
         retriever: MulVulRetriever | None = None,
@@ -117,7 +118,9 @@ class MainlineDetectorSystem:
             self.bundle = artifact
 
         self.scorer = LLMNodeScorer(llm_client, self.bundle)
-        evidence_provider = RetrieverEvidenceProvider(self.retriever) if self.retriever else None
+        evidence_provider = (
+            RetrieverEvidenceProvider(self.retriever) if self.retriever else None
+        )
         policy_cls = (
             TopKCascadePolicy
             if self.ablations.major_top_k > 1 or self.ablations.middle_top_k > 1
@@ -134,7 +137,7 @@ class MainlineDetectorSystem:
         inference = self.policy.run(self.bundle, self.scorer, code)
         return self._to_legacy_result(inference)
 
-    def _to_legacy_result(self, inference) -> MainlineDetectionResult:
+    def _to_legacy_result(self, inference: InferenceResult) -> MainlineDetectionResult:
         stage_scores = {
             stage: [self._to_stage_score(result) for result in results]
             for stage, results in inference.stage_results.items()
@@ -147,8 +150,8 @@ class MainlineDetectorSystem:
             return MainlineDetectionResult(
                 prediction=inference.prediction,
                 major="Benign",
-                middle="Benign",
-                cwe="Benign",
+                middle=None,
+                cwe=None,
                 score=0.0,
                 stage_scores=stage_scores,
                 candidate_paths=candidate_paths,
@@ -196,16 +199,15 @@ class MainlineDetectorSystem:
             score=path.score,
         )
 
-    def _path_labels(self, path: V2DetectionPath) -> tuple[str, str, str]:
+    def _path_labels(self, path: V2DetectionPath) -> tuple[str, str | None, str | None]:
         major = "Benign"
-        middle = "Benign"
-        cwe = "Benign"
+        middle = None
+        cwe = None
         for result in path.stage_results:
             if result.stage == "major":
                 major = result.target_label
             elif result.stage == "middle":
                 middle = result.target_label
-                cwe = "Benign"
             elif result.stage == "cwe":
                 cwe = result.target_label
         return major, middle, cwe

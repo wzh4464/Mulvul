@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Mapping, Protocol
+from typing import Any, Literal, Mapping, Protocol
 
 from mulvul.utils.text import safe_format
 
@@ -24,10 +24,14 @@ class NodeScorer(Protocol):
         """Score a node under a provided context."""
 
 
+Decision = Literal["accept", "reject", "abstain", "error"]
+ParseStatus = Literal["ok", "fallback", "error"]
+
+
 class LLMNodeScorer:
     """Default prompt-rendering LLM scorer for v2 bundles."""
 
-    def __init__(self, llm_client, bundle: PromptBundle):
+    def __init__(self, llm_client: Any, bundle: PromptBundle):
         self.llm_client = llm_client
         self.bundle = bundle
 
@@ -77,6 +81,8 @@ class LLMNodeScorer:
         )
         matched_target = predicted_label == node.target_label
         effective_threshold = self._effective_threshold(node)
+        decision: Decision
+        reject_label: str | None
 
         if parse_status == "fallback" and self.bundle.defaults.distrust_fallback:
             decision = "abstain"
@@ -133,8 +139,9 @@ class LLMNodeScorer:
         )
 
     def _render_query(self, node: NodeSpec, ctx: ScorerContext) -> str:
-        template = node.query_template or self.bundle.defaults.default_query_templates.get(
-            node.stage
+        template = (
+            node.query_template
+            or self.bundle.defaults.default_query_templates.get(node.stage)
         )
         if not template:
             return ctx.code
@@ -156,12 +163,17 @@ class LLMNodeScorer:
 
         lines = []
         for item in evidence.items:
-            title = f"{item.kind.upper()}: {item.title}" if item.title else item.kind.upper()
+            title = (
+                f"{item.kind.upper()}: {item.title}"
+                if item.title
+                else item.kind.upper()
+            )
             lines.append(f"{title}\n{item.text}")
         evidence_text = "\n\n".join(lines)
 
-        template = node.evidence_template or self.bundle.defaults.default_evidence_templates.get(
-            node.stage
+        template = (
+            node.evidence_template
+            or self.bundle.defaults.default_evidence_templates.get(node.stage)
         )
         if not template:
             return evidence_text
@@ -175,7 +187,7 @@ class LLMNodeScorer:
         self,
         response: str,
         candidate_labels: list[str],
-    ) -> tuple[list[tuple[str, float]], str]:
+    ) -> tuple[list[tuple[str, float]], ParseStatus]:
         ranking = self._parse_json_ranking(response, candidate_labels)
         if ranking:
             return ranking, "ok"
@@ -191,12 +203,12 @@ class LLMNodeScorer:
         response: str,
         candidate_labels: list[str],
     ) -> list[tuple[str, float]]:
-        json_match = re.search(r"\{[\s\S]*\}", response)
-        if not json_match:
+        json_blob = self._extract_json_blob(response)
+        if json_blob is None:
             return []
 
         try:
-            data = json.loads(json_match.group())
+            data = json.loads(json_blob)
         except json.JSONDecodeError:
             return []
 
@@ -224,6 +236,17 @@ class LLMNodeScorer:
             scores_by_label[label] = max(scores_by_label.get(label, 0.0), confidence)
 
         return sorted(scores_by_label.items(), key=lambda pair: pair[1], reverse=True)
+
+    def _extract_json_blob(self, response: str) -> str | None:
+        stripped = response.strip()
+        if stripped.startswith("{") or stripped.startswith("["):
+            return stripped
+
+        for pattern in (r"\[[\s\S]*\]", r"\{[\s\S]*\}"):
+            match = re.search(pattern, response)
+            if match:
+                return match.group()
+        return None
 
     def _parse_fallback_ranking(
         self,

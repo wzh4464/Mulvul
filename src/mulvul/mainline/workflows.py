@@ -2,25 +2,31 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import random
+import subprocess
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-from mulvul.agents.hierarchical_trainer import HierarchicalTrainer
 from mulvul.agents.hierarchical_sampler import HierarchicalSampler
+from mulvul.agents.hierarchical_trainer import HierarchicalTrainer
 from mulvul.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
 from mulvul.llm.client import create_llm_client, load_env_vars
 from mulvul.rag.retriever import MulVulRetriever
 
 from .ablations import AblationConfig, apply_ablation_presets
 from .artifacts import PromptArtifact
-from .bundle import PromptBundleAdapter, PromptBundleIO
+from .bundle import PromptBundle, PromptBundleAdapter, PromptBundleIO
 from .system import MainlineDetectorSystem
+
+REQUIRED_DATASET_FIELDS: tuple[str, ...] = ("func", "target", "cwe")
+MAINLINE_ROOT = Path(__file__).resolve().parents[3]
 
 
 @dataclass
@@ -57,26 +63,29 @@ def load_jsonl(path: str) -> List[Dict[str, Any]]:
 
     records: List[Dict[str, Any]] = []
     with open(path, "r", encoding="utf-8") as handle:
-        for line in handle:
+        for line_number, line in enumerate(handle, start=1):
             if not line.strip():
                 continue
             try:
-                records.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
+                record = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Invalid JSON in {path} at line {line_number}: {exc.msg}"
+                ) from exc
+            records.append(
+                _validate_jsonl_record(record, path=path, line_number=line_number)
+            )
     return records
 
 
-def get_ground_truth(item: Dict[str, Any]) -> Tuple[str, str, str]:
+def get_ground_truth(item: Dict[str, Any]) -> Tuple[str | None, str | None, str]:
     """Return ground-truth CWE, middle, and major labels."""
 
-    target = int(item.get("target", 0))
+    target = int(item["target"])
     if target == 0:
-        return "Benign", "Benign", "Benign"
+        return None, None, "Benign"
 
-    cwe_codes = item.get("cwe", [])
-    if isinstance(cwe_codes, str):
-        cwe_codes = [cwe_codes] if cwe_codes else []
+    cwe_codes = item["cwe"]
     if not cwe_codes:
         return "Unknown", "Other", "Logic"
 
@@ -104,11 +113,9 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
     """Train the best prompt for each router/detector stage."""
 
     load_env_vars()
-    llm_client = create_llm_client(llm_type=config.llm_type)
+    llm_client = _create_runtime_client(config.llm_type)
     retriever = (
-        MulVulRetriever(knowledge_base_path=config.kb_path)
-        if config.kb_path
-        else None
+        MulVulRetriever(knowledge_base_path=config.kb_path) if config.kb_path else None
     )
     sampler = HierarchicalSampler(config.train_file)
     trainer = HierarchicalTrainer(
@@ -125,6 +132,9 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
     )
     trainer.save_best_prompts()
 
+    timestamp = datetime.now().isoformat()
+    dataset_hash = _sha256_file(config.train_file)
+    git_sha = _current_git_sha()
     artifact_path = Path(config.output_dir) / "prompt_artifact.json"
     artifact = PromptArtifact.from_mapping(
         {"prompts": trainer.best_prompts, "scores": trainer.best_scores}
@@ -135,17 +145,42 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         artifact,
         source_artifact=str(artifact_path),
         allow_partial=False,
+        training_metadata={
+            "trainer_name": type(trainer).__name__,
+            "trainer_seed": None,
+            "split_hash": dataset_hash,
+            "retrieval_snapshot_id": config.kb_path,
+            "created_at": timestamp,
+            "source_dataset": config.train_file,
+            "rounds": config.rounds,
+            "samples_per_class": config.samples_per_class,
+        },
+        data_fingerprint=dataset_hash,
+        code_revision=git_sha,
     )
     PromptBundleIO.save(bundle, bundle_path, allow_partial=False)
 
-    summary = {
-        "timestamp": datetime.now().isoformat(),
+    summary: Dict[str, Any] = {
+        "timestamp": timestamp,
         "train_file": config.train_file,
         "kb_path": config.kb_path,
         "rounds": config.rounds,
         "samples_per_class": config.samples_per_class,
         "prompt_artifact": str(artifact_path),
         "prompt_bundle": str(bundle_path),
+        "runtime_prompt_format": "v2_bundle",
+        "seed": None,
+        "model_name": _runtime_model_name(llm_client),
+        "api_base": getattr(llm_client, "api_base", None),
+        "endpoint_kind": _endpoint_kind(llm_client),
+        "temperature": 0.1,
+        "top_p": None,
+        "dataset_hash": dataset_hash,
+        "git_sha": git_sha,
+        "prompt_artifact_hash": _sha256_file(artifact_path),
+        "prompt_bundle_hash": _sha256_json(bundle.to_dict()),
+        "active_ablations": [],
+        "policy_class": "GreedyCascadePolicy",
         "router_prompt_count": len(artifact.router_prompts),
         "middle_prompt_count": len(artifact.middle_prompts),
         "cwe_prompt_count": len(artifact.cwe_prompts),
@@ -161,13 +196,14 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
     """Evaluate frozen prompts on vulnerability detection."""
 
     load_env_vars()
-    llm_client = create_llm_client(llm_type=config.llm_type)
+    llm_client = _create_runtime_client(config.llm_type)
     ablation_config = apply_ablation_presets(config.ablations, AblationConfig())
     retriever = (
         MulVulRetriever(knowledge_base_path=config.kb_path)
         if config.kb_path and ablation_config.use_retrieval
         else None
     )
+    prompt_format = _detect_prompt_format(config.prompts_path)
     bundle_or_artifact = _load_runtime_prompts(config.prompts_path)
     system = MainlineDetectorSystem(
         llm_client=llm_client,
@@ -182,35 +218,42 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
     if config.max_samples is not None:
         samples = samples[: config.max_samples]
 
+    timestamp = datetime.now().isoformat()
+    dataset_hash = _sha256_file(config.eval_file)
+    git_sha = _current_git_sha()
     start = time.time()
-    records = []
-    metrics = {
+    records: list[dict[str, Any]] = []
+    metrics: dict[str, dict[str, int]] = {
         "major": {"correct": 0, "total": 0},
         "middle": {"correct": 0, "total": 0},
         "cwe": {"correct": 0, "total": 0},
         "binary": {"correct": 0, "total": 0},
     }
-    per_major = defaultdict(lambda: {"total": 0, "correct": 0})
+    per_major: defaultdict[str, dict[str, int]] = defaultdict(
+        lambda: {"total": 0, "correct": 0}
+    )
 
     for item in samples:
         gt_cwe, gt_middle, gt_major = get_ground_truth(item)
-        result = system.detect(item.get("func", ""))
+        result = system.detect(item["func"])
         pred_binary = "Vulnerable" if result.is_vulnerable else "Benign"
         gt_binary = "Vulnerable" if gt_major != "Benign" else "Benign"
 
         metrics["major"]["total"] += 1
-        metrics["middle"]["total"] += 1
-        metrics["cwe"]["total"] += 1
         metrics["binary"]["total"] += 1
 
         if result.major == gt_major:
             metrics["major"]["correct"] += 1
-        if result.middle == gt_middle:
-            metrics["middle"]["correct"] += 1
-        if result.cwe == gt_cwe:
-            metrics["cwe"]["correct"] += 1
         if pred_binary == gt_binary:
             metrics["binary"]["correct"] += 1
+
+        if gt_major != "Benign":
+            metrics["middle"]["total"] += 1
+            metrics["cwe"]["total"] += 1
+            if result.middle == gt_middle:
+                metrics["middle"]["correct"] += 1
+            if result.cwe == gt_cwe:
+                metrics["cwe"]["correct"] += 1
 
         per_major[gt_major]["total"] += 1
         if result.major == gt_major:
@@ -229,18 +272,33 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         )
 
     elapsed = time.time() - start
-    summary = {
-        "timestamp": datetime.now().isoformat(),
+    summary: Dict[str, Any] = {
+        "timestamp": timestamp,
         "eval_file": config.eval_file,
         "prompts_path": config.prompts_path,
-        "prompt_format": _detect_prompt_format(config.prompts_path),
+        "prompt_format": prompt_format,
+        "runtime_prompt_format": "v2_bundle",
         "ablations": list(config.ablations),
+        "active_ablations": list(config.ablations),
+        "seed": config.seed,
+        "model_name": _runtime_model_name(llm_client),
+        "api_base": getattr(llm_client, "api_base", None),
+        "endpoint_kind": _endpoint_kind(llm_client),
+        "temperature": 0.1,
+        "top_p": None,
+        "dataset_hash": dataset_hash,
+        "git_sha": git_sha,
+        "prompt_artifact_hash": (
+            _sha256_file(config.prompts_path)
+            if prompt_format == "v1_artifact"
+            else None
+        ),
+        "prompt_bundle_hash": _sha256_json(bundle_or_artifact.to_dict()),
+        "policy_class": type(system.policy).__name__,
         "samples": len(samples),
         "elapsed_seconds": elapsed,
         "accuracy": {
-            level: (
-                values["correct"] / values["total"] if values["total"] else 0.0
-            )
+            level: (values["correct"] / values["total"] if values["total"] else 0.0)
             for level, values in metrics.items()
         },
         "counts": metrics,
@@ -262,13 +320,106 @@ def _detect_prompt_format(path: str) -> str:
     return "v2_bundle" if data.get("schema_version") == "2" else "v1_artifact"
 
 
-def _load_runtime_prompts(path: str):
-    prompt_format = _detect_prompt_format(path)
-    if prompt_format == "v2_bundle":
-        return PromptBundleIO.load(path, load_mode="strict_v2")
-    artifact = PromptArtifact.load(path)
-    return PromptBundleAdapter.from_artifact(
-        artifact,
-        source_artifact=path,
-        allow_partial=True,
-    )
+def _load_runtime_prompts(path: str) -> PromptBundle:
+    return PromptBundleIO.load(path, load_mode="legacy_compat")
+
+
+def _create_runtime_client(llm_type: Optional[str]) -> Any:
+    if llm_type is None:
+        return create_llm_client()
+    return create_llm_client(llm_type=llm_type)
+
+
+def _validate_jsonl_record(
+    record: Any,
+    *,
+    path: str,
+    line_number: int,
+) -> Dict[str, Any]:
+    if not isinstance(record, Mapping):
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: expected an object."
+        )
+
+    missing_fields = [
+        field_name for field_name in REQUIRED_DATASET_FIELDS if field_name not in record
+    ]
+    if missing_fields:
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: missing required "
+            f"fields {', '.join(missing_fields)}."
+        )
+
+    func = record["func"]
+    if not isinstance(func, str):
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: func must be a string."
+        )
+
+    try:
+        target = int(record["target"])
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: target must be 0 or 1."
+        ) from exc
+    if target not in (0, 1):
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: target must be 0 or 1."
+        )
+
+    cwe_codes = record["cwe"]
+    if not isinstance(cwe_codes, list):
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: cwe must be a list."
+        )
+    if target == 1 and not cwe_codes:
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: vulnerable samples "
+            "must include at least one CWE label."
+        )
+    invalid_cwes = [
+        cwe for cwe in cwe_codes if not isinstance(cwe, (str, int)) or str(cwe) == ""
+    ]
+    if invalid_cwes:
+        raise ValueError(
+            f"Invalid JSONL record in {path} at line {line_number}: cwe entries must "
+            "be non-empty strings or integers."
+        )
+
+    return dict(record)
+
+
+def _sha256_file(path: str | Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sha256_json(payload: Mapping[str, Any]) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _current_git_sha() -> str:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=MAINLINE_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
+def _runtime_model_name(llm_client: Any) -> str:
+    return str(getattr(llm_client, "model_name", os.getenv("MODEL_NAME", "unknown")))
+
+
+def _endpoint_kind(llm_client: Any) -> str:
+    if getattr(llm_client, "api_base", None):
+        return "openai_compatible"
+    return type(llm_client).__name__

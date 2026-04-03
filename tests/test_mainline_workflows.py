@@ -1,0 +1,202 @@
+import json
+
+import pytest
+
+from mulvul.mainline.artifacts import PromptArtifact
+from mulvul.mainline.bundle import PromptBundleIO, TaxonomyGraph
+from mulvul.mainline.workflows import (
+    EvaluationWorkflowConfig,
+    EvolutionWorkflowConfig,
+    load_jsonl,
+    run_evaluation_workflow,
+    run_evolution_workflow,
+)
+
+
+class StubLLMClient:
+    model_name = "unit-test-model"
+    api_base = "https://unit.test/v1"
+
+
+class FakeTrainer:
+    def __init__(self, llm_client, sampler, retriever, output_dir):
+        graph = TaxonomyGraph.from_current_mainline()
+        self.best_prompts = {
+            node_id: f"Judge {node.label}: {{code}}"
+            for node_id, node in graph.nodes.items()
+        }
+        self.best_scores = {node_id: 0.9 for node_id in graph.nodes}
+
+    def train_all_levels(self, n_rounds, n_samples_per_class, max_workers):
+        return None
+
+    def save_best_prompts(self):
+        return None
+
+
+class FakeDetectionResult:
+    def __init__(self, *, prediction, major, middle, cwe):
+        self.prediction = prediction
+        self.major = major
+        self.middle = middle
+        self.cwe = cwe
+        self.score = 0.9
+
+    @property
+    def is_vulnerable(self):
+        return self.prediction != "Benign"
+
+    def to_dict(self):
+        return {
+            "prediction": self.prediction,
+            "major": self.major,
+            "middle": self.middle,
+            "cwe": self.cwe,
+            "score": self.score,
+            "stage_scores": {},
+            "candidate_paths": [],
+        }
+
+
+class GreedyCascadePolicy:
+    pass
+
+
+class FakeSystem:
+    def __init__(self, llm_client, artifact, ablations=None, retriever=None):
+        self.bundle = artifact
+        self.policy = GreedyCascadePolicy()
+
+    def detect(self, code):
+        if "strcpy" in code:
+            return FakeDetectionResult(
+                prediction="CWE-120",
+                major="Memory",
+                middle="Buffer Errors",
+                cwe="CWE-120",
+            )
+        return FakeDetectionResult(
+            prediction="Benign",
+            major="Benign",
+            middle=None,
+            cwe=None,
+        )
+
+
+def _write_jsonl(path, records):
+    with path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(json.dumps(record) + "\n")
+
+
+def test_load_jsonl_fails_fast_on_invalid_json(temp_dir):
+    dataset_path = temp_dir / "broken.jsonl"
+    dataset_path.write_text(
+        '{"func":"ok","target":0,"cwe":[]}\nnot-json\n', encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match=r"Invalid JSON .* line 2"):
+        load_jsonl(str(dataset_path))
+
+
+def test_load_jsonl_fails_fast_on_missing_required_fields(temp_dir):
+    dataset_path = temp_dir / "missing-fields.jsonl"
+    _write_jsonl(dataset_path, [{"func": "strcpy(buf, src);", "target": 1}])
+
+    with pytest.raises(ValueError, match=r"missing required fields cwe"):
+        load_jsonl(str(dataset_path))
+
+
+def test_run_evolution_workflow_emits_reproducibility_metadata(temp_dir, monkeypatch):
+    train_file = temp_dir / "train.jsonl"
+    _write_jsonl(
+        train_file,
+        [
+            {"func": "int add(int a, int b) { return a + b; }", "target": 0, "cwe": []},
+            {"func": "strcpy(buf, src);", "target": 1, "cwe": ["CWE-120"]},
+        ],
+    )
+
+    monkeypatch.setattr("mulvul.mainline.workflows.load_env_vars", lambda: None)
+    monkeypatch.setattr(
+        "mulvul.mainline.workflows.create_llm_client",
+        lambda llm_type=None: StubLLMClient(),
+    )
+    monkeypatch.setattr(
+        "mulvul.mainline.workflows.HierarchicalSampler",
+        lambda path: object(),
+    )
+    monkeypatch.setattr("mulvul.mainline.workflows.HierarchicalTrainer", FakeTrainer)
+
+    summary = run_evolution_workflow(
+        EvolutionWorkflowConfig(
+            train_file=str(train_file),
+            output_dir=str(temp_dir / "evolution"),
+        )
+    )
+
+    bundle = PromptBundleIO.load(summary["prompt_bundle"], load_mode="strict_v2")
+
+    assert summary["runtime_prompt_format"] == "v2_bundle"
+    assert summary["policy_class"] == "GreedyCascadePolicy"
+    assert summary["model_name"] == "unit-test-model"
+    assert summary["endpoint_kind"] == "openai_compatible"
+    assert len(summary["dataset_hash"]) == 64
+    assert len(summary["prompt_artifact_hash"]) == 64
+    assert len(summary["prompt_bundle_hash"]) == 64
+    assert summary["active_ablations"] == []
+    assert bundle.data_fingerprint == summary["dataset_hash"]
+    assert bundle.code_revision == summary["git_sha"]
+
+
+def test_run_evaluation_workflow_uses_non_benign_only_middle_and_cwe_counts(
+    temp_dir,
+    monkeypatch,
+):
+    eval_file = temp_dir / "eval.jsonl"
+    _write_jsonl(
+        eval_file,
+        [
+            {"func": "strcpy(buf, src);", "target": 1, "cwe": ["CWE-120"]},
+            {"func": "return a + b;", "target": 0, "cwe": []},
+        ],
+    )
+    prompts_path = temp_dir / "prompt_artifact.json"
+    PromptArtifact.from_mapping(
+        {
+            "prompts": {
+                "major_Memory": "major-memory",
+                "middle_Buffer Errors": "middle-buffer",
+                "cwe_CWE-120": "cwe-120",
+            }
+        }
+    ).save(prompts_path)
+
+    monkeypatch.setattr("mulvul.mainline.workflows.load_env_vars", lambda: None)
+    monkeypatch.setattr(
+        "mulvul.mainline.workflows.create_llm_client",
+        lambda llm_type=None: StubLLMClient(),
+    )
+    monkeypatch.setattr("mulvul.mainline.workflows.MainlineDetectorSystem", FakeSystem)
+
+    summary = run_evaluation_workflow(
+        EvaluationWorkflowConfig(
+            eval_file=str(eval_file),
+            prompts_path=str(prompts_path),
+            output_dir=str(temp_dir / "evaluation"),
+        )
+    )
+
+    assert summary["prompt_format"] == "v1_artifact"
+    assert summary["runtime_prompt_format"] == "v2_bundle"
+    assert summary["policy_class"] == "GreedyCascadePolicy"
+    assert summary["accuracy"]["major"] == 1.0
+    assert summary["accuracy"]["middle"] == 1.0
+    assert summary["accuracy"]["cwe"] == 1.0
+    assert summary["accuracy"]["binary"] == 1.0
+    assert summary["counts"]["middle"]["total"] == 1
+    assert summary["counts"]["cwe"]["total"] == 1
+    assert summary["records"][1]["ground_truth"]["middle"] is None
+    assert summary["records"][1]["prediction"]["middle"] is None
+    assert len(summary["prompt_artifact_hash"]) == 64
+    assert len(summary["prompt_bundle_hash"]) == 64

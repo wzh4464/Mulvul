@@ -5,14 +5,48 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, cast
 
-from mulvul.agents.hierarchical_detector import MAJOR_TO_MIDDLE, MIDDLE_TO_CWE
+from mulvul.data.cwe_hierarchy import MAJOR_TO_MIDDLE, MIDDLE_TO_CWE
 
 from .artifacts import PromptArtifact
 
 Stage = Literal["major", "middle", "cwe"]
 STAGE_ORDER: tuple[Stage, ...] = ("major", "middle", "cwe")
+REQUIRED_BUNDLE_FIELDS: tuple[str, ...] = (
+    "schema_version",
+    "taxonomy",
+    "nodes",
+    "defaults",
+    "training_metadata",
+    "data_fingerprint",
+    "code_revision",
+)
+REQUIRED_TAXONOMY_FIELDS: tuple[str, ...] = (
+    "version",
+    "stage_order",
+    "nodes",
+    "benign_label",
+)
+
+
+def _parse_stage_template_mapping(
+    value: Any,
+    *,
+    field_name: str,
+) -> dict[Stage, str]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{field_name} must be a mapping")
+
+    parsed: dict[Stage, str] = {}
+    for raw_key, raw_value in value.items():
+        key = str(raw_key)
+        if key not in STAGE_ORDER:
+            raise ValueError(
+                f"{field_name} keys must be one of {STAGE_ORDER!r}; got {key!r}"
+            )
+        parsed[cast(Stage, key)] = str(raw_value)
+    return parsed
 
 
 @dataclass
@@ -56,17 +90,11 @@ class TaxonomyGraph:
 
     def children_of(self, node_id: str) -> list[str]:
         return [
-            child.node_id
-            for child in self.nodes.values()
-            if child.parent_id == node_id
+            child.node_id for child in self.nodes.values() if child.parent_id == node_id
         ]
 
     def node_ids_for_stage(self, stage: Stage) -> list[str]:
-        return [
-            node.node_id
-            for node in self.nodes.values()
-            if node.stage == stage
-        ]
+        return [node.node_id for node in self.nodes.values() if node.stage == stage]
 
     def labels_for_stage(self, stage: Stage) -> list[str]:
         return [self.node(node_id).label for node_id in self.node_ids_for_stage(stage)]
@@ -121,25 +149,47 @@ class TaxonomyGraph:
             "version": self.version,
             "stage_order": list(self.stage_order),
             "benign_label": self.benign_label,
-            "nodes": {
-                node_id: node.to_dict() for node_id, node in self.nodes.items()
-            },
+            "nodes": {node_id: node.to_dict() for node_id, node in self.nodes.items()},
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "TaxonomyGraph":
-        nodes_obj = data.get("nodes", {})
+        missing_fields = [
+            field_name
+            for field_name in REQUIRED_TAXONOMY_FIELDS
+            if field_name not in data
+        ]
+        if missing_fields:
+            raise ValueError(
+                "taxonomy is missing required fields: " + ", ".join(missing_fields)
+            )
+
+        nodes_obj = data["nodes"]
         if not isinstance(nodes_obj, Mapping):
             raise ValueError("taxonomy.nodes must be a mapping")
+        invalid_nodes = [
+            str(node_id)
+            for node_id, node_data in nodes_obj.items()
+            if not isinstance(node_data, Mapping)
+        ]
+        if invalid_nodes:
+            raise ValueError(
+                "taxonomy.nodes entries must be mappings for: "
+                + ", ".join(invalid_nodes)
+            )
+
+        stage_order = data["stage_order"]
+        if not isinstance(stage_order, (list, tuple)):
+            raise ValueError("taxonomy.stage_order must be a list or tuple")
+
         return cls(
-            version=str(data.get("version", "unknown")),
-            stage_order=tuple(data.get("stage_order", STAGE_ORDER)),  # type: ignore[arg-type]
+            version=str(data["version"]),
+            stage_order=tuple(stage_order),  # type: ignore[arg-type]
             nodes={
                 str(node_id): TaxonomyNode.from_dict(node_data)
                 for node_id, node_data in nodes_obj.items()
-                if isinstance(node_data, Mapping)
             },
-            benign_label=str(data.get("benign_label", "Benign")),
+            benign_label=str(data["benign_label"]),
         )
 
     @classmethod
@@ -304,21 +354,21 @@ class BundleDefaults:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "BundleDefaults":
+        default_query_templates = _parse_stage_template_mapping(
+            data.get("default_query_templates", {}),
+            field_name="defaults.default_query_templates",
+        )
+        default_evidence_templates = _parse_stage_template_mapping(
+            data.get("default_evidence_templates", {}),
+            field_name="defaults.default_evidence_templates",
+        )
         return cls(
             default_threshold=float(data.get("default_threshold", 0.5)),
-            default_query_templates={
-                str(key): str(value)
-                for key, value in data.get("default_query_templates", {}).items()
-            },
-            default_evidence_templates={
-                str(key): str(value)
-                for key, value in data.get("default_evidence_templates", {}).items()
-            },
+            default_query_templates=default_query_templates,
+            default_evidence_templates=default_evidence_templates,
             distrust_fallback=bool(data.get("distrust_fallback", True)),
             max_abstain_delta_pp=float(data.get("max_abstain_delta_pp", 5.0)),
-            max_benign_reject_drop_pp=float(
-                data.get("max_benign_reject_drop_pp", 2.0)
-            ),
+            max_benign_reject_drop_pp=float(data.get("max_benign_reject_drop_pp", 2.0)),
             max_hard_negative_reject_drop_pp=float(
                 data.get("max_hard_negative_reject_drop_pp", 2.0)
             ),
@@ -358,9 +408,7 @@ class PromptBundle:
         return {
             "schema_version": self.schema_version,
             "taxonomy": self.taxonomy.to_dict(),
-            "nodes": {
-                node_id: node.to_dict() for node_id, node in self.nodes.items()
-            },
+            "nodes": {node_id: node.to_dict() for node_id, node in self.nodes.items()},
             "defaults": self.defaults.to_dict(),
             "training_metadata": dict(self.training_metadata),
             "data_fingerprint": self.data_fingerprint,
@@ -369,21 +417,52 @@ class PromptBundle:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PromptBundle":
-        nodes_obj = data.get("nodes", {})
+        missing_fields = [
+            field_name
+            for field_name in REQUIRED_BUNDLE_FIELDS
+            if field_name not in data
+        ]
+        if missing_fields:
+            raise ValueError(
+                "bundle is missing required fields: " + ", ".join(missing_fields)
+            )
+
+        taxonomy_obj = data["taxonomy"]
+        if not isinstance(taxonomy_obj, Mapping):
+            raise ValueError("bundle.taxonomy must be a mapping")
+
+        nodes_obj = data["nodes"]
         if not isinstance(nodes_obj, Mapping):
             raise ValueError("bundle.nodes must be a mapping")
+        invalid_nodes = [
+            str(node_id)
+            for node_id, node_data in nodes_obj.items()
+            if not isinstance(node_data, Mapping)
+        ]
+        if invalid_nodes:
+            raise ValueError(
+                "bundle.nodes entries must be mappings for: " + ", ".join(invalid_nodes)
+            )
+
+        defaults_obj = data["defaults"]
+        if not isinstance(defaults_obj, Mapping):
+            raise ValueError("bundle.defaults must be a mapping")
+
+        training_metadata = data["training_metadata"]
+        if not isinstance(training_metadata, Mapping):
+            raise ValueError("bundle.training_metadata must be a mapping")
+
         return cls(
-            schema_version=str(data.get("schema_version", "")),
-            taxonomy=TaxonomyGraph.from_dict(dict(data.get("taxonomy", {}))),
+            schema_version=str(data["schema_version"]),
+            taxonomy=TaxonomyGraph.from_dict(taxonomy_obj),
             nodes={
                 str(node_id): NodeSpec.from_dict(node_data)
                 for node_id, node_data in nodes_obj.items()
-                if isinstance(node_data, Mapping)
             },
-            defaults=BundleDefaults.from_dict(dict(data.get("defaults", {}))),
-            training_metadata=dict(data.get("training_metadata", {})),
-            data_fingerprint=str(data.get("data_fingerprint", "unknown")),
-            code_revision=str(data.get("code_revision", "unknown")),
+            defaults=BundleDefaults.from_dict(defaults_obj),
+            training_metadata=dict(training_metadata),
+            data_fingerprint=str(data["data_fingerprint"]),
+            code_revision=str(data["code_revision"]),
         )
 
 
@@ -431,6 +510,9 @@ class PromptBundleAdapter:
         *,
         source_artifact: str = "unknown",
         allow_partial: bool = True,
+        training_metadata: Mapping[str, Any] | None = None,
+        data_fingerprint: str = "unknown",
+        code_revision: str = "unknown",
     ) -> PromptBundle:
         taxonomy = TaxonomyGraph.from_current_mainline(version="legacy")
         nodes: dict[str, NodeSpec] = {}
@@ -468,22 +550,27 @@ class PromptBundleAdapter:
                 metadata={"source_format": "v1"},
             )
 
+        normalized_training_metadata = {
+            "trainer_name": "legacy_v1_adapter",
+            "trainer_seed": "unknown",
+            "split_hash": "unknown",
+            "retrieval_snapshot_id": "unknown",
+            "created_at": "unknown",
+            "source_dataset": "unknown",
+            "source_artifact": source_artifact,
+        }
+        if training_metadata is not None:
+            normalized_training_metadata.update(dict(training_metadata))
+        normalized_training_metadata.setdefault("source_artifact", source_artifact)
+
         bundle = PromptBundle(
             schema_version="2",
             taxonomy=taxonomy,
             nodes=nodes,
             defaults=BundleDefaults(default_threshold=0.5),
-            training_metadata={
-                "trainer_name": "legacy_v1_adapter",
-                "trainer_seed": "unknown",
-                "split_hash": "unknown",
-                "retrieval_snapshot_id": "unknown",
-                "created_at": "unknown",
-                "source_dataset": "unknown",
-                "source_artifact": source_artifact,
-            },
-            data_fingerprint="unknown",
-            code_revision="unknown",
+            training_metadata=normalized_training_metadata,
+            data_fingerprint=data_fingerprint,
+            code_revision=code_revision,
         )
 
         errors = bundle.validate(allow_partial=allow_partial)
@@ -499,7 +586,10 @@ class PromptBundleIO:
     def _read_json(path: str | Path) -> dict[str, Any]:
         bundle_path = Path(path)
         with bundle_path.open("r", encoding="utf-8") as handle:
-            return json.load(handle)
+            data = json.load(handle)
+        if not isinstance(data, Mapping):
+            raise ValueError("Prompt bundle file must decode to a JSON object.")
+        return dict(data)
 
     @classmethod
     def load(

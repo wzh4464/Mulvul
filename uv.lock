@@ -2338,6 +2338,7 @@ dependencies = [
     { name = "jsonlines" },
     { name = "matplotlib", version = "3.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "matplotlib", version = "3.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "mypy" },
     { name = "numpy" },
     { name = "openai" },
     { name = "pandas", version = "2.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -2391,6 +2392,8 @@ vulnerability = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "black" },
+    { name = "isort" },
     { name = "pytest" },
     { name = "pytest-timeout" },
 ]
@@ -2412,6 +2415,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "mosestokenizer", marker = "extra == 'vulnerability'", specifier = ">=1.2.1" },
     { name = "msal", marker = "extra == 'vulnerability'", specifier = ">=1.20.0" },
+    { name = "mypy", specifier = ">=1.17.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.4.0" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "nevergrad", marker = "extra == 'vulnerability'", specifier = ">=0.7.0" },
@@ -2442,6 +2446,8 @@ provides-extras = ["dev", "static-analysis", "vulnerability", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "black", specifier = ">=25.1.0" },
+    { name = "isort", specifier = ">=6.0.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
 ]

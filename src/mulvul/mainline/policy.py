@@ -5,7 +5,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from math import prod
-from typing import Protocol, Sequence
+from typing import Any, Protocol, Sequence
 
 from .bundle import (
     EvidenceBundle,
@@ -67,7 +67,7 @@ class NullEvidenceProvider:
 class RetrieverEvidenceProvider:
     """Adapter from current retriever objects to structured v2 evidence."""
 
-    def __init__(self, retriever, top_k: int = 3):
+    def __init__(self, retriever: Any, top_k: int = 3):
         self.retriever = retriever
         self.top_k = top_k
 
@@ -107,7 +107,11 @@ class RetrieverEvidenceProvider:
                         title=title,
                         text="\n".join(part for part in text_parts if part),
                         source_id=source_id,
-                        metadata={k: v for k, v in sample.items() if k not in {"code", "description"}},
+                        metadata={
+                            k: v
+                            for k, v in sample.items()
+                            if k not in {"code", "description"}
+                        },
                     )
                 )
                 retrieval_ids.append(source_id)
@@ -129,19 +133,29 @@ class RetrieverEvidenceProvider:
             metadata={"top_k": self.top_k},
         )
 
-    def _retrieve_samples(self, node: NodeSpec, query_code: str) -> Sequence[dict]:
+    def _retrieve_samples(self, node: NodeSpec, query_code: str) -> Sequence[object]:
         if node.stage == "major" and hasattr(self.retriever, "retrieve_from_category"):
-            return self.retriever.retrieve_from_category(
+            result = self.retriever.retrieve_from_category(
                 query_code, node.target_label, top_k=self.top_k
             )
+            return self._normalize_samples(result)
         if node.stage == "middle" and hasattr(self.retriever, "retrieve_from_middle"):
-            return self.retriever.retrieve_from_middle(
+            result = self.retriever.retrieve_from_middle(
                 query_code, node.target_label, top_k=self.top_k
             )
+            return self._normalize_samples(result)
         if node.stage == "cwe" and hasattr(self.retriever, "retrieve_from_cwe"):
-            return self.retriever.retrieve_from_cwe(
+            result = self.retriever.retrieve_from_cwe(
                 query_code, node.target_label, top_k=self.top_k
             )
+            return self._normalize_samples(result)
+        return []
+
+    def _normalize_samples(self, value: Any) -> list[object]:
+        if isinstance(value, Sequence) and not isinstance(
+            value, (str, bytes, bytearray)
+        ):
+            return list(value)
         return []
 
 
@@ -186,8 +200,12 @@ class GreedyCascadePolicy:
         }
         candidate_paths: list[DetectionPath] = []
 
-        major_ids = self._existing_node_ids(bundle, bundle.taxonomy.node_ids_for_stage("major"))
-        major_results = self._score_nodes(bundle, scorer, major_ids, code=code, parent_result=None)
+        major_ids = self._existing_node_ids(
+            bundle, bundle.taxonomy.node_ids_for_stage("major")
+        )
+        major_results = self._score_nodes(
+            bundle, scorer, major_ids, code=code, parent_result=None
+        )
         stage_results["major"] = self._sort_results(major_results)
 
         accepted_major = [
@@ -245,7 +263,9 @@ class GreedyCascadePolicy:
                 stage_results["cwe"].extend(sorted_cwe_results)
 
                 accepted_cwes = [
-                    result for result in sorted_cwe_results if result.decision == "accept"
+                    result
+                    for result in sorted_cwe_results
+                    if result.decision == "accept"
                 ]
 
                 if not accepted_cwes:
@@ -376,12 +396,12 @@ class GreedyCascadePolicy:
             node_ids=[result.node_id for result in accepted_results],
             stage_results=accepted_results,
             final_label=final_result.target_label,
-            score=prod(
-                result.target_confidence for result in accepted_results
-            ),
+            score=prod(result.target_confidence for result in accepted_results),
         )
 
-    def _sort_results(self, results: Sequence[NodeScoreResult]) -> list[NodeScoreResult]:
+    def _sort_results(
+        self, results: Sequence[NodeScoreResult]
+    ) -> list[NodeScoreResult]:
         return sorted(
             results,
             key=lambda result: result.target_confidence,

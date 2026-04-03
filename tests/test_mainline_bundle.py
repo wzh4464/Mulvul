@@ -62,7 +62,9 @@ def test_prompt_bundle_io_strict_rejects_partial_bundle(temp_dir):
     bundle = PromptBundleAdapter.from_artifact(artifact, allow_partial=True)
     bundle_path = temp_dir / "prompt_bundle.json"
 
-    with pytest.raises(ValueError, match="missing node specs|Bundle is missing node specs"):
+    with pytest.raises(
+        ValueError, match="missing node specs|Bundle is missing node specs"
+    ):
         PromptBundleIO.save(bundle, bundle_path, allow_partial=False)
 
 
@@ -107,3 +109,41 @@ def test_prompt_bundle_io_strict_round_trip_for_full_bundle(temp_dir):
     assert loaded.schema_version == "2"
     assert loaded.taxonomy.version == taxonomy.version
     assert loaded.validate(allow_partial=False) == []
+
+
+def test_prompt_bundle_io_rejects_missing_required_top_level_fields(temp_dir):
+    bundle_path = temp_dir / "prompt_bundle.json"
+    bundle_path.write_text('{"schema_version":"2","nodes":{}}', encoding="utf-8")
+
+    with pytest.raises(ValueError, match="bundle is missing required fields"):
+        PromptBundleIO.load(bundle_path, load_mode="strict_v2")
+
+
+def test_prompt_bundle_io_v1_and_v2_loaders_normalize_to_equivalent_runtime_bundle(
+    temp_dir,
+):
+    artifact = PromptArtifact.from_mapping(
+        {
+            "prompts": {
+                "major_Memory": "major-memory",
+                "major_Injection": "major-injection",
+                "middle_Buffer Errors": "middle-buffer",
+                "cwe_CWE-120": "cwe-120",
+            }
+        }
+    )
+    artifact_path = temp_dir / "prompt_artifact.json"
+    artifact.save(artifact_path)
+
+    bundle = PromptBundleAdapter.from_artifact(
+        artifact,
+        source_artifact=str(artifact_path),
+        allow_partial=True,
+    )
+    bundle_path = temp_dir / "prompt_bundle.json"
+    PromptBundleIO.save(bundle, bundle_path, allow_partial=True)
+
+    runtime_from_v1 = PromptBundleIO.load(artifact_path, load_mode="legacy_compat")
+    runtime_from_v2 = PromptBundleIO.load(bundle_path, load_mode="legacy_compat")
+
+    assert runtime_from_v1.to_dict() == runtime_from_v2.to_dict()

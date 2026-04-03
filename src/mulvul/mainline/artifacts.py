@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Mapping
 
+PROMPT_KEY_PREFIXES = ("major_", "middle_", "cwe_")
+
 
 @dataclass
 class PromptArtifact:
@@ -26,17 +28,22 @@ class PromptArtifact:
         if not isinstance(prompts_obj, Mapping):
             raise ValueError("Prompt artifact must contain a 'prompts' mapping.")
 
-        prompts = {
-            str(key): str(value)
-            for key, value in prompts_obj.items()
-            if isinstance(value, str)
-        }
+        prompts: Dict[str, str] = {}
+        for raw_key, raw_value in prompts_obj.items():
+            key = str(raw_key)
+            if not any(key.startswith(prefix) for prefix in PROMPT_KEY_PREFIXES):
+                raise ValueError(
+                    "Prompt artifact keys must start with one of "
+                    f"{PROMPT_KEY_PREFIXES!r}; got {key!r}."
+                )
+            if not isinstance(raw_value, str):
+                raise ValueError(f"Prompt artifact value for {key!r} must be a string.")
+            prompts[key] = raw_value
+
         scores_obj = data.get("scores", {})
         scores: Dict[str, float] = {}
         if isinstance(scores_obj, Mapping):
-            scores = {
-                str(key): float(value) for key, value in scores_obj.items()
-            }
+            scores = {str(key): float(value) for key, value in scores_obj.items()}
 
         artifact = cls(scores=scores, raw_prompts=prompts)
         for key, prompt in prompts.items():

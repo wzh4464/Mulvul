@@ -16,6 +16,13 @@ from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from mulvul.data.cwe_hierarchy import (
+    CWE_TO_MIDDLE,
+    MAJOR_TO_MIDDLE,
+    MIDDLE_TO_CWE,
+    MIDDLE_TO_MAJOR,
+)
+
 # Minimum samples required for CWE-level detection
 MIN_CWE_SAMPLES = 50
 
@@ -32,43 +39,6 @@ class HierarchicalResult:
     evidence: str
     path: List[Tuple[str, float]] = field(default_factory=list)  # Detection path
     raw_responses: Dict[str, str] = field(default_factory=dict)
-
-
-# CWE Hierarchy Definition
-MAJOR_TO_MIDDLE = {
-    "Memory": ["Buffer Errors", "Memory Management", "Pointer Dereference", "Integer Errors"],
-    "Injection": ["Injection"],
-    "Logic": ["Concurrency Issues", "Information Exposure", "Resource Management", "Access Control", "Other"],
-    "Input": ["Path Traversal", "Input Validation"],
-    "Crypto": ["Cryptography Issues"],
-}
-
-MIDDLE_TO_CWE = {
-    "Buffer Errors": ["CWE-119", "CWE-120", "CWE-125", "CWE-787", "CWE-805"],
-    "Memory Management": ["CWE-416", "CWE-415", "CWE-401", "CWE-772"],
-    "Pointer Dereference": ["CWE-476", "CWE-617"],
-    "Integer Errors": ["CWE-190", "CWE-191", "CWE-189", "CWE-369"],
-    "Injection": ["CWE-78", "CWE-89", "CWE-79", "CWE-94", "CWE-77"],
-    "Concurrency Issues": ["CWE-362", "CWE-667"],
-    "Information Exposure": ["CWE-200", "CWE-209"],
-    "Resource Management": ["CWE-399", "CWE-400", "CWE-770", "CWE-835"],
-    "Access Control": ["CWE-264", "CWE-284", "CWE-269"],
-    "Path Traversal": ["CWE-22", "CWE-59"],
-    "Input Validation": ["CWE-20", "CWE-703"],
-    "Cryptography Issues": ["CWE-310", "CWE-327", "CWE-330", "CWE-311"],
-    "Other": [],
-}
-
-# Reverse mappings
-CWE_TO_MIDDLE = {}
-for middle, cwes in MIDDLE_TO_CWE.items():
-    for cwe in cwes:
-        CWE_TO_MIDDLE[cwe] = middle
-
-MIDDLE_TO_MAJOR = {}
-for major, middles in MAJOR_TO_MIDDLE.items():
-    for middle in middles:
-        MIDDLE_TO_MAJOR[middle] = major
 
 
 def load_fallback_list(path: str = "data/cwe_fallback_list.json") -> Tuple[Set[str], Dict[str, str]]:

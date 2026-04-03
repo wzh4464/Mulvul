@@ -32,7 +32,9 @@ def _make_ctx(bundle):
     candidate_labels = bundle.taxonomy.decision_labels_for(node.node_id) + [
         bundle.taxonomy.benign_label
     ]
-    return node, ScorerContext(code="strcpy(buf, input);", candidate_labels=candidate_labels)
+    return node, ScorerContext(
+        code="strcpy(buf, input);", candidate_labels=candidate_labels
+    )
 
 
 def test_llm_node_scorer_json_accept_path():
@@ -121,4 +123,22 @@ def test_llm_node_scorer_filters_labels_to_candidate_space():
     result = scorer.score(node, ctx)
 
     assert result.ranking == [("Memory", 0.91)]
+    assert result.decision == "accept"
+
+
+def test_llm_node_scorer_accepts_top_level_list_and_deduplicates_by_max_confidence():
+    bundle = _make_bundle()
+    node, ctx = _make_ctx(bundle)
+    scorer = LLMNodeScorer(
+        StubLLMClient(
+            '[{"label":"Memory","confidence":0.41},'
+            '{"label":"Memory","confidence":0.91},'
+            '{"category":"Benign","confidence":0.20}]'
+        ),
+        bundle,
+    )
+
+    result = scorer.score(node, ctx)
+
+    assert result.ranking == [("Memory", 0.91), ("Benign", 0.2)]
     assert result.decision == "accept"
