@@ -140,3 +140,102 @@ class TestErrorAttribution:
             true_middle=None, pred_middle="Buffer Errors",
             true_cwe=None, pred_cwe="CWE-120",
         ) == "major"
+
+
+from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
+
+
+class StubLLMClient:
+    """Returns predictable ranking_v2 responses for testing."""
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        if "specializing in Memory" in prompt:
+            return '{"predictions":[{"category":"Memory","confidence":0.91}]}'
+        if "specializing in Injection" in prompt:
+            return '{"predictions":[{"category":"Benign","confidence":0.80}]}'
+        if "Buffer Errors" in prompt:
+            return '{"predictions":[{"category":"Buffer Errors","confidence":0.84}]}'
+        if "CWE-120" in prompt:
+            return '{"predictions":[{"cwe":"CWE-120","confidence":0.88}]}'
+        return '{"predictions":[{"category":"Benign","confidence":0.70}]}'
+
+    def batch_generate(self, prompts, **kwargs):
+        return [self.generate(p) for p in prompts]
+
+
+class StubSampler:
+    """Minimal sampler returning fixed samples."""
+
+    def get_all_majors(self):
+        return ["Memory"]
+
+    def get_all_middles(self):
+        return ["Buffer Errors"]
+
+    def get_all_cwes(self, min_samples=0):
+        return ["CWE-120"]
+
+    def sample_for_major(self, target, n):
+        from mulvul.agents.hierarchical_sampler import TrainingSample
+        return [
+            TrainingSample(code="void f(){char b[8];strcpy(b,x);}", label="target",
+                           cwe="CWE-120", middle="Buffer Errors", major="Memory"),
+            TrainingSample(code="int add(int a,int b){return a+b;}", label="benign",
+                           cwe="Benign", middle="Benign", major="Benign"),
+        ]
+
+    def sample_for_middle(self, target, n):
+        return self.sample_for_major(target, n)
+
+    def sample_for_cwe(self, target, n):
+        return self.sample_for_major(target, n)
+
+
+class TestCoevolutionaryTrainer:
+    def test_train_all_levels_returns_best_prompts(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        best_prompts = trainer.train_all_levels(
+            n_rounds=2, n_samples_per_class=2, population_size=3,
+        )
+        assert isinstance(best_prompts, dict)
+        assert "major_Memory" in best_prompts
+        assert "middle_Buffer Errors" in best_prompts
+        assert "cwe_CWE-120" in best_prompts
+
+    def test_evolution_log_file_created(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer.train_all_levels(n_rounds=1, n_samples_per_class=2, population_size=2)
+        log_path = tmp_path / "evolution.jsonl"
+        assert log_path.exists()
+        lines = log_path.read_text().strip().split("\n")
+        assert len(lines) >= 3
+
+    def test_best_scores_populated(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer.train_all_levels(n_rounds=1, n_samples_per_class=2, population_size=2)
+        assert len(trainer.best_scores) > 0
+        assert all(isinstance(v, float) for v in trainer.best_scores.values())
+
+    def test_save_best_prompts(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer.train_all_levels(n_rounds=1, n_samples_per_class=2, population_size=2)
+        trainer.save_best_prompts()
+        saved = json.loads((tmp_path / "best_prompts.json").read_text())
+        assert "prompts" in saved
+        assert "scores" in saved
