@@ -272,3 +272,45 @@ class TestEvolutionLogIntegration:
         for ge in gen_ends:
             assert "population_diversity" in ge["data"]
             assert "best_fitness" in ge["data"]
+
+
+class TestErrorRouting:
+    """Verify that error attribution routes to the correct population."""
+
+    def test_false_positive_routes_to_predicted_node(self):
+        from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer, NodePopulation, PromptIndividual
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.populations = {
+            "major_Memory": NodePopulation(node_key="major_Memory", stage="major",
+                individuals=[PromptIndividual(prompt="p")]),
+        }
+        # Benign sample wrongly predicted as Memory -> charge major_Memory
+        err = {"stage": "major", "true_major": "Benign", "pred_major": "Memory",
+               "true_middle": None, "pred_middle": "Buffer Errors",
+               "true_cwe": None, "pred_cwe": "CWE-120"}
+        assert trainer._route_error_to_node(err) == "major_Memory"
+
+    def test_false_negative_routes_to_true_node(self):
+        from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer, NodePopulation, PromptIndividual
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.populations = {
+            "major_Memory": NodePopulation(node_key="major_Memory", stage="major",
+                individuals=[PromptIndividual(prompt="p")]),
+        }
+        # Memory sample wrongly predicted as Injection -> charge major_Memory (failed to attract)
+        err = {"stage": "major", "true_major": "Memory", "pred_major": "Injection",
+               "true_middle": "Buffer Errors", "pred_middle": "Injection",
+               "true_cwe": "CWE-120", "pred_cwe": "CWE-89"}
+        assert trainer._route_error_to_node(err) == "major_Memory"
+
+    def test_nonexistent_population_returns_none(self):
+        from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer, NodePopulation, PromptIndividual
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.populations = {}
+        err = {"stage": "major", "true_major": "Benign", "pred_major": "Memory",
+               "true_middle": None, "pred_middle": None,
+               "true_cwe": None, "pred_cwe": None}
+        assert trainer._route_error_to_node(err) is None

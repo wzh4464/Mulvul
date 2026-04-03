@@ -192,7 +192,7 @@ class CoevolutionaryTrainer:
             )
 
             # Phase 2 -- cascade evaluation
-            e2e_accuracy, errors = self._phase2_cascade_eval(
+            e2e_accuracy, errors, detect_failures = self._phase2_cascade_eval(
                 representatives, n_samples=n_samples_per_class
             )
 
@@ -208,6 +208,7 @@ class CoevolutionaryTrainer:
                     "e2e_accuracy": e2e_accuracy,
                     "error_count": len(errors),
                     "error_distribution": dict(error_distribution),
+                    "detect_failures": detect_failures,
                 },
             )
 
@@ -266,9 +267,14 @@ class CoevolutionaryTrainer:
     # ------------------------------------------------------------------
 
     def _init_populations(self, population_size: int) -> None:
-        """Seed every taxonomy node with *population_size* prompt variants."""
+        """Seed every canonical taxonomy node with *population_size* prompt variants.
 
-        for major in self.sampler.get_all_majors():
+        Uses the full taxonomy from ``MAJOR_TO_MIDDLE`` / ``MIDDLE_TO_CWE``
+        rather than what the sampler happens to cover, so the output artifact
+        is always complete even when the training dataset is sparse.
+        """
+
+        for major in MAJOR_TO_MIDDLE.keys():
             key = f"major_{major}"
             candidates = list(MAJOR_TO_MIDDLE.keys()) + ["Benign"]
             individuals = [
@@ -282,7 +288,7 @@ class CoevolutionaryTrainer:
                 node_key=key, stage="major", individuals=individuals
             )
 
-        for middle in self.sampler.get_all_middles():
+        for middle in MIDDLE_TO_CWE.keys():
             key = f"middle_{middle}"
             parent_major = MIDDLE_TO_MAJOR.get(middle, "Logic")
             candidates = MAJOR_TO_MIDDLE.get(parent_major, []) + ["Benign"]
@@ -297,7 +303,8 @@ class CoevolutionaryTrainer:
                 node_key=key, stage="middle", individuals=individuals
             )
 
-        for cwe in self.sampler.get_all_cwes(min_samples=0):
+        all_cwes = [cwe for cwe_list in MIDDLE_TO_CWE.values() for cwe in cwe_list]
+        for cwe in all_cwes:
             key = f"cwe_{cwe}"
             parent_middle = CWE_TO_MIDDLE.get(cwe, "Other")
             candidates = MIDDLE_TO_CWE.get(parent_middle, []) + ["Benign"]
@@ -357,6 +364,7 @@ class CoevolutionaryTrainer:
         """Score all individuals locally, then tournament-select a representative."""
 
         representatives: Dict[str, PromptIndividual] = {}
+        scoring_failure_count = 0
 
         for key, pop in self.populations.items():
             stage = pop.stage
@@ -371,10 +379,33 @@ class CoevolutionaryTrainer:
             else:
                 samples = self.sampler.sample_for_cwe(target, n_samples)
 
+            # Skip scoring for nodes without training data; keep seed fitness 0
+            if not samples:
+                rep = pop.tournament_select(k=tournament_k)
+                representatives[key] = rep
+                self.log.emit(
+                    "tournament_done",
+                    {
+                        "node": key,
+                        "generation": gen,
+                        "best_f1": 0.0,
+                        "rep_f1": 0.0,
+                        "skipped_no_data": True,
+                        "scoring_failure_count": 0,
+                    },
+                )
+                continue
+
             # Score every individual
+            node_failures = 0
             for ind in pop.individuals:
-                ind.node_fitness = self._score_individual(ind, stage, target, samples)
+                score, failures = self._score_individual(
+                    ind, stage, target, samples
+                )
+                ind.node_fitness = score
                 ind.generation = gen
+                node_failures += failures
+            scoring_failure_count += node_failures
 
             # Tournament select a representative
             rep = pop.tournament_select(k=tournament_k)
@@ -387,7 +418,15 @@ class CoevolutionaryTrainer:
                     "generation": gen,
                     "best_f1": round(pop.best().node_fitness, 4),
                     "rep_f1": round(rep.node_fitness, 4),
+                    "scoring_failure_count": node_failures,
                 },
+            )
+
+        if scoring_failure_count > 0:
+            logger.warning(
+                "Phase 1: %d scoring exceptions across all nodes in gen %d",
+                scoring_failure_count,
+                gen,
             )
 
         return representatives
@@ -398,11 +437,17 @@ class CoevolutionaryTrainer:
         stage: str,
         target: str,
         samples: List[TrainingSample],
-    ) -> float:
-        """Evaluate one individual's prompt on *samples* and return F1."""
+    ) -> Tuple[float, int]:
+        """Evaluate one individual's prompt on *samples*.
+
+        Returns:
+            A ``(f1_score, failure_count)`` tuple.  *failure_count* tracks how
+            many samples raised exceptions during scoring so callers can surface
+            backend health in logs.
+        """
 
         if not samples:
-            return 0.0
+            return 0.0, 0
 
         # Determine candidates for this detector
         if stage == "major":
@@ -426,6 +471,7 @@ class CoevolutionaryTrainer:
         tp = 0
         fp = 0
         fn = 0
+        failure_count = 0
 
         for sample in samples:
             try:
@@ -433,6 +479,7 @@ class CoevolutionaryTrainer:
                 predicted = results[0][0] if results else "Benign"
             except Exception:
                 predicted = "Benign"
+                failure_count += 1
 
             is_target = sample.label == "target"
             pred_is_target = predicted == target
@@ -447,8 +494,8 @@ class CoevolutionaryTrainer:
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         if precision + recall > 0:
-            return 2 * precision * recall / (precision + recall)
-        return 0.0
+            return 2 * precision * recall / (precision + recall), failure_count
+        return 0.0, failure_count
 
     # ------------------------------------------------------------------
     # Phase 2 -- End-to-end cascade evaluation
@@ -458,8 +505,13 @@ class CoevolutionaryTrainer:
         self,
         representatives: Dict[str, PromptIndividual],
         n_samples: int,
-    ) -> Tuple[float, List[Dict[str, Any]]]:
-        """Evaluate the assembled prompt artifact end-to-end."""
+    ) -> Tuple[float, List[Dict[str, Any]], int]:
+        """Evaluate the assembled prompt artifact end-to-end.
+
+        Returns:
+            A ``(accuracy, errors, detect_failures)`` tuple where
+            *detect_failures* counts how many ``system.detect()`` calls raised.
+        """
 
         # Build the PromptArtifact from representative prompts
         prompt_mapping = {key: rep.prompt for key, rep in representatives.items()}
@@ -468,7 +520,7 @@ class CoevolutionaryTrainer:
             system = MainlineDetectorSystem(self.llm_client, artifact)
         except Exception as exc:
             logger.warning("Cascade eval failed to build system: %s", exc)
-            return 0.0, []
+            return 0.0, [], 0
 
         # Gather a small evaluation set from all stages
         eval_samples: List[TrainingSample] = []
@@ -476,9 +528,10 @@ class CoevolutionaryTrainer:
             eval_samples.extend(self.sampler.sample_for_major(major, n_samples))
 
         if not eval_samples:
-            return 0.0, []
+            return 0.0, [], 0
 
         correct = 0
+        detect_failures = 0
         errors: List[Dict[str, Any]] = []
 
         for sample in eval_samples:
@@ -491,6 +544,7 @@ class CoevolutionaryTrainer:
                 pred_major = "Benign"
                 pred_middle = None
                 pred_cwe = None
+                detect_failures += 1
 
             true_major = sample.major
             true_middle = sample.middle if sample.middle != "Benign" else None
@@ -520,8 +574,42 @@ class CoevolutionaryTrainer:
                     }
                 )
 
+        if detect_failures > 0:
+            logger.warning(
+                "Phase 2: %d detect() failures out of %d samples",
+                detect_failures,
+                len(eval_samples),
+            )
+
         accuracy = correct / len(eval_samples) if eval_samples else 0.0
-        return accuracy, errors
+        return accuracy, errors, detect_failures
+
+    # ------------------------------------------------------------------
+    # Error routing helper
+    # ------------------------------------------------------------------
+
+    def _route_error_to_node(self, err: Dict[str, Any]) -> str | None:
+        """Route an error to the population that should receive mutation pressure.
+
+        False positives are charged to the predicted node (it fired incorrectly).
+        False negatives are charged to the true node (it failed to fire).
+        """
+        stage = err["stage"]
+        true_label = err.get(f"true_{stage}")
+        pred_label = err.get(f"pred_{stage}")
+
+        # If true label is Benign at this stage, this is a false positive --
+        # charge the predicted node (it shouldn't have fired)
+        if true_label is None or true_label == "Benign":
+            key = f"{stage}_{pred_label}" if pred_label else None
+        else:
+            # The true node failed to attract -- charge it
+            key = f"{stage}_{true_label}"
+
+        # Only route to nodes that have populations
+        if key and key in self.populations:
+            return key
+        return None
 
     # ------------------------------------------------------------------
     # Phase 3 -- Fitness propagation
@@ -538,16 +626,9 @@ class CoevolutionaryTrainer:
         # Count errors attributed to each node key
         error_counts: Dict[str, int] = defaultdict(int)
         for err in errors:
-            stage = err["stage"]
-            if stage == "major":
-                node_key = f"major_{err['true_major']}"
-            elif stage == "middle" and err.get("true_middle"):
-                node_key = f"middle_{err['true_middle']}"
-            elif stage == "cwe" and err.get("true_cwe"):
-                node_key = f"cwe_{err['true_cwe']}"
-            else:
-                continue
-            error_counts[node_key] += 1
+            node_key = self._route_error_to_node(err)
+            if node_key is not None:
+                error_counts[node_key] += 1
 
         total_errors = len(errors) if errors else 1
 
@@ -568,19 +649,12 @@ class CoevolutionaryTrainer:
     ) -> None:
         """Mutate, crossover, and optionally migrate prompts."""
 
-        # Group errors by node key
+        # Group errors by node key using correct routing
         errors_by_node: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         for err in errors:
-            stage = err["stage"]
-            if stage == "major":
-                node_key = f"major_{err['true_major']}"
-            elif stage == "middle" and err.get("true_middle"):
-                node_key = f"middle_{err['true_middle']}"
-            elif stage == "cwe" and err.get("true_cwe"):
-                node_key = f"cwe_{err['true_cwe']}"
-            else:
-                continue
-            errors_by_node[node_key].append(err)
+            node_key = self._route_error_to_node(err)
+            if node_key is not None:
+                errors_by_node[node_key].append(err)
 
         # Per-population evolution
         for key, pop in self.populations.items():
