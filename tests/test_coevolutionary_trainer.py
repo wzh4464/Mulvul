@@ -239,3 +239,36 @@ class TestCoevolutionaryTrainer:
         saved = json.loads((tmp_path / "best_prompts.json").read_text())
         assert "prompts" in saved
         assert "scores" in saved
+
+
+class TestEvolutionLogIntegration:
+    def test_full_run_produces_expected_event_sequence(self, tmp_path):
+        trainer = CoevolutionaryTrainer(
+            llm_client=StubLLMClient(),
+            sampler=StubSampler(),
+            output_dir=str(tmp_path),
+        )
+        trainer.train_all_levels(n_rounds=2, n_samples_per_class=2, population_size=3)
+
+        log_path = tmp_path / "evolution.jsonl"
+        events = [json.loads(line) for line in log_path.read_text().strip().split("\n")]
+
+        event_types = [e["event"] for e in events]
+        assert "generation_start" in event_types
+        assert "tournament_done" in event_types
+        assert "cascade_eval_done" in event_types
+        assert "generation_end" in event_types
+
+        # Verify cascade_eval_done has the expected fields
+        cascade_events = [e for e in events if e["event"] == "cascade_eval_done"]
+        assert len(cascade_events) == 2  # one per generation
+        for ce in cascade_events:
+            assert "e2e_accuracy" in ce["data"]
+            assert "error_count" in ce["data"]
+            assert "error_distribution" in ce["data"]
+
+        # Verify generation_end has diversity info
+        gen_ends = [e for e in events if e["event"] == "generation_end"]
+        for ge in gen_ends:
+            assert "population_diversity" in ge["data"]
+            assert "best_fitness" in ge["data"]

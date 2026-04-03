@@ -196,9 +196,19 @@ class CoevolutionaryTrainer:
                 representatives, n_samples=n_samples_per_class
             )
 
+            # Build error distribution by stage
+            error_distribution: Dict[str, int] = defaultdict(int)
+            for err in errors:
+                error_distribution[err["stage"]] += 1
+
             self.log.emit(
                 "cascade_eval_done",
-                {"generation": gen, "e2e_accuracy": e2e_accuracy},
+                {
+                    "generation": gen,
+                    "e2e_accuracy": e2e_accuracy,
+                    "error_count": len(errors),
+                    "error_distribution": dict(error_distribution),
+                },
             )
 
             # Phase 3 -- propagate cascade fitness
@@ -214,12 +224,27 @@ class CoevolutionaryTrainer:
                     self.best_prompts[key] = best_ind.prompt
                     self.best_scores[key] = best_ind.combined_fitness
 
+            # Compute population diversity: ratio of unique prompts to total
+            total_individuals = sum(p.size for p in self.populations.values())
+            unique_prompts = len(
+                {ind.prompt for p in self.populations.values() for ind in p.individuals}
+            )
+            diversity = unique_prompts / total_individuals if total_individuals > 0 else 0.0
+
+            # Best fitness across all populations
+            best_fitness = max(
+                (p.best().combined_fitness for p in self.populations.values()),
+                default=0.0,
+            )
+
             self.log.emit(
                 "generation_end",
                 {
                     "generation": gen,
                     "e2e_accuracy": e2e_accuracy,
                     "best_scores": {k: round(v, 4) for k, v in self.best_scores.items()},
+                    "population_diversity": round(diversity, 4),
+                    "best_fitness": round(best_fitness, 4),
                 },
             )
 
