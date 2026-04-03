@@ -2,8 +2,9 @@ import json
 
 import pytest
 
+from mulvul.data.cwe_hierarchy import MAJOR_TO_MIDDLE, MIDDLE_TO_CWE
 from mulvul.mainline.artifacts import PromptArtifact
-from mulvul.mainline.bundle import PromptBundleIO, TaxonomyGraph
+from mulvul.mainline.bundle import PromptBundleIO
 from mulvul.mainline.workflows import (
     EvaluationWorkflowConfig,
     EvolutionWorkflowConfig,
@@ -20,12 +21,14 @@ class StubLLMClient:
 
 class FakeTrainer:
     def __init__(self, llm_client, sampler, retriever, output_dir):
-        graph = TaxonomyGraph.from_current_mainline()
         self.best_prompts = {
-            node_id: f"Judge {node.label}: {{code}}"
-            for node_id, node in graph.nodes.items()
+            f"major_{major}": f"Judge {major}: {{code}}" for major in MAJOR_TO_MIDDLE
         }
-        self.best_scores = {node_id: 0.9 for node_id in graph.nodes}
+        for middle in MIDDLE_TO_CWE:
+            self.best_prompts[f"middle_{middle}"] = f"Judge {middle}: {{code}}"
+            for cwe in MIDDLE_TO_CWE[middle]:
+                self.best_prompts[f"cwe_{cwe}"] = f"Judge {cwe}: {{code}}"
+        self.best_scores = {prompt_key: 0.9 for prompt_key in self.best_prompts}
 
     def train_all_levels(self, n_rounds, n_samples_per_class, max_workers):
         return None
@@ -136,6 +139,8 @@ def test_run_evolution_workflow_emits_reproducibility_metadata(temp_dir, monkeyp
     )
 
     bundle = PromptBundleIO.load(summary["prompt_bundle"], load_mode="strict_v2")
+    memory_id = bundle.taxonomy.node_id_for_label("major", "Memory")
+    buffer_id = bundle.taxonomy.node_id_for_label("middle", "Buffer Errors")
 
     assert summary["runtime_prompt_format"] == "v2_bundle"
     assert summary["policy_class"] == "GreedyCascadePolicy"
@@ -147,6 +152,9 @@ def test_run_evolution_workflow_emits_reproducibility_metadata(temp_dir, monkeyp
     assert summary["active_ablations"] == []
     assert bundle.data_fingerprint == summary["dataset_hash"]
     assert bundle.code_revision == summary["git_sha"]
+    assert memory_id == "major_memory"
+    assert buffer_id == "middle_buffer_errors"
+    assert bundle.taxonomy.node(memory_id).display_name == "Memory"
 
 
 def test_run_evaluation_workflow_uses_non_benign_only_middle_and_cwe_counts(

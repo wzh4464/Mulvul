@@ -1,13 +1,14 @@
 from mulvul.mainline.artifacts import PromptArtifact
-from mulvul.mainline.bundle import PromptBundleAdapter
+from mulvul.mainline.bundle import NodeScoreResult, PromptBundleAdapter
 from mulvul.mainline.evaluator import EvaluationSample, MainlineEvaluator
 from mulvul.mainline.policy import DetectionPath, InferenceResult
-from mulvul.mainline.bundle import NodeScoreResult
 
 
 class DummyScorer:
     def score(self, node, ctx):
-        raise AssertionError("Evaluator test should use policy outputs, not scorer calls")
+        raise AssertionError(
+            "Evaluator test should use policy outputs, not scorer calls"
+        )
 
 
 class DummyPolicy:
@@ -44,10 +45,15 @@ def _node_result(node_id, target, decision, confidence, predicted=None):
 
 
 def test_mainline_evaluator_aggregates_policy_outputs():
-    artifact = PromptArtifact.from_mapping({"prompts": {"major_Memory": "major-memory"}})
+    artifact = PromptArtifact.from_mapping(
+        {"prompts": {"major_Memory": "major-memory"}}
+    )
     bundle = PromptBundleAdapter.from_artifact(artifact, allow_partial=True)
-    memory_accept = _node_result("major_Memory", "Memory", "accept", 0.91)
-    memory_reject = _node_result("major_Memory", "Memory", "reject", 0.10, predicted="Benign")
+    memory_id = bundle.taxonomy.node_id_for_label("major", "Memory")
+    memory_accept = _node_result(memory_id, "Memory", "accept", 0.91)
+    memory_reject = _node_result(
+        memory_id, "Memory", "reject", 0.10, predicted="Benign"
+    )
 
     evaluator = MainlineEvaluator()
     policy = DummyPolicy(
@@ -55,14 +61,14 @@ def test_mainline_evaluator_aggregates_policy_outputs():
             "vuln": InferenceResult(
                 prediction="Memory",
                 best_path=DetectionPath(
-                    node_ids=["major_Memory"],
+                    node_ids=[memory_id],
                     stage_results=[memory_accept],
                     final_label="Memory",
                     score=0.91,
                 ),
                 candidate_paths=[
                     DetectionPath(
-                        node_ids=["major_Memory"],
+                        node_ids=[memory_id],
                         stage_results=[memory_accept],
                         final_label="Memory",
                         score=0.91,
@@ -110,8 +116,8 @@ def test_mainline_evaluator_aggregates_policy_outputs():
     assert result.end_to_end_metrics["final_exact_match"] == 1.0
     assert result.end_to_end_metrics["major_accuracy"] == 1.0
     assert result.cost_metrics["avg_nodes_scored_per_sample"] == 1.0
-    assert result.node_metrics["major_Memory"].tp == 1
-    assert result.node_metrics["major_Memory"].tn == 1
+    assert result.node_metrics[memory_id].tp == 1
+    assert result.node_metrics[memory_id].tn == 1
 
 
 def test_mainline_evaluator_skips_benign_samples_for_middle_and_cwe_accuracy():
@@ -125,8 +131,11 @@ def test_mainline_evaluator_skips_benign_samples_for_middle_and_cwe_accuracy():
         }
     )
     bundle = PromptBundleAdapter.from_artifact(artifact, allow_partial=True)
-    memory_accept = _node_result("major_Memory", "Memory", "accept", 0.91)
-    benign_reject = _node_result("major_Memory", "Memory", "reject", 0.10, predicted="Benign")
+    memory_id = bundle.taxonomy.node_id_for_label("major", "Memory")
+    memory_accept = _node_result(memory_id, "Memory", "accept", 0.91)
+    benign_reject = _node_result(
+        memory_id, "Memory", "reject", 0.10, predicted="Benign"
+    )
 
     evaluator = MainlineEvaluator()
     policy = DummyPolicy(
@@ -134,14 +143,14 @@ def test_mainline_evaluator_skips_benign_samples_for_middle_and_cwe_accuracy():
             "vuln": InferenceResult(
                 prediction="Memory",
                 best_path=DetectionPath(
-                    node_ids=["major_Memory"],
+                    node_ids=[memory_id],
                     stage_results=[memory_accept],
                     final_label="Memory",
                     score=0.91,
                 ),
                 candidate_paths=[
                     DetectionPath(
-                        node_ids=["major_Memory"],
+                        node_ids=[memory_id],
                         stage_results=[memory_accept],
                         final_label="Memory",
                         score=0.91,

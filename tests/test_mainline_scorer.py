@@ -28,7 +28,7 @@ def _make_bundle(*, distrust_fallback: bool = True):
 
 
 def _make_ctx(bundle):
-    node = bundle.nodes["major_Memory"]
+    node = bundle.nodes[bundle.taxonomy.node_id_for_label("major", "Memory")]
     candidate_labels = bundle.taxonomy.decision_labels_for(node.node_id) + [
         bundle.taxonomy.benign_label
     ]

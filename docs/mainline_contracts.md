@@ -108,29 +108,32 @@ Minimal example:
     "stage_order": ["major", "middle", "cwe"],
     "benign_label": "Benign",
     "nodes": {
-      "major_Memory": {
-        "node_id": "major_Memory",
+      "major_memory": {
+        "node_id": "major_memory",
         "stage": "major",
         "label": "Memory",
+        "display_name": "Memory",
         "parent_id": null
       },
-      "middle_Buffer Errors": {
-        "node_id": "middle_Buffer Errors",
+      "middle_buffer_errors": {
+        "node_id": "middle_buffer_errors",
         "stage": "middle",
         "label": "Buffer Errors",
-        "parent_id": "major_Memory"
+        "display_name": "Buffer Errors",
+        "parent_id": "major_memory"
       },
-      "cwe_CWE-120": {
-        "node_id": "cwe_CWE-120",
+      "cwe_120": {
+        "node_id": "cwe_120",
         "stage": "cwe",
         "label": "CWE-120",
-        "parent_id": "middle_Buffer Errors"
+        "display_name": "CWE-120",
+        "parent_id": "middle_buffer_errors"
       }
     }
   },
   "nodes": {
-    "major_Memory": {
-      "node_id": "major_Memory",
+    "major_memory": {
+      "node_id": "major_memory",
       "stage": "major",
       "target_label": "Memory",
       "instruction_template": "Analyze {code}",
@@ -161,8 +164,11 @@ Contract rules:
 
 - `schema_version` must be `"2"`
 - `taxonomy.stage_order` must be `["major", "middle", "cwe"]`
+- `taxonomy.nodes[*].node_id` is a stable machine-facing identifier
+- `taxonomy.nodes[*].display_name` is the human-facing display string
 - Each `nodes[*].node_id` must exist in `taxonomy.nodes`
 - Each `nodes[*].target_label` and `nodes[*].stage` must match its taxonomy node
+- Loading a v1 artifact must normalize `major_<label>`, `middle_<label>`, and `cwe_<label>` keys to the stable v2 `node_id`
 - Invalid JSON, missing required top-level mappings, or schema mismatches fail fast
 
 ## `ranking_v2` Response

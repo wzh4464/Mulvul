@@ -8,12 +8,13 @@ forward definitions and must not be maintained separately elsewhere.
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from typing import Iterable, Literal
 
 BENIGN_LABEL = "Benign"
 UNKNOWN_LABEL = "Unknown"
 DEFAULT_MAJOR_LABEL = "Logic"
 DEFAULT_MIDDLE_LABEL = "Other"
+TaxonomyStage = Literal["major", "middle", "cwe"]
 
 # Forward mappings are the only hand-maintained taxonomy definitions.
 MAJOR_TO_MIDDLE: dict[str, list[str]] = {
@@ -119,6 +120,46 @@ CWE_DESCRIPTIONS: dict[str, str] = {
 }
 
 _CWE_REGEX = re.compile(r"CWE-(\d+)")
+_NODE_SUFFIX_REGEX = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify_node_suffix(label: str) -> str:
+    normalized = _NODE_SUFFIX_REGEX.sub("_", label.lower()).strip("_")
+    return normalized or "unknown"
+
+
+def major_node_id(major: str) -> str:
+    """Return the stable v2 node id for a major label."""
+
+    return f"major_{_slugify_node_suffix(major)}"
+
+
+def middle_node_id(middle: str) -> str:
+    """Return the stable v2 node id for a middle label."""
+
+    return f"middle_{_slugify_node_suffix(middle)}"
+
+
+def cwe_node_id(cwe: str | int) -> str:
+    """Return the stable v2 node id for a CWE label."""
+
+    label = normalize_cwe_label(cwe)
+    if label is None:
+        raise ValueError(f"Invalid CWE label for node id: {cwe!r}")
+    cwe_id = extract_cwe_id(label)
+    if cwe_id is None:
+        raise ValueError(f"Invalid CWE label for node id: {cwe!r}")
+    return f"cwe_{cwe_id}"
+
+
+def taxonomy_node_id(stage: TaxonomyStage, label: str) -> str:
+    """Return the stable v2 node id for a taxonomy stage/label pair."""
+
+    if stage == "major":
+        return major_node_id(label)
+    if stage == "middle":
+        return middle_node_id(label)
+    return cwe_node_id(label)
 
 
 def extract_cwe_id(cwe_str: str | int) -> int | None:
@@ -199,8 +240,7 @@ def validate_taxonomy() -> list[str]:
     orphan_middles = sorted(set(MIDDLE_TO_CWE) - set(seen_middles))
     if orphan_middles:
         errors.append(
-            "Middle categories are missing a major parent: "
-            + ", ".join(orphan_middles)
+            "Middle categories are missing a major parent: " + ", ".join(orphan_middles)
         )
 
     seen_cwes: dict[str, str] = {}
@@ -235,5 +275,17 @@ def validate_taxonomy() -> list[str]:
             "Reverse cwe-to-middle mapping is inconsistent for: "
             + ", ".join(sorted(reverse_cwe_errors))
         )
+
+    major_node_ids = [major_node_id(major) for major in MAJOR_TO_MIDDLE]
+    if len(major_node_ids) != len(set(major_node_ids)):
+        errors.append("Major labels produce duplicate stable node ids.")
+
+    middle_node_ids = [middle_node_id(middle) for middle in MIDDLE_TO_CWE]
+    if len(middle_node_ids) != len(set(middle_node_ids)):
+        errors.append("Middle labels produce duplicate stable node ids.")
+
+    cwe_node_ids = [cwe_node_id(cwe) for cwe in seen_cwes]
+    if len(cwe_node_ids) != len(set(cwe_node_ids)):
+        errors.append("CWE labels produce duplicate stable node ids.")
 
     return errors

@@ -38,7 +38,9 @@ def _make_bundle():
 
 def _result(node_id, stage, target, decision, target_confidence, predicted=None):
     predicted_label = predicted or target
-    top_confidence = target_confidence if predicted_label == target else max(target_confidence, 0.8)
+    top_confidence = (
+        target_confidence if predicted_label == target else max(target_confidence, 0.8)
+    )
     ranking = [(predicted_label, top_confidence)]
     if predicted_label != target:
         ranking.append((target, target_confidence))
@@ -61,13 +63,30 @@ def _result(node_id, stage, target, decision, target_confidence, predicted=None)
 
 def test_greedy_policy_matches_major_middle_cwe_behavior():
     bundle = _make_bundle()
+    memory_id = bundle.taxonomy.node_id_for_label("major", "Memory")
+    injection_id = bundle.taxonomy.node_id_for_label("major", "Injection")
+    buffer_id = bundle.taxonomy.node_id_for_label("middle", "Buffer Errors")
+    cwe_id = bundle.taxonomy.node_id_for_label("cwe", "CWE-120")
     provider = CountingEvidenceProvider()
     scorer = RecordingScorer(
         {
-            "major_Memory": _result("major_Memory", "major", "Memory", "accept", 0.91),
-            "major_Injection": _result("major_Injection", "major", "Injection", "reject", 0.10, predicted="Benign"),
-            "middle_Buffer Errors": _result("middle_Buffer Errors", "middle", "Buffer Errors", "accept", 0.84),
-            "cwe_CWE-120": _result("cwe_CWE-120", "cwe", "CWE-120", "accept", 0.88),
+            memory_id: _result(memory_id, "major", "Memory", "accept", 0.91),
+            injection_id: _result(
+                injection_id,
+                "major",
+                "Injection",
+                "reject",
+                0.10,
+                predicted="Benign",
+            ),
+            buffer_id: _result(
+                buffer_id,
+                "middle",
+                "Buffer Errors",
+                "accept",
+                0.84,
+            ),
+            cwe_id: _result(cwe_id, "cwe", "CWE-120", "accept", 0.88),
         }
     )
     policy = GreedyCascadePolicy(evidence_provider=provider)
@@ -85,13 +104,30 @@ def test_greedy_policy_matches_major_middle_cwe_behavior():
 
 def test_greedy_policy_stops_descendants_after_middle_rejection():
     bundle = _make_bundle()
+    memory_id = bundle.taxonomy.node_id_for_label("major", "Memory")
+    injection_id = bundle.taxonomy.node_id_for_label("major", "Injection")
+    buffer_id = bundle.taxonomy.node_id_for_label("middle", "Buffer Errors")
+    cwe_id = bundle.taxonomy.node_id_for_label("cwe", "CWE-120")
     provider = CountingEvidenceProvider()
     scorer = RecordingScorer(
         {
-            "major_Memory": _result("major_Memory", "major", "Memory", "accept", 0.91),
-            "major_Injection": _result("major_Injection", "major", "Injection", "reject", 0.10, predicted="Benign"),
-            "middle_Buffer Errors": _result("middle_Buffer Errors", "middle", "Buffer Errors", "abstain", 0.40),
-            "cwe_CWE-120": _result("cwe_CWE-120", "cwe", "CWE-120", "accept", 0.88),
+            memory_id: _result(memory_id, "major", "Memory", "accept", 0.91),
+            injection_id: _result(
+                injection_id,
+                "major",
+                "Injection",
+                "reject",
+                0.10,
+                predicted="Benign",
+            ),
+            buffer_id: _result(
+                buffer_id,
+                "middle",
+                "Buffer Errors",
+                "abstain",
+                0.40,
+            ),
+            cwe_id: _result(cwe_id, "cwe", "CWE-120", "accept", 0.88),
         }
     )
     policy = GreedyCascadePolicy(evidence_provider=provider)

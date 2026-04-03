@@ -7,7 +7,13 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Mapping, cast
 
-from mulvul.data.cwe_hierarchy import MAJOR_TO_MIDDLE, MIDDLE_TO_CWE
+from mulvul.data.cwe_hierarchy import (
+    MAJOR_TO_MIDDLE,
+    MIDDLE_TO_CWE,
+    cwe_node_id,
+    major_node_id,
+    middle_node_id,
+)
 
 from .artifacts import PromptArtifact
 
@@ -56,6 +62,7 @@ class TaxonomyNode:
     node_id: str
     stage: Stage
     label: str
+    display_name: str
     parent_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -63,10 +70,12 @@ class TaxonomyNode:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "TaxonomyNode":
+        label = str(data["label"])
         return cls(
             node_id=str(data["node_id"]),
             stage=str(data["stage"]),  # type: ignore[arg-type]
-            label=str(data["label"]),
+            label=label,
+            display_name=str(data.get("display_name", label)),
             parent_id=(
                 str(data["parent_id"]) if data.get("parent_id") is not None else None
             ),
@@ -98,6 +107,18 @@ class TaxonomyGraph:
 
     def labels_for_stage(self, stage: Stage) -> list[str]:
         return [self.node(node_id).label for node_id in self.node_ids_for_stage(stage)]
+
+    def display_names_for_stage(self, stage: Stage) -> list[str]:
+        return [
+            self.node(node_id).display_name
+            for node_id in self.node_ids_for_stage(stage)
+        ]
+
+    def node_id_for_label(self, stage: Stage, label: str) -> str:
+        for node in self.nodes.values():
+            if node.stage == stage and node.label == label:
+                return node.node_id
+        raise KeyError(f"No taxonomy node for stage={stage!r}, label={label!r}")
 
     def decision_labels_for(self, node_id: str) -> list[str]:
         node = self.node(node_id)
@@ -200,27 +221,30 @@ class TaxonomyGraph:
         nodes: dict[str, TaxonomyNode] = {}
 
         for major, middles in MAJOR_TO_MIDDLE.items():
-            major_id = f"major_{major}"
+            major_id = major_node_id(major)
             nodes[major_id] = TaxonomyNode(
                 node_id=major_id,
                 stage="major",
                 label=major,
+                display_name=major,
                 parent_id=None,
             )
             for middle in middles:
-                middle_id = f"middle_{middle}"
+                middle_id = middle_node_id(middle)
                 nodes[middle_id] = TaxonomyNode(
                     node_id=middle_id,
                     stage="middle",
                     label=middle,
+                    display_name=middle,
                     parent_id=major_id,
                 )
                 for cwe in MIDDLE_TO_CWE.get(middle, []):
-                    cwe_id = f"cwe_{cwe}"
+                    cwe_id = cwe_node_id(cwe)
                     nodes[cwe_id] = TaxonomyNode(
                         node_id=cwe_id,
                         stage="cwe",
                         label=cwe,
+                        display_name=cwe,
                         parent_id=middle_id,
                     )
 
@@ -518,7 +542,7 @@ class PromptBundleAdapter:
         nodes: dict[str, NodeSpec] = {}
 
         for label, prompt in artifact.router_prompts.items():
-            node_id = f"major_{label}"
+            node_id = taxonomy.node_id_for_label("major", label)
             nodes[node_id] = NodeSpec(
                 node_id=node_id,
                 stage="major",
@@ -529,7 +553,7 @@ class PromptBundleAdapter:
             )
 
         for label, prompt in artifact.middle_prompts.items():
-            node_id = f"middle_{label}"
+            node_id = taxonomy.node_id_for_label("middle", label)
             nodes[node_id] = NodeSpec(
                 node_id=node_id,
                 stage="middle",
@@ -540,7 +564,7 @@ class PromptBundleAdapter:
             )
 
         for label, prompt in artifact.cwe_prompts.items():
-            node_id = f"cwe_{label}"
+            node_id = taxonomy.node_id_for_label("cwe", label)
             nodes[node_id] = NodeSpec(
                 node_id=node_id,
                 stage="cwe",

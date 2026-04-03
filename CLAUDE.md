@@ -34,6 +34,7 @@ Mainline baseline means all of the following at once:
 - Only `MAJOR_TO_MIDDLE` and `MIDDLE_TO_CWE` are hand-maintained. `CWE_TO_MIDDLE` and `MIDDLE_TO_MAJOR` must be derived from them.
 - `src/mulvul/agents/hierarchical_detector.py` and mainline runtime modules may consume taxonomy mappings, but must not redefine them.
 - Evaluation may accept `prompt_artifact.json` or `prompt_bundle.json`, but execution always normalizes to `PromptBundle` before scoring.
+- In v2 bundles, `node_id` is the stable machine-facing identifier; human-facing names belong in `display_name`.
 - `Benign` terminates the cascade explicitly. Benign samples must serialize as `major="Benign", middle=null, cwe=null`.
 - Changes to taxonomy, artifact schema, adapter behavior, or `ranking_v2` parsing require contract tests.
 - In core training, routing, and evaluation logic, do not add broad catch-and-continue error handling. Boundary layers may use narrow exception handling for file I/O, network calls, JSON parsing, or endpoint fallback, but must preserve traceback and original context.
