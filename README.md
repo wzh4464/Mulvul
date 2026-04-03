@@ -1,73 +1,90 @@
-# Mulvul: Two-Line Prompt Evolution for Vulnerability Detection
+<p align="center">
+  <img src="https://img.shields.io/badge/Mulvul-Prompt_Evolution_for_Vulnerability_Detection-0d1117?style=for-the-badge&labelColor=161b22" alt="Mulvul" />
+</p>
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.9+" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" /></a>
+  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/badge/pkg-uv-blueviolet?style=flat-square" alt="uv" /></a>
+  <a href="https://github.com/wzh4464/Mulvul/issues"><img src="https://img.shields.io/badge/issues-GitHub-red?style=flat-square&logo=github" alt="Issues" /></a>
+</p>
 
-Mulvul is organized around two first-class workflows:
+<p align="center">
+  <b>Evolve LLM prompts. Detect real-world vulnerabilities. One cascade at a time.</b>
+</p>
 
-1. Evolve the best prompt for each router/detector stage.
-2. Freeze that prompt bundle and evaluate end-to-end vulnerability detection.
+---
 
-Other ideas such as RAG, parallel scoring, top-k routing, and alternative
-detectors should be treated as ablations layered on top of this baseline.
+## What is Mulvul?
 
-Minimal repository docs live in:
+Mulvul uses **evolutionary algorithms** to optimize LLM prompts for source-code vulnerability detection. Instead of hand-tuning a single monolithic prompt, it evolves **stage-specific prompts** across a three-level taxonomy — then freezes the best ones and evaluates end-to-end detection performance.
 
-- `docs/README.md`
-- `docs/MAINLINE_ARCHITECTURE.md`
-- `docs/ABLATIONS.md`
+```
+              Code Sample
+                  |
+          [ Major Router ]          Memory | Injection | Logic | Input | Crypto | Benign
+                  |
+         [ Middle Detector ]        Buffer Errors | Memory Mgmt | Pointer Deref | ...
+                  |
+          [ CWE Classifier ]        CWE-119 | CWE-120 | CWE-416 | CWE-476 | ...
+                  |
+          Detection Result
+```
 
-## 🎯 Focus Areas
+The cascade scores candidates at each level, multiplies confidences across the path, and picks the most likely vulnerability — or classifies the sample as benign.
 
-- **Vulnerability Detection**: Primary focus on code security analysis
-- **SVEN Dataset**: Support for CWE-based vulnerability classification
-- **Primevul Dataset**: Large-scale vulnerability detection dataset support
+## Two Workflows, Nothing More
 
-## ✨ Mainline Workflows
+| # | Workflow | What it does | Entry point |
+|:-:|:---------|:-------------|:------------|
+| 1 | **Evolve** | Train the best prompt for every router and detector node | `scripts/run_mainline_evolution.py` |
+| 2 | **Evaluate** | Freeze evolved prompts, measure detection accuracy | `scripts/run_mainline_evaluation.py` |
 
-- **Prompt Evolution**: Train stage-specific prompts for router and detector nodes.
-- **Frozen Evaluation**: Load the best prompt artifact and test vulnerability detection.
-- **Ablation Layering**: Add optional features back with explicit ablation flags.
+Everything else — RAG retrieval, parallel scoring, top-k routing — is an **ablation** layered on top.
 
-## 🚀 Quick Start
+## Quick Start
 
-### Installation
+### Install
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd Mulvul
-
-# Install with uv (recommended)
+git clone https://github.com/wzh4464/Mulvul.git && cd Mulvul
 uv sync
 ```
 
-### Configuration
+### Configure
 
-Create a `.env` file with your API configuration:
+Create a `.env` file:
 
 ```env
-API_BASE_URL=https://newapi.pockgo.com/v1
-API_KEY=your-api-key-here
+API_BASE_URL=https://api-inference.modelscope.cn/v1/
+API_KEY=your-key-here
 BACKUP_API_BASE_URL=https://newapi.aicohere.org/v1
-MODEL_NAME=kimi-k2-code
+MODEL_NAME=Qwen/Qwen3-Coder-480B-A35B-Instruct
 ```
 
-### Basic Usage
+Any OpenAI-compatible endpoint works. The client auto-falls back to `BACKUP_API_BASE_URL` if the primary fails.
+
+### Run
 
 ```bash
-# 1. Evolve best prompts for each stage
+# 1. Evolve prompts
 uv run python scripts/run_mainline_evolution.py \
   --train-file data/primevul/primevul/primevul_train.jsonl \
   --output-dir outputs/mainline/evolution
 
-# 2. Evaluate the frozen prompt bundle
+# 2. Evaluate frozen prompts
 uv run python scripts/run_mainline_evaluation.py \
   --eval-file data/primevul/primevul/primevul_valid.jsonl \
-  --prompts-path outputs/mainline/evolution/prompt_artifact.json \
-  --output-dir outputs/mainline/evaluation
+  --prompts-path outputs/mainline/evolution/prompt_artifact.json
 
-# Optional ablations
+# Or use the CLI
+uv run mulvul evolve   --train-file <path> --output-dir <path>
+uv run mulvul evaluate --eval-file <path> --prompts-path <path>
+```
+
+### Ablations
+
+```bash
 uv run python scripts/run_mainline_evaluation.py \
   --eval-file data/primevul/primevul/primevul_valid.jsonl \
   --prompts-path outputs/mainline/evolution/prompt_artifact.json \
@@ -75,171 +92,124 @@ uv run python scripts/run_mainline_evaluation.py \
   --ablation parallel
 ```
 
-## 📊 Supported Datasets
+Available ablations: `rag` (inject retrieved evidence), `parallel` (concurrent scoring), `topk-router` (explore top-k cascade paths).
 
-### SVEN Dataset
-- **CWE Types**: 9 common vulnerability types
-- **Format**: JSONL with function context
-- **Location**: `data/vul_detection/sven/`
+## Taxonomy
 
-### Primevul Dataset  
-- **Scale**: 24,000+ vulnerability samples
-- **Format**: JSONL with code analysis
-- **Location**: `data/primevul/primevul/`
+<table>
+<tr>
+<th>Major (6)</th>
+<th>Middle (13)</th>
+<th>CWE (46 types)</th>
+</tr>
+<tr>
+<td>
 
-## 🧬 Evolutionary Algorithms
+`Memory`<br>`Injection`<br>`Logic`<br>`Input`<br>`Crypto`<br>`Benign`
 
-### Differential Evolution (DE)
-- Continuous optimization approach
-- Good for fine-tuning prompts
-- Configurable mutation and crossover rates
+</td>
+<td>
 
-### Genetic Algorithm (GA)
-- Population-based optimization
-- Diverse prompt generation
-- Tournament selection and crossover
+Buffer Errors, Memory Management,<br>
+Pointer Dereference, Integer Errors,<br>
+Injection, Concurrency Issues,<br>
+Information Exposure, Resource Management,<br>
+Access Control, Other,<br>
+Path Traversal, Input Validation,<br>
+Cryptography Issues
 
-## 📁 Project Structure
+</td>
+<td>
+
+CWE-119, CWE-120, CWE-125,<br>
+CWE-416, CWE-476, CWE-190,<br>
+CWE-787, CWE-200, CWE-264,<br>
+CWE-399, CWE-310, ...
+
+</td>
+</tr>
+</table>
+
+> Single source of truth: [`src/mulvul/data/cwe_hierarchy.py`](src/mulvul/data/cwe_hierarchy.py). Only `MAJOR_TO_MIDDLE` and `MIDDLE_TO_CWE` are hand-maintained; reverse maps are derived.
+
+## Architecture
 
 ```
-Mulvul/
-├── src/mulvul/mainline/   # First-class workflows and prompt artifacts
-├── src/mulvul/agents/     # Reused router/detector building blocks
-├── src/mulvul/rag/        # Retrieval components, only via ablations
-├── scripts/ablations/        # Legacy experiments, demos, and utilities
-├── scripts/run_mainline_evolution.py
-├── scripts/run_mainline_evaluation.py
-└── tests/test_mainline_*.py
+src/mulvul/
+├── mainline/                 # First-class runtime
+│   ├── bundle.py             # PromptBundle, TaxonomyGraph, NodeSpec (v2 format)
+│   ├── artifacts.py          # PromptArtifact (v1 compatibility)
+│   ├── scorer.py             # LLMNodeScorer — prompt rendering + ranking_v2 parsing
+│   ├── policy.py             # GreedyCascadePolicy / TopKCascadePolicy
+│   ├── system.py             # MainlineDetectorSystem — top-level detect()
+│   ├── evaluator.py          # MainlineEvaluator — accuracy & F1 metrics
+│   ├── workflows.py          # End-to-end workflow orchestration
+│   └── ablations.py          # AblationConfig (rag, parallel, topk-router)
+├── agents/                   # Training & sampling
+│   ├── hierarchical_trainer.py
+│   ├── hierarchical_detector.py
+│   └── hierarchical_sampler.py
+├── data/                     # Taxonomy & dataset loading
+│   └── cwe_hierarchy.py      # The taxonomy source of truth
+├── llm/                      # LLM client abstraction
+│   └── client.py             # OpenAI-compatible, auto-fallback
+├── rag/                      # Retrieval (ablation only)
+│   └── retriever.py
+└── cli.py                    # `mulvul evolve` / `mulvul evaluate`
 ```
 
-## 🔧 API Usage
+### Prompt Artifact Flow
 
-### SVEN-Compatible Client
-
-```python
-from mulvul import sven_llm_init, sven_llm_query
-
-# Initialize client
-client = sven_llm_init()
-
-# Single query
-result = sven_llm_query("Analyze this code for vulnerabilities", client, task=True)
-
-# Batch queries
-results = sven_llm_query(["query1", "query2"], client, task=True)
+```
+ Evolution                              Evaluation
+ ─────────                              ──────────
+ HierarchicalSampler                    Load v1 or v2
+       │                                      │
+ HierarchicalTrainer                    PromptBundleAdapter
+   (N rounds × stage)                   (normalize → PromptBundle)
+       │                                      │
+  PromptArtifact (v1)  ──────────►    MainlineDetectorSystem
+  PromptBundle   (v2)                    ├─ LLMNodeScorer
+                                         ├─ CascadePolicy
+                                         └─ detect(code) → result
+                                              │
+                                       MainlineEvaluator
+                                         └─ accuracy, F1
 ```
 
-### Vulnerability Detection Workflow
+## Datasets
 
-```python
-from mulvul import VulnerabilityDetectionWorkflow
+| Dataset | Scale | Location |
+|:--------|:------|:---------|
+| **PrimeVul** | 24,000+ samples | `data/primevul/primevul/` |
+| **SVEN** | 9 CWE types | `data/vul_detection/sven/` |
 
-# Configure experiment
-config = {
-    "algorithm": "de",
-    "population_size": 10,
-    "max_generations": 5,
-    "llm_type": "sven"
-}
+Expected JSONL format:
 
-# Run evolution
-workflow = VulnerabilityDetectionWorkflow(config)
-results = workflow.run()
+```json
+{"func": "void f(char *src) { char buf[8]; strcpy(buf, src); }", "target": 1, "cwe": ["CWE-120"]}
+{"func": "int add(int a, int b) { return a + b; }", "target": 0, "cwe": []}
 ```
 
-## 📈 Performance Tracking
-
-Mulvul provides comprehensive tracking of the evolution process:
-
-- **Real-time Logging**: All prompt updates recorded in `prompt_evolution.jsonl`
-- **Best Prompts**: History of best-performing prompts
-- **Fitness Tracking**: Complete fitness evolution over generations
-- **LLM Call History**: All API calls logged for analysis
-
-## 🧪 Example Results
-
-### Primevul 1% Demo Results
-- **Total Samples**: 100 (balanced: 50 benign + 50 vulnerable)
-- **Evolution Generations**: 4
-- **LLM Calls**: 924
-- **Output Files**: 5 detailed tracking files
-
-## 🔄 Development Commands
+## Development
 
 ```bash
-# Mainline workflows
-uv run python scripts/run_mainline_evolution.py
-uv run python scripts/run_mainline_evaluation.py
+# Tests
+uv run pytest tests/                    # all
+uv run pytest tests/test_mainline_system.py::TestMainlineDetectorSystem::test_detect  # one
 
-# Legacy experiments and ablations
-uv run python scripts/ablations/<name>.py
-
-# Run tests
-uv run pytest tests/
-
-# Check code quality
-uv run ruff check src/
-uv run mypy src/
+# Formatting & linting
+uv run black src tests
+uv run isort src tests
+uv run ruff check src
+uv run mypy src
 ```
 
-## 🧪 Response Parsing Harness
+Detailed design invariants and contract specifications live in:
+- [`CLAUDE.md`](CLAUDE.md) — defaults, invariants, required validation
+- [`docs/mainline_contracts.md`](docs/mainline_contracts.md) — payload schemas and fail-fast rules
+- [`docs/MAINLINE_ARCHITECTURE.md`](docs/MAINLINE_ARCHITECTURE.md) — workflow-level architecture
 
-Use `scripts/ablations/verify_response_parsing.py` to run a handful of real LLM calls and
-confirm that the parser recovers the intended labels:
+## License
 
-```bash
-uv run python scripts/ablations/verify_response_parsing.py \
-  --llm-type openai \
-  --model-name gpt-4o-mini \
-  --sample-file data/primevul_1percent_sample/dev_sample.jsonl \
-  --max-samples 3 \
-  --temperature 0.0 \
-  --verbose
-```
-
-- To run with full PrimeVul samples and output archiving:
-
-```bash
-uv run python scripts/ablations/verify_response_parsing.py \
-  --model-name gpt-4o \
-  --sample-file data/primevul_1percent_sample/dev_sample.jsonl \
-  --max-samples 10 \
-  --temperature 0.0 \
-  --verbose \
-  --use-cwe-major \
-  --output-json result.json
-```
-
-- Runs against a real LLM by default; ensure `API_KEY`, `API_BASE_URL`, `MODEL_NAME` are set in `.env`.
-- Use `--use-cwe-major` mode to verify major-category classification parsing.
-- For offline debugging, pass `--mock-response "benign"` to reuse a single response (no real API validation).
-- Use `--output-json` to save per-sample prompts, raw responses, and parsed results for further analysis.
-
-> By default, `pytest` will not run `tests/test_response_parsing.py`.
-> To include it in the test run, set `RUN_RESPONSE_PARSING_TESTS=1` before the command.
-
-## 📋 Requirements
-
-- Python 3.11+
-- uv package manager
-- API access (configured in .env)
-
-## 🤝 Contributing
-
-1. Focus on vulnerability detection improvements
-2. Maintain SVEN compatibility
-3. Follow modern Python practices
-4. Add comprehensive tests
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🔗 Related Projects
-
-- **SVEN**: Vulnerability detection submodule
-- **Primevul**: Large-scale vulnerability dataset
-
----
-
-**Note**: Mulvul now uses `src/mulvul` as the canonical package namespace throughout the repository. Mainline workflows live at the top level, while older experiments stay under `scripts/ablations/`.
+[MIT](LICENSE)
