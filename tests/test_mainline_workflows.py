@@ -30,7 +30,7 @@ class FakeTrainer:
                 self.best_prompts[f"cwe_{cwe}"] = f"Judge {cwe}: {{code}}"
         self.best_scores = {prompt_key: 0.9 for prompt_key in self.best_prompts}
 
-    def train_all_levels(self, n_rounds, n_samples_per_class, max_workers):
+    def train_all_levels(self, n_rounds, n_samples_per_class, population_size=5, tournament_k=3, migration_rate=0.2, max_workers=8):
         return None
 
     def save_best_prompts(self):
@@ -129,7 +129,7 @@ def test_run_evolution_workflow_emits_reproducibility_metadata(temp_dir, monkeyp
         "mulvul.mainline.workflows.HierarchicalSampler",
         lambda path: object(),
     )
-    monkeypatch.setattr("mulvul.mainline.workflows.HierarchicalTrainer", FakeTrainer)
+    monkeypatch.setattr("mulvul.mainline.workflows.CoevolutionaryTrainer", FakeTrainer)
 
     summary = run_evolution_workflow(
         EvolutionWorkflowConfig(

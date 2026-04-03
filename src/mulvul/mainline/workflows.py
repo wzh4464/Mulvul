@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from mulvul.agents.hierarchical_sampler import HierarchicalSampler
-from mulvul.agents.hierarchical_trainer import HierarchicalTrainer
+from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
 from mulvul.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
 from mulvul.llm.client import create_llm_client, load_env_vars
 from mulvul.rag.retriever import MulVulRetriever
@@ -40,6 +40,9 @@ class EvolutionWorkflowConfig:
     samples_per_class: int = 50
     max_workers: int = 8
     llm_type: Optional[str] = None
+    population_size: int = 5
+    tournament_k: int = 3
+    migration_rate: float = 0.2
 
 
 @dataclass
@@ -118,7 +121,7 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         MulVulRetriever(knowledge_base_path=config.kb_path) if config.kb_path else None
     )
     sampler = HierarchicalSampler(config.train_file)
-    trainer = HierarchicalTrainer(
+    trainer = CoevolutionaryTrainer(
         llm_client=llm_client,
         sampler=sampler,
         retriever=retriever,
@@ -128,6 +131,9 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
     trainer.train_all_levels(
         n_rounds=config.rounds,
         n_samples_per_class=config.samples_per_class,
+        population_size=config.population_size,
+        tournament_k=config.tournament_k,
+        migration_rate=config.migration_rate,
         max_workers=config.max_workers,
     )
     trainer.save_best_prompts()
