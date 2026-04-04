@@ -289,6 +289,26 @@ class CoevolutionaryTrainer:
         with save_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
+    def _save_incremental_prompts(self, gen: int) -> None:
+        """Persist current best prompts after every node tournament.
+
+        Written atomically so the file is always valid JSON even if the
+        process is killed mid-write.  This ensures prompt texts survive
+        interruptions without waiting for a full-generation checkpoint.
+        """
+        save_path = Path(self.output_dir) / "prompts_incremental.json"
+        tmp_path = save_path.with_suffix(".tmp")
+        data = {
+            "generation": gen,
+            "prompts": dict(self.best_prompts),
+            "scores": {k: round(v, 6) for k, v in self.best_scores.items()},
+            "timestamp": datetime.now().isoformat(),
+            "node_count": len(self.best_prompts),
+        }
+        with tmp_path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        tmp_path.rename(save_path)
+
     # ------------------------------------------------------------------
     # Checkpoint save / restore
     # ------------------------------------------------------------------
@@ -542,6 +562,13 @@ class CoevolutionaryTrainer:
                     "scoring_failure_count": node_failures,
                 },
             )
+
+            # Incremental save: persist best prompt per node immediately
+            best_ind = pop.best()
+            if key not in self.best_scores or best_ind.node_fitness > self.best_scores.get(key, 0):
+                self.best_prompts[key] = best_ind.prompt
+                self.best_scores[key] = best_ind.node_fitness
+            self._save_incremental_prompts(gen)
 
         if scoring_failure_count > 0:
             logger.warning(
