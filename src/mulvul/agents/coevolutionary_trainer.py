@@ -159,6 +159,7 @@ class CoevolutionaryTrainer:
         self.populations: Dict[str, NodePopulation] = {}
         self.best_prompts: Dict[str, str] = {}
         self.best_scores: Dict[str, float] = {}
+        self._max_workers: int = 8
         self.log = EvolutionLog(Path(output_dir) / "evolution.jsonl")
 
     # ------------------------------------------------------------------
@@ -182,6 +183,7 @@ class CoevolutionaryTrainer:
         long-running jobs can survive interruptions.
         """
 
+        self._max_workers = max_workers
         start_gen = self._try_restore_checkpoint(population_size)
 
         for gen in range(start_gen, n_rounds):
@@ -616,28 +618,36 @@ class CoevolutionaryTrainer:
             retriever=self.retriever,
         )
 
+        def _score_one(sample: TrainingSample) -> Tuple[str, bool, bool]:
+            """Score a single sample. Returns (predicted, is_target, failed)."""
+            try:
+                results = detector.detect(sample.code, top_k=1)
+                predicted = results[0][0] if results else "Benign"
+                return predicted, sample.label == "target", False
+            except Exception:
+                return "Benign", sample.label == "target", True
+
+        # Concurrent sample scoring
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         tp = 0
         fp = 0
         fn = 0
         failure_count = 0
 
-        for sample in samples:
-            try:
-                results = detector.detect(sample.code, top_k=1)
-                predicted = results[0][0] if results else "Benign"
-            except Exception:
-                predicted = "Benign"
-                failure_count += 1
-
-            is_target = sample.label == "target"
-            pred_is_target = predicted == target
-
-            if is_target and pred_is_target:
-                tp += 1
-            elif pred_is_target and not is_target:
-                fp += 1
-            elif is_target and not pred_is_target:
-                fn += 1
+        with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            futures = [executor.submit(_score_one, s) for s in samples]
+            for future in as_completed(futures):
+                predicted, is_target, failed = future.result()
+                if failed:
+                    failure_count += 1
+                pred_is_target = predicted == target
+                if is_target and pred_is_target:
+                    tp += 1
+                elif pred_is_target and not is_target:
+                    fp += 1
+                elif is_target and not pred_is_target:
+                    fn += 1
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
