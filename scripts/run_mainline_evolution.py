@@ -27,6 +27,8 @@ def main() -> int:
     parser.add_argument("--samples-per-class", type=int, default=50)
     parser.add_argument("--max-workers", type=int, default=8)
     parser.add_argument("--llm-type", default=None)
+    parser.add_argument("--phase1-only", action="store_true",
+                        help="Run only Phase 1 (tournament), skip cascade eval and evolution")
     args = parser.parse_args()
 
     summary = run_evolution_workflow(
@@ -38,6 +40,7 @@ def main() -> int:
             samples_per_class=args.samples_per_class,
             max_workers=args.max_workers,
             llm_type=args.llm_type,
+            phase1_only=args.phase1_only,
         )
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))

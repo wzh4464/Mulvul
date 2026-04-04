@@ -173,6 +173,7 @@ class CoevolutionaryTrainer:
         tournament_k: int = 3,
         migration_rate: float = 0.1,
         max_workers: int = 8,
+        phase1_only: bool = False,
     ) -> Dict[str, str]:
         """Run the full coevolutionary loop and return best prompts.
 
@@ -195,6 +196,24 @@ class CoevolutionaryTrainer:
                 tournament_k=tournament_k,
                 gen=gen,
             )
+
+            # Save intermediate checkpoint after Phase 1 so results are not lost
+            for key, pop in self.populations.items():
+                best_ind = pop.best()
+                if key not in self.best_scores or best_ind.node_fitness > self.best_scores.get(key, 0):
+                    self.best_prompts[key] = best_ind.prompt
+                    self.best_scores[key] = best_ind.node_fitness
+            self._save_checkpoint(gen, n_rounds, population_size)
+
+            if phase1_only:
+                self.log.emit("phase1_complete", {
+                    "generation": gen,
+                    "node_count": len(representatives),
+                    "avg_node_f1": round(
+                        sum(r.node_fitness for r in representatives.values()) / max(len(representatives), 1), 4
+                    ),
+                })
+                continue
 
             # Phase 2 -- cascade evaluation
             e2e_accuracy, errors, detect_failures = self._phase2_cascade_eval(

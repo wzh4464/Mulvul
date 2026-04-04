@@ -43,6 +43,7 @@ class EvolutionWorkflowConfig:
     population_size: int = 5
     tournament_k: int = 3
     migration_rate: float = 0.2
+    phase1_only: bool = False
 
 
 @dataclass
@@ -135,6 +136,7 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         tournament_k=config.tournament_k,
         migration_rate=config.migration_rate,
         max_workers=config.max_workers,
+        phase1_only=config.phase1_only,
     )
     trainer.save_best_prompts()
 
