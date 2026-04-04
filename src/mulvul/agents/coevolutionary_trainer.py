@@ -624,10 +624,14 @@ class CoevolutionaryTrainer:
             logger.warning("Cascade eval failed to build system: %s", exc)
             return 0.0, [], 0
 
-        # Gather a small evaluation set from all stages
+        # Gather a small evaluation set — keep it small since each sample
+        # triggers a full 3-level cascade (3-6 LLM calls sequentially).
+        cascade_eval_per_major = max(2, min(5, n_samples // 6))
         eval_samples: List[TrainingSample] = []
         for major in self.sampler.get_all_majors():
-            eval_samples.extend(self.sampler.sample_for_major(major, n_samples))
+            eval_samples.extend(
+                self.sampler.sample_for_major(major, cascade_eval_per_major)
+            )
 
         if not eval_samples:
             return 0.0, [], 0
