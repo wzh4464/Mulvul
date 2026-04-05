@@ -15,10 +15,12 @@ from typing import Any, Dict, List, Tuple
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
 from mulvul.data.cwe_hierarchy import (
+    CWE_TO_GROUP,
     CWE_TO_MIDDLE,
     MAJOR_TO_MIDDLE,
     MIDDLE_TO_CWE,
     MIDDLE_TO_MAJOR,
+    compressed_candidates,
 )
 from mulvul.mainline.artifacts import PromptArtifact
 from mulvul.mainline.system import MainlineDetectorSystem
@@ -450,7 +452,7 @@ class CoevolutionaryTrainer:
         for cwe in all_cwes:
             key = f"cwe_{cwe}"
             parent_middle = CWE_TO_MIDDLE.get(cwe, "Other")
-            candidates = MIDDLE_TO_CWE.get(parent_middle, []) + ["Benign"]
+            candidates = compressed_candidates(parent_middle) + ["Benign"]
             individuals = [
                 PromptIndividual(
                     prompt=self._generate_seed_prompt("cwe", cwe, candidates),
@@ -607,7 +609,7 @@ class CoevolutionaryTrainer:
             candidates = MAJOR_TO_MIDDLE.get(parent_major, []) + ["Benign"]
         else:
             parent_middle = CWE_TO_MIDDLE.get(target, "Other")
-            candidates = MIDDLE_TO_CWE.get(parent_middle, []) + ["Benign"]
+            candidates = compressed_candidates(parent_middle) + ["Benign"]
 
         detector = LevelDetector(
             level=stage,
@@ -635,13 +637,22 @@ class CoevolutionaryTrainer:
         fn = 0
         failure_count = 0
 
+        # For CWE stage, normalize through groups so predictions within
+        # the same family count as correct (e.g., CWE-120 matches CWE-121).
+        effective_target = target
+        if stage == "cwe":
+            effective_target = CWE_TO_GROUP.get(target, target)
+
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = [executor.submit(_score_one, s) for s in samples]
             for future in as_completed(futures):
                 predicted, is_target, failed = future.result()
                 if failed:
                     failure_count += 1
-                pred_is_target = predicted == target
+                effective_predicted = predicted
+                if stage == "cwe":
+                    effective_predicted = CWE_TO_GROUP.get(predicted, predicted)
+                pred_is_target = effective_predicted == effective_target
                 if is_target and pred_is_target:
                     tp += 1
                 elif pred_is_target and not is_target:

@@ -98,6 +98,45 @@ def _derive_cwe_to_middle(
 MIDDLE_TO_MAJOR: dict[str, str] = _derive_middle_to_major(MAJOR_TO_MIDDLE)
 CWE_TO_MIDDLE: dict[str, str] = _derive_cwe_to_middle(MIDDLE_TO_CWE)
 
+# Groups of semantically overlapping CWEs. The first element is the
+# representative used when the cascade operates in "compressed" mode.
+CWE_GROUPS: dict[str, list[str]] = {
+    # Buffer overflow family -> representative CWE-119
+    "CWE-119": ["CWE-119", "CWE-120", "CWE-121", "CWE-122", "CWE-787", "CWE-805"],
+    # Resource leak family -> representative CWE-401
+    "CWE-401": ["CWE-401", "CWE-772"],
+    # Injection family -> representative CWE-74
+    "CWE-74": ["CWE-74", "CWE-77"],
+    # Crypto weakness family -> representative CWE-310
+    "CWE-310": ["CWE-310", "CWE-326", "CWE-327", "CWE-330"],
+    # Access control family -> representative CWE-264
+    "CWE-264": ["CWE-264", "CWE-269", "CWE-284"],
+}
+
+# Reverse mapping: member CWE -> group representative
+CWE_TO_GROUP: dict[str, str] = {}
+for _rep, _members in CWE_GROUPS.items():
+    for _member in _members:
+        CWE_TO_GROUP[_member] = _rep
+
+
+def compressed_candidates(middle: str) -> list[str]:
+    """Return a compressed candidate list for a middle category.
+
+    Replaces grouped CWEs with their representative, removing duplicates.
+    This reduces candidate list sizes (e.g., Buffer Errors from 9 to 4).
+    """
+    raw = MIDDLE_TO_CWE.get(middle, [])
+    seen: set[str] = set()
+    compressed: list[str] = []
+    for cwe in raw:
+        rep = CWE_TO_GROUP.get(cwe, cwe)
+        if rep not in seen:
+            seen.add(rep)
+            compressed.append(rep)
+    return compressed
+
+
 MAJOR_CATEGORIES = [*MAJOR_TO_MIDDLE.keys(), BENIGN_LABEL]
 MIDDLE_CATEGORIES = list(MIDDLE_TO_CWE.keys())
 
