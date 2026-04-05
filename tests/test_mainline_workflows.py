@@ -8,6 +8,7 @@ from mulvul.mainline.bundle import PromptBundleIO
 from mulvul.mainline.workflows import (
     EvaluationWorkflowConfig,
     EvolutionWorkflowConfig,
+    MAX_SUMMARY_RECORDS,
     load_jsonl,
     run_evaluation_workflow,
     run_evolution_workflow,
@@ -219,9 +220,11 @@ def test_run_evaluation_workflow_uses_non_benign_only_middle_and_cwe_counts(
     assert len(summary["prompt_bundle_hash"]) == 64
 
 
+@pytest.mark.parametrize("max_samples", [10, 50, 120, None])
 def test_run_evaluation_workflow_streams_input_and_caps_records(
     temp_dir,
     monkeypatch,
+    max_samples,
 ):
     eval_file = temp_dir / "streamed.jsonl"
     eval_file.write_text("", encoding="utf-8")
@@ -261,10 +264,12 @@ def test_run_evaluation_workflow_streams_input_and_caps_records(
             eval_file=str(eval_file),
             prompts_path=str(prompts_path),
             output_dir=str(temp_dir / "evaluation"),
+            max_samples=max_samples,
         )
     )
 
-    assert summary["samples"] == 150
-    assert len(summary["records"]) == 100
+    expected_samples = 150 if max_samples is None else max_samples
+    assert summary["samples"] == expected_samples
+    assert len(summary["records"]) == min(MAX_SUMMARY_RECORDS, expected_samples)
     assert summary["records"][0]["ground_truth"]["cwe"] == "CWE-120"
     assert summary["accuracy"]["major"] == 1.0

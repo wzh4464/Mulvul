@@ -27,6 +27,7 @@ from .system import MainlineDetectorSystem
 
 REQUIRED_DATASET_FIELDS: tuple[str, ...] = ("func", "target", "cwe")
 MAINLINE_ROOT = Path(__file__).resolve().parents[3]
+MAX_SUMMARY_RECORDS = 100
 
 
 @dataclass
@@ -275,7 +276,7 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         if result.major == gt_major:
             per_major[gt_major]["correct"] += 1
 
-        if len(records) < 100:
+        if len(records) < MAX_SUMMARY_RECORDS:
             records.append(
                 {
                     "ground_truth": {
