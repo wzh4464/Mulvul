@@ -8,6 +8,7 @@ from mulvul.mainline.bundle import PromptBundleIO
 from mulvul.mainline.workflows import (
     EvaluationWorkflowConfig,
     EvolutionWorkflowConfig,
+    MAX_SUMMARY_RECORDS,
     load_jsonl,
     run_evaluation_workflow,
     run_evolution_workflow,
@@ -30,7 +31,16 @@ class FakeTrainer:
                 self.best_prompts[f"cwe_{cwe}"] = f"Judge {cwe}: {{code}}"
         self.best_scores = {prompt_key: 0.9 for prompt_key in self.best_prompts}
 
-    def train_all_levels(self, n_rounds, n_samples_per_class, population_size=5, tournament_k=3, migration_rate=0.2, max_workers=8):
+    def train_all_levels(
+        self,
+        n_rounds,
+        n_samples_per_class,
+        population_size=5,
+        tournament_k=3,
+        migration_rate=0.2,
+        max_workers=8,
+        phase1_only=False,
+    ):
         return None
 
     def save_best_prompts(self):
@@ -208,3 +218,58 @@ def test_run_evaluation_workflow_uses_non_benign_only_middle_and_cwe_counts(
     assert summary["records"][1]["prediction"]["middle"] is None
     assert len(summary["prompt_artifact_hash"]) == 64
     assert len(summary["prompt_bundle_hash"]) == 64
+
+
+@pytest.mark.parametrize("max_samples", [10, 50, 120, None])
+def test_run_evaluation_workflow_streams_input_and_caps_records(
+    temp_dir,
+    monkeypatch,
+    max_samples,
+):
+    eval_file = temp_dir / "streamed.jsonl"
+    eval_file.write_text("", encoding="utf-8")
+    prompts_path = temp_dir / "prompt_artifact.json"
+    PromptArtifact.from_mapping(
+        {
+            "prompts": {
+                "major_Memory": "major-memory",
+                "middle_Buffer Errors": "middle-buffer",
+                "cwe_CWE-120": "cwe-120",
+            }
+        }
+    ).save(prompts_path)
+
+    monkeypatch.setattr("mulvul.mainline.workflows.load_env_vars", lambda: None)
+    monkeypatch.setattr(
+        "mulvul.mainline.workflows.create_llm_client",
+        lambda llm_type=None: StubLLMClient(),
+    )
+    monkeypatch.setattr("mulvul.mainline.workflows.MainlineDetectorSystem", FakeSystem)
+    monkeypatch.setattr(
+        "mulvul.mainline.workflows.load_jsonl",
+        lambda path: pytest.fail("run_evaluation_workflow should stream unbalanced input"),
+    )
+    monkeypatch.setattr(
+        "mulvul.mainline.workflows.iter_jsonl",
+        lambda path: iter(
+            [
+                {"func": f"strcpy(buf_{idx}, src);", "target": 1, "cwe": ["CWE-120"]}
+                for idx in range(150)
+            ]
+        ),
+    )
+
+    summary = run_evaluation_workflow(
+        EvaluationWorkflowConfig(
+            eval_file=str(eval_file),
+            prompts_path=str(prompts_path),
+            output_dir=str(temp_dir / "evaluation"),
+            max_samples=max_samples,
+        )
+    )
+
+    expected_samples = 150 if max_samples is None else max_samples
+    assert summary["samples"] == expected_samples
+    assert len(summary["records"]) == min(MAX_SUMMARY_RECORDS, expected_samples)
+    assert summary["records"][0]["ground_truth"]["cwe"] == "CWE-120"
+    assert summary["accuracy"]["major"] == 1.0

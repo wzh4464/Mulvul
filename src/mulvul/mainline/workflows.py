@@ -12,7 +12,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
 
 from mulvul.agents.hierarchical_sampler import HierarchicalSampler
 from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
@@ -27,6 +27,7 @@ from .system import MainlineDetectorSystem
 
 REQUIRED_DATASET_FIELDS: tuple[str, ...] = ("func", "target", "cwe")
 MAINLINE_ROOT = Path(__file__).resolve().parents[3]
+MAX_SUMMARY_RECORDS = 100
 
 
 @dataclass
@@ -65,7 +66,12 @@ class EvaluationWorkflowConfig:
 def load_jsonl(path: str) -> List[Dict[str, Any]]:
     """Load JSONL records from disk."""
 
-    records: List[Dict[str, Any]] = []
+    return list(iter_jsonl(path))
+
+
+def iter_jsonl(path: str) -> Iterator[Dict[str, Any]]:
+    """Yield validated JSONL records from disk one line at a time."""
+
     with open(path, "r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
@@ -76,10 +82,7 @@ def load_jsonl(path: str) -> List[Dict[str, Any]]:
                 raise ValueError(
                     f"Invalid JSON in {path} at line {line_number}: {exc.msg}"
                 ) from exc
-            records.append(
-                _validate_jsonl_record(record, path=path, line_number=line_number)
-            )
-    return records
+            yield _validate_jsonl_record(record, path=path, line_number=line_number)
 
 
 def get_ground_truth(item: Dict[str, Any]) -> Tuple[str | None, str | None, str]:
@@ -220,17 +223,19 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         retriever=retriever,
     )
 
-    samples = load_jsonl(config.eval_file)
     if config.balanced:
-        samples = balanced_sample(samples, config.seed)
-    if config.max_samples is not None:
-        samples = samples[: config.max_samples]
+        samples_iter = iter(
+            balanced_sample(load_jsonl(config.eval_file), config.seed)
+        )
+    else:
+        samples_iter = iter_jsonl(config.eval_file)
 
     timestamp = datetime.now().isoformat()
     dataset_hash = _sha256_file(config.eval_file)
     git_sha = _current_git_sha()
     start = time.time()
     records: list[dict[str, Any]] = []
+    sample_count = 0
     metrics: dict[str, dict[str, int]] = {
         "major": {"correct": 0, "total": 0},
         "middle": {"correct": 0, "total": 0},
@@ -241,7 +246,11 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         lambda: {"total": 0, "correct": 0}
     )
 
-    for item in samples:
+    for item in samples_iter:
+        if config.max_samples is not None and sample_count >= config.max_samples:
+            break
+
+        sample_count += 1
         gt_cwe, gt_middle, gt_major = get_ground_truth(item)
         result = system.detect(item["func"])
         pred_binary = "Vulnerable" if result.is_vulnerable else "Benign"
@@ -267,17 +276,18 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         if result.major == gt_major:
             per_major[gt_major]["correct"] += 1
 
-        records.append(
-            {
-                "ground_truth": {
-                    "major": gt_major,
-                    "middle": gt_middle,
-                    "cwe": gt_cwe,
-                    "binary": gt_binary,
-                },
-                "prediction": result.to_dict(),
-            }
-        )
+        if len(records) < MAX_SUMMARY_RECORDS:
+            records.append(
+                {
+                    "ground_truth": {
+                        "major": gt_major,
+                        "middle": gt_middle,
+                        "cwe": gt_cwe,
+                        "binary": gt_binary,
+                    },
+                    "prediction": result.to_dict(),
+                }
+            )
 
     elapsed = time.time() - start
     summary: Dict[str, Any] = {
@@ -303,7 +313,7 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         ),
         "prompt_bundle_hash": _sha256_json(bundle_or_artifact.to_dict()),
         "policy_class": type(system.policy).__name__,
-        "samples": len(samples),
+        "samples": sample_count,
         "elapsed_seconds": elapsed,
         "accuracy": {
             level: (values["correct"] / values["total"] if values["total"] else 0.0)
@@ -311,7 +321,7 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
         },
         "counts": metrics,
         "per_major": {key: dict(value) for key, value in per_major.items()},
-        "records": records[:100],
+        "records": records,
     }
 
     output_dir = Path(config.output_dir)
