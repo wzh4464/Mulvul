@@ -15,8 +15,11 @@ from typing import Any, Dict, List, Tuple
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
 from mulvul.data.cwe_hierarchy import (
+    CWE_DESCRIPTIONS,
     CWE_TO_MIDDLE,
+    MAJOR_DESCRIPTIONS,
     MAJOR_TO_MIDDLE,
+    MIDDLE_DESCRIPTIONS,
     MIDDLE_TO_CWE,
     MIDDLE_TO_MAJOR,
 )
@@ -465,30 +468,53 @@ class CoevolutionaryTrainer:
     def _generate_seed_prompt(
         self, stage: str, target: str, candidates: List[str]
     ) -> str:
-        """Return an initial prompt template for *target* at the given *stage*."""
+        """Return an initial prompt template for *target* at the given *stage*.
 
-        candidates_str = ", ".join(candidates)
+        Prompts include semantic descriptions of candidates so the LLM can
+        distinguish between similar taxonomy labels (e.g. CWE-119 vs CWE-121).
+        """
 
         if stage == "major":
+            target_desc = MAJOR_DESCRIPTIONS.get(target, "")
+            target_info = f"{target} ({target_desc})" if target_desc else target
+            candidates_with_desc = []
+            for c in candidates:
+                desc = MAJOR_DESCRIPTIONS.get(c, "")
+                candidates_with_desc.append(f"{c}: {desc}" if desc else c)
+            candidates_str = "\n- ".join(candidates_with_desc)
             return (
-                f"You are a security expert specializing in {target} vulnerabilities.\n"
-                f"Classify the code into one of: {candidates_str}.\n\n"
+                f"You are a security expert specializing in {target_info}.\n"
+                f"Classify the code into one of:\n- {candidates_str}\n\n"
                 "## Evidence:\n{evidence}\n\n"
                 "## Code:\n```\n{code}\n```\n\n"
                 '## Output (JSON):\n{{"predictions":[{{"category":"...","confidence":0.0}}]}}'
             )
         if stage == "middle":
+            target_desc = MIDDLE_DESCRIPTIONS.get(target, "")
+            target_info = f"{target} ({target_desc})" if target_desc else target
+            candidates_with_desc = []
+            for c in candidates:
+                desc = MIDDLE_DESCRIPTIONS.get(c, "")
+                candidates_with_desc.append(f"{c}: {desc}" if desc else c)
+            candidates_str = "\n- ".join(candidates_with_desc)
             return (
-                f"You are a {target} vulnerability expert.\n"
-                f"Classify the code into one of: {candidates_str}.\n\n"
+                f"You are a {target_info} vulnerability expert.\n"
+                f"Classify the code into one of:\n- {candidates_str}\n\n"
                 "## Evidence:\n{evidence}\n\n"
                 "## Code:\n```\n{code}\n```\n\n"
                 '## Output (JSON):\n{{"predictions":[{{"category":"...","confidence":0.0}}]}}'
             )
         # cwe
+        target_desc = CWE_DESCRIPTIONS.get(target, "")
+        target_info = f"{target} ({target_desc})" if target_desc else target
+        candidates_with_desc = []
+        for c in candidates:
+            desc = CWE_DESCRIPTIONS.get(c, "")
+            candidates_with_desc.append(f"{c}: {desc}" if desc else c)
+        candidates_str = "\n- ".join(candidates_with_desc)
         return (
-            f"Identify if this code has {target}.\n"
-            f"Possible CWEs: {candidates_str}.\n\n"
+            f"Identify if this code has {target_info}.\n"
+            f"Possible classifications:\n- {candidates_str}\n\n"
             "## Evidence:\n{evidence}\n\n"
             "## Code:\n```\n{code}\n```\n\n"
             '## Output (JSON):\n{{"predictions":[{{"cwe":"CWE-XXX","confidence":0.0}}]}}'

@@ -1,7 +1,10 @@
 from mulvul.data.cwe_hierarchy import (
     BENIGN_LABEL,
+    CWE_DESCRIPTIONS,
     CWE_TO_MIDDLE,
+    MAJOR_DESCRIPTIONS,
     MAJOR_TO_MIDDLE,
+    MIDDLE_DESCRIPTIONS,
     MIDDLE_TO_CWE,
     MIDDLE_TO_MAJOR,
     cwe_node_id,
@@ -56,3 +59,19 @@ def test_stable_v2_node_ids_are_machine_friendly_and_unique():
     assert len(major_ids) == len(set(major_ids))
     assert len(middle_ids) == len(set(middle_ids))
     assert len(cwe_ids) == len(set(cwe_ids))
+
+
+def test_all_cwes_have_descriptions():
+    all_cwes = {cwe for cwes in MIDDLE_TO_CWE.values() for cwe in cwes}
+    missing = all_cwes - set(CWE_DESCRIPTIONS.keys())
+    assert not missing, f"CWEs missing descriptions: {missing}"
+
+
+def test_all_majors_have_descriptions():
+    missing = set(MAJOR_TO_MIDDLE.keys()) - set(MAJOR_DESCRIPTIONS.keys())
+    assert not missing, f"Major categories missing descriptions: {missing}"
+
+
+def test_all_middles_have_descriptions():
+    missing = set(MIDDLE_TO_CWE.keys()) - set(MIDDLE_DESCRIPTIONS.keys())
+    assert not missing, f"Middle categories missing descriptions: {missing}"

@@ -316,6 +316,51 @@ class TestErrorRouting:
         assert trainer._route_error_to_node(err) is None
 
 
+class TestSeedPromptDescriptions:
+    """Verify that seed prompts include CWE/category descriptions."""
+
+    def test_cwe_seed_prompt_contains_description(self):
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        prompt = trainer._generate_seed_prompt(
+            "cwe", "CWE-120", ["CWE-119", "CWE-120", "Benign"]
+        )
+        # Target description should appear
+        assert "bounds checking" in prompt.lower() or "buffer overflow" in prompt.lower()
+        # Both candidate CWEs should appear
+        assert "CWE-119" in prompt
+        assert "CWE-120" in prompt
+        # Candidate descriptions should appear
+        assert "buffer" in prompt.lower()
+
+    def test_cwe_seed_prompt_lists_candidates_with_descriptions(self):
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        prompt = trainer._generate_seed_prompt(
+            "cwe", "CWE-416", ["CWE-401", "CWE-415", "CWE-416", "CWE-772", "Benign"]
+        )
+        assert "use after free" in prompt.lower()
+        assert "double free" in prompt.lower()
+        assert "memory leak" in prompt.lower()
+
+    def test_major_seed_prompt_contains_description(self):
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        prompt = trainer._generate_seed_prompt(
+            "major", "Memory", ["Memory", "Injection", "Logic", "Input", "Crypto", "Benign"]
+        )
+        assert "memory safety" in prompt.lower() or "buffer overflow" in prompt.lower()
+        assert "Memory" in prompt
+        assert "Injection" in prompt
+
+    def test_middle_seed_prompt_contains_description(self):
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        prompt = trainer._generate_seed_prompt(
+            "middle", "Buffer Errors",
+            ["Buffer Errors", "Memory Management", "Pointer Dereference", "Integer Errors", "Benign"],
+        )
+        assert "buffer" in prompt.lower()
+        assert "Buffer Errors" in prompt
+        assert "Memory Management" in prompt
+
+
 class TestCheckpointResuming:
     def test_checkpoint_created_after_generation(self, tmp_path):
         trainer = CoevolutionaryTrainer(
