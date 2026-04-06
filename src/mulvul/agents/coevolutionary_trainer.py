@@ -893,6 +893,7 @@ class CoevolutionaryTrainer:
             idx = match.start()
             return prompt[:idx], prompt[idx:]
         # Fallback: can't find split point, protect everything
+        logger.debug("No split marker found in prompt (%d chars); fully protected", len(prompt))
         return "", prompt
 
     # ------------------------------------------------------------------
@@ -1018,7 +1019,7 @@ class CoevolutionaryTrainer:
                 )
                 result = self.meta_llm.generate(migrate_request)
                 result = result.strip()
-                if len(result) >= 20:
+                if len(result) >= _MIN_LLM_OUTPUT_LEN:
                     recipient.prompt = self._reassemble(result, protected_recipient)
                     recipient.origin = "migration"
             except Exception:
