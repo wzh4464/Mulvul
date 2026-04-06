@@ -76,6 +76,9 @@ def main() -> int:
 
     cwe_pool: dict[str, list[dict]] = defaultdict(list)
     parse_errors = 0
+    skipped_short = 0
+    skipped_no_cwe = 0
+    skipped_benign = 0
     with open(args.train_file, "r", encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             if not line.strip():
@@ -86,13 +89,16 @@ def main() -> int:
                 parse_errors += 1
                 continue
             if int(item.get("target", 0)) == 0:
+                skipped_benign += 1
                 continue
             cwes = item.get("cwe", [])
             if not cwes:
+                skipped_no_cwe += 1
                 continue
             cwe = select_primary_cwe(cwes)
             code = item.get("func", "")
             if len(code) < args.min_code_length:
+                skipped_short += 1
                 continue
             cwe_pool[cwe].append(
                 {
@@ -134,6 +140,10 @@ def main() -> int:
     print(
         f"KB: {len(by_cwe)} CWEs, {len(by_middle)} middles, "
         f"{len(by_major)} majors, {total} total samples"
+    )
+    print(
+        f"Filtered: {skipped_benign} benign, {skipped_short} short code, "
+        f"{skipped_no_cwe} missing CWE"
     )
     if parse_errors:
         print(f"Warning: {parse_errors} lines skipped due to JSON parse errors")
