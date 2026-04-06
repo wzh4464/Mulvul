@@ -10,7 +10,7 @@ from typing import Iterable, List
 class AblationConfig:
     """Optional extensions on top of the mainline workflow."""
 
-    use_retrieval: bool = False
+    use_retrieval: bool = True
     parallel_scoring: bool = False
     major_top_k: int = 1
     middle_top_k: int = 1

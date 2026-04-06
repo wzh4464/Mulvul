@@ -21,7 +21,7 @@ Mainline baseline means all of the following at once:
 
 - Routing policy: `GreedyCascadePolicy`
 - `top_k = 1` at major and middle stages
-- No RAG
+- RAG enabled by default (auto-discovers `knowledge_base.json` next to eval file)
 - No parallel scoring
 - Evaluation uses frozen prompts only
 - Evaluation input may be v1 artifact or v2 bundle, but runtime execution uses a normalized `PromptBundle`

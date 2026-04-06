@@ -209,9 +209,18 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
     load_env_vars()
     llm_client = _create_runtime_client(config.llm_type)
     ablation_config = apply_ablation_presets(config.ablations, AblationConfig())
+
+    # RAG is enabled by default.  Resolve KB path: explicit > sibling of
+    # eval_file > disabled.
+    kb_path = config.kb_path
+    if kb_path is None and ablation_config.use_retrieval:
+        candidate = Path(config.eval_file).parent / "knowledge_base.json"
+        if candidate.exists():
+            kb_path = str(candidate)
+
     retriever = (
-        MulVulRetriever(knowledge_base_path=config.kb_path)
-        if config.kb_path and ablation_config.use_retrieval
+        MulVulRetriever(knowledge_base_path=kb_path)
+        if kb_path and ablation_config.use_retrieval
         else None
     )
     prompt_format = _detect_prompt_format(config.prompts_path)
