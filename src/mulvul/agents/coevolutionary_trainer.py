@@ -819,8 +819,21 @@ class CoevolutionaryTrainer:
                 errors_by_node[node_key].append(err)
 
         # Per-population evolution
+        # Elitism: skip mutation/crossover for nodes whose best individual
+        # already exceeds the threshold — avoids degrading good prompts.
+        elitism_threshold = 0.5
+
         for key, pop in self.populations.items():
             if pop.size < 2:
+                continue
+
+            best_f1 = pop.best().node_fitness
+            if best_f1 >= elitism_threshold:
+                self.log.emit("elitism_skip", {
+                    "node": key, "generation": gen,
+                    "best_f1": round(best_f1, 4),
+                    "threshold": elitism_threshold,
+                })
                 continue
 
             node_errors = errors_by_node.get(key, [])
