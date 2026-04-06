@@ -316,6 +316,213 @@ class TestErrorRouting:
         assert trainer._route_error_to_node(err) is None
 
 
+class TestConstrainedMutation:
+    def test_split_prompt_finds_evidence_marker(self):
+        from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        prompt = (
+            "You are a security expert.\n"
+            "Classify into: Memory, Injection, Benign.\n\n"
+            "## Evidence:\n{evidence}\n\n"
+            "## Code:\n```\n{code}\n```\n\n"
+            '## Output (JSON):\n{{"predictions":[]}}'
+        )
+        mutable, protected = trainer._split_prompt(prompt)
+        assert "security expert" in mutable
+        assert "{evidence}" in protected
+        assert "{code}" in protected
+        assert "predictions" in protected
+        assert "{evidence}" not in mutable
+
+    def test_split_prompt_returns_empty_mutable_if_no_marker(self):
+        from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        mutable, protected = trainer._split_prompt("no markers here")
+        assert mutable == ""
+        assert protected == "no markers here"
+
+    def test_split_prompt_fallback_to_evidence_placeholder(self):
+        from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        prompt = "Role description.\n\n{evidence}\n\n{code}"
+        mutable, protected = trainer._split_prompt(prompt)
+        assert "Role description" in mutable
+        assert "{evidence}" in protected
+
+    def test_mutate_preserves_protected_region(self, tmp_path):
+        """Verify that mutation output still contains {code} and {evidence}."""
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        class FakeMeta:
+            def generate(self, prompt, **kw):
+                return "Improved: You are an expert at finding buffer overflows."
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.meta_llm = FakeMeta()
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        original = (
+            "You are a security expert.\n"
+            "Classify into: Memory, Benign.\n\n"
+            "## Evidence:\n{evidence}\n\n"
+            "## Code:\n```\n{code}\n```\n\n"
+            '## Output (JSON):\n{{"predictions":[]}}'
+        )
+        errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
+
+        result = trainer._mutate_prompt(original, errors, "major_Memory")
+
+        assert "{evidence}" in result
+        assert "{code}" in result
+        assert "predictions" in result
+        assert "buffer overflow" in result.lower()
+        trainer.log.close()
+
+    def test_mutate_returns_original_when_no_errors(self, tmp_path):
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        original = "Some prompt\n\n## Evidence:\n{evidence}\n\n## Code:\n{code}"
+        result = trainer._mutate_prompt(original, [], "major_Memory")
+        assert result == original
+        trainer.log.close()
+
+    def test_mutate_returns_original_when_no_split_point(self, tmp_path):
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        class FakeMeta:
+            def generate(self, prompt, **kw):
+                return "Improved prompt without structure."
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.meta_llm = FakeMeta()
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        original = "No markers in this prompt"
+        errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
+        result = trainer._mutate_prompt(original, errors, "major_Memory")
+        assert result == original
+        trainer.log.close()
+
+    def test_mutate_returns_original_on_short_llm_response(self, tmp_path):
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        class FakeMeta:
+            def generate(self, prompt, **kw):
+                return "Too short"
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.meta_llm = FakeMeta()
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        original = "You are an expert.\n\n## Evidence:\n{evidence}\n\n## Code:\n{code}"
+        errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
+        result = trainer._mutate_prompt(original, errors, "major_Memory")
+        assert result == original
+        trainer.log.close()
+
+    def test_crossover_preserves_protected_region(self, tmp_path):
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        class FakeMeta:
+            def generate(self, prompt, **kw):
+                return "Merged: Expert at both memory and injection issues."
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.meta_llm = FakeMeta()
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        protected_part = "## Evidence:\n{evidence}\n\n## Code:\n```\n{code}\n```"
+        prompt_a = "Expert in memory.\n\n" + protected_part
+        prompt_b = "Expert in injection.\n\n" + protected_part
+
+        result = trainer._crossover_prompts(prompt_a, prompt_b, "major_Memory")
+
+        assert "{evidence}" in result
+        assert "{code}" in result
+        assert "Merged" in result
+        trainer.log.close()
+
+    def test_crossover_returns_prompt_a_when_no_split(self, tmp_path):
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        class FakeMeta:
+            def generate(self, prompt, **kw):
+                return "Should not be used."
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.meta_llm = FakeMeta()
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        prompt_a = "No markers in A"
+        prompt_b = "No markers in B"
+
+        result = trainer._crossover_prompts(prompt_a, prompt_b, "major_Memory")
+        assert result == prompt_a
+        trainer.log.close()
+
+    def test_mutate_does_not_send_protected_region_to_llm(self, tmp_path):
+        """Verify the meta-LLM never sees the protected region content."""
+        from mulvul.agents.coevolutionary_trainer import (
+            CoevolutionaryTrainer,
+            EvolutionLog,
+        )
+
+        captured_prompts = []
+
+        class CapturingMeta:
+            def generate(self, prompt, **kw):
+                captured_prompts.append(prompt)
+                return "Improved instruction with better decision boundaries."
+
+        trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
+        trainer.meta_llm = CapturingMeta()
+        trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+
+        original = (
+            "You are a security expert.\n"
+            "Classify into: Memory, Benign.\n\n"
+            "## Evidence:\n{evidence}\n\n"
+            "## Code:\n```\n{code}\n```\n\n"
+            '## Output (JSON):\n{{"predictions":[]}}'
+        )
+        errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
+        trainer._mutate_prompt(original, errors, "major_Memory")
+
+        assert len(captured_prompts) == 1
+        llm_input = captured_prompts[0]
+        # The protected footer sections should not appear in the LLM input
+        assert "## Evidence:" not in llm_input
+        assert "## Code:" not in llm_input
+        assert "## Output (JSON):" not in llm_input
+        # The mutable header content should be present
+        assert "security expert" in llm_input
+        trainer.log.close()
+
+
 class TestCheckpointResuming:
     def test_checkpoint_created_after_generation(self, tmp_path):
         trainer = CoevolutionaryTrainer(

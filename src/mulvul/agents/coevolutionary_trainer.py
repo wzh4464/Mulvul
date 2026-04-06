@@ -853,56 +853,109 @@ class CoevolutionaryTrainer:
         if random.random() < migration_rate:
             self._migrate_across_stage()
 
+    # ------------------------------------------------------------------
+    # Prompt splitting helper
+    # ------------------------------------------------------------------
+
+    def _split_prompt(self, prompt: str) -> Tuple[str, str]:
+        """Split prompt into (mutable_header, protected_footer).
+
+        The split point is ``## Evidence:`` -- everything before it is mutable
+        (role, candidates, rules), everything from it onward is protected
+        (evidence/code placeholders, JSON output format).
+        """
+        markers = ["## Evidence:", "## Evidence", "{evidence}"]
+        for marker in markers:
+            idx = prompt.find(marker)
+            if idx > 0:
+                return prompt[:idx], prompt[idx:]
+        # Fallback: can't find split point, protect everything
+        return "", prompt
+
+    # ------------------------------------------------------------------
+    # Constrained mutation / crossover
+    # ------------------------------------------------------------------
+
     def _mutate_prompt(
         self,
         prompt: str,
         errors: List[Dict[str, Any]],
         node_key: str,
     ) -> str:
-        """Use the meta-LLM to rewrite *prompt* given cascade errors."""
+        """Use the meta-LLM to improve the mutable region of a prompt.
+
+        The prompt is split at ``## Evidence:`` into a mutable header (role,
+        candidates, rules) and a protected footer (evidence/code placeholders,
+        JSON output format).  Only the header is sent for rewriting.
+        """
         if not errors:
+            return prompt
+
+        mutable, protected = self._split_prompt(prompt)
+        if not mutable:
             return prompt
 
         error_summary = json.dumps(errors[:5], ensure_ascii=False)
         mutation_request = (
-            f"The following prompt for node '{node_key}' produced cascade errors:\n"
-            f"--- PROMPT ---\n{prompt[:1500]}\n"
-            f"--- ERRORS ---\n{error_summary}\n\n"
-            "Rewrite the prompt to fix the errors.  Keep {code} and {evidence} "
-            "placeholders and JSON output format.  Return ONLY the new prompt."
+            f"Improve this vulnerability detection instruction for node '{node_key}'.\n\n"
+            f"--- CURRENT INSTRUCTION ---\n{mutable.strip()}\n"
+            f"--- END INSTRUCTION ---\n\n"
+            f"Cascade errors attributed to this node:\n{error_summary}\n\n"
+            "You may:\n"
+            "- Add decision boundaries between candidates (e.g., 'Choose X only when...')\n"
+            "- Add brief descriptions after candidate names\n"
+            "- Refine the role description or task framing\n"
+            "- Add reasoning hints based on the error patterns\n\n"
+            "You must NOT:\n"
+            "- Remove any candidate from the list\n"
+            "- Add {{code}}, {{evidence}}, or JSON format — those are handled separately\n\n"
+            "Return ONLY the improved instruction text, nothing else."
         )
         try:
             result = self.meta_llm.generate(mutation_request)
-            # Basic validation: the result should contain placeholders
-            if "{code}" in result and len(result) > 50:
-                return result
+            result = result.strip()
+            # Basic validation
+            if len(result) < 20:
+                return prompt
+            # Reassemble
+            return result + "\n\n" + protected
         except Exception:
-            pass
-        return prompt
+            return prompt
 
     def _crossover_prompts(
         self, prompt_a: str, prompt_b: str, node_key: str
     ) -> str:
-        """Use the meta-LLM to merge two parent prompts."""
+        """Merge the mutable regions of two prompts, preserving protected structure."""
+        mutable_a, protected_a = self._split_prompt(prompt_a)
+        mutable_b, _ = self._split_prompt(prompt_b)
+
+        if not mutable_a or not mutable_b:
+            return prompt_a
+
         crossover_request = (
-            f"Merge these two prompts for node '{node_key}' into a single "
-            "improved prompt.  Keep {code} and {evidence} placeholders and "
-            "JSON output format.  Return ONLY the merged prompt.\n\n"
-            f"--- PROMPT A ---\n{prompt_a[:1000]}\n\n"
-            f"--- PROMPT B ---\n{prompt_b[:1000]}"
+            f"Merge the strengths of these two instructions for node '{node_key}'.\n\n"
+            f"--- INSTRUCTION A ---\n{mutable_a.strip()}\n"
+            f"--- INSTRUCTION B ---\n{mutable_b.strip()}\n"
+            f"--- END ---\n\n"
+            "Create a single improved instruction combining the best elements.\n"
+            "Do NOT include {{code}}, {{evidence}}, or JSON output format.\n"
+            "Return ONLY the merged instruction text."
         )
         try:
             result = self.meta_llm.generate(crossover_request)
-            if "{code}" in result and len(result) > 50:
-                return result
+            result = result.strip()
+            if len(result) < 20:
+                return prompt_a
+            return result + "\n\n" + protected_a
         except Exception:
-            pass
-        # Fallback: return the better prompt (by length heuristic, as we
-        # can't score them here)
-        return prompt_a
+            return prompt_a
 
     def _migrate_across_stage(self) -> None:
-        """Best-in-stage donates its prompt to the worst-in-stage."""
+        """Best-in-stage donates its prompt style to the worst-in-stage.
+
+        Only the mutable header (role, candidates, rules) is transplanted;
+        the protected footer of the recipient is preserved.
+        """
         by_stage: Dict[str, List[NodePopulation]] = defaultdict(list)
         for pop in self.populations.values():
             by_stage[pop.stage].append(pop)
@@ -916,18 +969,34 @@ class CoevolutionaryTrainer:
                 continue
             donor = best_pop.best()
             recipient = worst_pop.worst()
+
+            mutable_donor, _ = self._split_prompt(donor.prompt)
+            mutable_recipient, protected_recipient = self._split_prompt(
+                recipient.prompt
+            )
+
+            if not mutable_donor or not mutable_recipient:
+                continue
+
             try:
                 migrate_request = (
-                    f"Adapt the following donor prompt for node "
-                    f"'{worst_pop.node_key}' (stage={stage}).\n\n"
-                    f"--- DONOR ---\n{donor.prompt[:1000]}\n\n"
-                    f"--- CURRENT ---\n{recipient.prompt[:1000]}\n\n"
-                    "Return ONLY the adapted prompt. Keep {{code}} and "
-                    "{{evidence}} placeholders."
+                    f"Adapt this instruction's style for node "
+                    f"'{worst_pop.node_key}'.\n\n"
+                    f"--- DONOR INSTRUCTION (works well) ---\n"
+                    f"{mutable_donor.strip()}\n"
+                    f"--- CURRENT INSTRUCTION ---\n"
+                    f"{mutable_recipient.strip()}\n"
+                    f"--- END ---\n\n"
+                    "Adapt the donor's reasoning style and structure for "
+                    "the target node.\n"
+                    "Change domain-specific content only. Do NOT include "
+                    "{{code}}, {{evidence}}, or JSON.\n"
+                    "Return ONLY the adapted instruction."
                 )
                 result = self.meta_llm.generate(migrate_request)
-                if "{code}" in result and len(result) > 50:
-                    recipient.prompt = result
+                result = result.strip()
+                if len(result) >= 20:
+                    recipient.prompt = result + "\n\n" + protected_recipient
                     recipient.origin = "migration"
             except Exception:
                 pass
