@@ -870,18 +870,24 @@ class CoevolutionaryTrainer:
     # Prompt splitting helper
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _reassemble(mutable: str, protected: str) -> str:
+        """Join mutable header and protected footer with normalized spacing."""
+        return mutable.rstrip() + "\n\n" + protected.lstrip()
+
     def _split_prompt(self, prompt: str) -> Tuple[str, str]:
         """Split prompt into (mutable_header, protected_footer).
 
-        The split point is ``## Evidence:`` -- everything before it is mutable
-        (role, candidates, rules), everything from it onward is protected
-        (evidence/code placeholders, JSON output format).
+        The split point is a heading or placeholder containing 'evidence'.
+        Uses case-insensitive regex so the split survives template changes
+        (e.g., ``## Evidence:``, ``## evidence``, ``{evidence}``).
         """
-        markers = ["## Evidence:", "## Evidence", "{evidence}"]
-        for marker in markers:
-            idx = prompt.find(marker)
-            if idx > 0:
-                return prompt[:idx], prompt[idx:]
+        import re
+
+        match = re.search(r"(?i)(^|\n)(##\s*evidence\b|{evidence})", prompt)
+        if match and match.start() > 0:
+            idx = match.start()
+            return prompt[:idx], prompt[idx:]
         # Fallback: can't find split point, protect everything
         return "", prompt
 
@@ -931,7 +937,7 @@ class CoevolutionaryTrainer:
             if len(result) < 20:
                 return prompt
             # Reassemble
-            return result + "\n\n" + protected
+            return self._reassemble(result, protected)
         except Exception:
             return prompt
 
@@ -959,7 +965,7 @@ class CoevolutionaryTrainer:
             result = result.strip()
             if len(result) < 20:
                 return prompt_a
-            return result + "\n\n" + protected_a
+            return self._reassemble(result, protected_a)
         except Exception:
             return prompt_a
 
@@ -1009,7 +1015,7 @@ class CoevolutionaryTrainer:
                 result = self.meta_llm.generate(migrate_request)
                 result = result.strip()
                 if len(result) >= 20:
-                    recipient.prompt = result + "\n\n" + protected_recipient
+                    recipient.prompt = self._reassemble(result, protected_recipient)
                     recipient.origin = "migration"
             except Exception:
                 pass
