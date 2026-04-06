@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import random
+import re
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,6 +25,9 @@ from mulvul.mainline.artifacts import PromptArtifact
 from mulvul.mainline.system import MainlineDetectorSystem
 
 logger = logging.getLogger(__name__)
+
+_SPLIT_RE = re.compile(r"(?i)(^|\n)(##\s*evidence\b|\{evidence\})")
+_MIN_LLM_OUTPUT_LEN = 20
 
 
 class EvolutionLog:
@@ -884,9 +888,7 @@ class CoevolutionaryTrainer:
         Uses case-insensitive regex so the split survives template changes
         (e.g., ``## Evidence:``, ``## evidence``, ``{evidence}``).
         """
-        import re
-
-        match = re.search(r"(?i)(^|\n)(##\s*evidence\b|\{evidence\})", prompt)
+        match = _SPLIT_RE.search(prompt)
         if match and match.start() > 0:
             idx = match.start()
             return prompt[:idx], prompt[idx:]
@@ -936,7 +938,7 @@ class CoevolutionaryTrainer:
             result = self.meta_llm.generate(mutation_request)
             result = result.strip()
             # Basic validation
-            if len(result) < 20:
+            if len(result) < _MIN_LLM_OUTPUT_LEN:
                 return prompt
             # Reassemble
             return self._reassemble(result, protected)
@@ -965,7 +967,7 @@ class CoevolutionaryTrainer:
         try:
             result = self.meta_llm.generate(crossover_request)
             result = result.strip()
-            if len(result) < 20:
+            if len(result) < _MIN_LLM_OUTPUT_LEN:
                 return prompt_a
             return self._reassemble(result, protected_a)
         except Exception:
