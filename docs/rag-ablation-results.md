@@ -4,11 +4,11 @@
 
 | Parameter | Baseline | RAG |
 |-----------|----------|-----|
-| Eval data | PrimeVul valid (balanced 200 samples) |
-| Prompts | `prompt_artifact.json` from v0.2.0 coevolution |
-| Scorer LLM | GPT-5.4 (OpenRouter) |
-| Cascade policy | GreedyCascadePolicy (top-1) |
-| Knowledge base | - | 429 samples (5 per CWE, hierarchical) |
+| Eval data | PrimeVul valid (balanced 200) | PrimeVul valid (balanced 200) |
+| Prompts | v0.2.0 coevolution artifact | v0.2.0 coevolution artifact |
+| Scorer LLM | GPT-5.4 (OpenRouter) | GPT-5.4 (OpenRouter) |
+| Cascade policy | GreedyCascadePolicy (top-1) | GreedyCascadePolicy (top-1) |
+| Knowledge base | None | 429 samples (5 per CWE) |
 | `--ablation rag` | No | Yes |
 
 ## Results

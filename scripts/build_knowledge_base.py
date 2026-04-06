@@ -14,6 +14,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from mulvul.data.cwe_hierarchy import CWE_TO_MIDDLE, MIDDLE_TO_MAJOR
 
+DEFAULT_MIN_CODE_LENGTH = 50
+DEFAULT_MAX_CODE_LENGTH = 2000
+DEFAULT_MAX_DESC_LENGTH = 200
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -23,6 +27,18 @@ def main() -> int:
     parser.add_argument("--output", default="data/primevul/knowledge_base.json")
     parser.add_argument("--samples-per-cwe", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--min-code-length", type=int, default=DEFAULT_MIN_CODE_LENGTH,
+        help=f"Skip samples with code shorter than this (default: {DEFAULT_MIN_CODE_LENGTH})",
+    )
+    parser.add_argument(
+        "--max-code-length", type=int, default=DEFAULT_MAX_CODE_LENGTH,
+        help=f"Truncate code to this length (default: {DEFAULT_MAX_CODE_LENGTH})",
+    )
+    parser.add_argument(
+        "--max-desc-length", type=int, default=DEFAULT_MAX_DESC_LENGTH,
+        help=f"Truncate descriptions to this length (default: {DEFAULT_MAX_DESC_LENGTH})",
+    )
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -40,24 +56,27 @@ def main() -> int:
                 continue
             cwe = cwes[0] if isinstance(cwes, list) else cwes
             code = item.get("func", "")
-            if len(code) < 50:
+            if len(code) < args.min_code_length:
                 continue
             cwe_pool[cwe].append(
                 {
-                    "code": code[:2000],
+                    "code": code[: args.max_code_length],
                     "cwe": cwe,
-                    "description": item.get("cve_desc", "")[:200],
+                    "description": item.get("cve_desc", "")[: args.max_desc_length],
                 }
             )
 
     by_major: dict[str, list[dict]] = defaultdict(list)
     by_middle: dict[str, list[dict]] = defaultdict(list)
     by_cwe: dict[str, list[dict]] = defaultdict(list)
+    fallback_count = 0
 
     for cwe, samples in cwe_pool.items():
         selected = random.sample(samples, min(args.samples_per_cwe, len(samples)))
         mid = CWE_TO_MIDDLE.get(cwe, "Other")
         maj = MIDDLE_TO_MAJOR.get(mid, "Logic")
+        if cwe not in CWE_TO_MIDDLE:
+            fallback_count += 1
         for s in selected:
             s["middle"] = mid
             s["major"] = maj
@@ -80,6 +99,8 @@ def main() -> int:
         f"KB: {len(by_cwe)} CWEs, {len(by_middle)} middles, "
         f"{len(by_major)} majors, {total} total samples"
     )
+    if fallback_count:
+        print(f"Warning: {fallback_count} CWEs not in hierarchy, mapped to Other/Logic")
     print(f"Saved to {args.output}")
     return 0
 
