@@ -175,6 +175,7 @@ class CoevolutionaryTrainer:
         migration_rate: float = 0.1,
         max_workers: int = 8,
         phase1_only: bool = False,
+        elitism_threshold: float = 0.5,
     ) -> Dict[str, str]:
         """Run the full coevolutionary loop and return best prompts.
 
@@ -242,7 +243,7 @@ class CoevolutionaryTrainer:
             self._phase3_propagate_fitness(representatives, e2e_accuracy, errors)
 
             # Phase 4 -- evolve populations
-            self._phase4_evolve(errors, gen, migration_rate)
+            self._phase4_evolve(errors, gen, migration_rate, elitism_threshold)
 
             # Update best prompts / scores from populations
             for key, pop in self.populations.items():
@@ -808,8 +809,14 @@ class CoevolutionaryTrainer:
         errors: List[Dict[str, Any]],
         gen: int,
         migration_rate: float,
+        elitism_threshold: float = 0.5,
     ) -> None:
-        """Mutate, crossover, and optionally migrate prompts."""
+        """Mutate, crossover, and optionally migrate prompts.
+
+        Nodes whose best individual exceeds *elitism_threshold* are
+        protected from mutation and crossover to avoid degrading
+        already-effective prompts.
+        """
 
         # Group errors by node key using correct routing
         errors_by_node: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
@@ -817,11 +824,6 @@ class CoevolutionaryTrainer:
             node_key = self._route_error_to_node(err)
             if node_key is not None:
                 errors_by_node[node_key].append(err)
-
-        # Per-population evolution
-        # Elitism: skip mutation/crossover for nodes whose best individual
-        # already exceeds the threshold — avoids degrading good prompts.
-        elitism_threshold = 0.5
 
         for key, pop in self.populations.items():
             if pop.size < 2:
@@ -884,7 +886,7 @@ class CoevolutionaryTrainer:
         """
         import re
 
-        match = re.search(r"(?i)(^|\n)(##\s*evidence\b|{evidence})", prompt)
+        match = re.search(r"(?i)(^|\n)(##\s*evidence\b|\{evidence\})", prompt)
         if match and match.start() > 0:
             idx = match.start()
             return prompt[:idx], prompt[idx:]
