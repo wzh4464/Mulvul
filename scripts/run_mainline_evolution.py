@@ -29,6 +29,8 @@ def main() -> int:
     parser.add_argument("--llm-type", default=None)
     parser.add_argument("--phase1-only", action="store_true",
                         help="Run only Phase 1 (tournament), skip cascade eval and evolution")
+    parser.add_argument("--agentic", action="store_true",
+                        help="Use agentic multi-turn detection with tool calling")
     args = parser.parse_args()
 
     summary = run_evolution_workflow(
@@ -41,6 +43,7 @@ def main() -> int:
             max_workers=args.max_workers,
             llm_type=args.llm_type,
             phase1_only=args.phase1_only,
+            use_agentic=args.agentic,
         )
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
