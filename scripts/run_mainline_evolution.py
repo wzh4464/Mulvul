@@ -29,7 +29,21 @@ def main() -> int:
     parser.add_argument("--llm-type", default=None)
     parser.add_argument("--phase1-only", action="store_true",
                         help="Run only Phase 1 (tournament), skip cascade eval and evolution")
+    parser.add_argument("--adaptive-hierarchy", action="store_true",
+                        help="Build data-driven taxonomy from training file before evolution")
     args = parser.parse_args()
+
+    # Optionally build an adaptive taxonomy from the training data
+    taxonomy = None
+    if args.adaptive_hierarchy:
+        from mulvul.agents.adaptive_hierarchy import AdaptiveHierarchyBuilder
+
+        builder = AdaptiveHierarchyBuilder()
+        taxonomy = builder.build(args.train_file)
+        print(
+            f"Built adaptive hierarchy: {len(taxonomy.root_nodes())} roots, "
+            f"{len(taxonomy.all_leaves())} leaves, depth={taxonomy.depth()}"
+        )
 
     summary = run_evolution_workflow(
         EvolutionWorkflowConfig(
@@ -41,7 +55,8 @@ def main() -> int:
             max_workers=args.max_workers,
             llm_type=args.llm_type,
             phase1_only=args.phase1_only,
-        )
+        ),
+        taxonomy=taxonomy,
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0

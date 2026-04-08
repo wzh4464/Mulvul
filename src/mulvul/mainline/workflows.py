@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
 
+from mulvul.agents.adaptive_hierarchy import DynamicTaxonomy
 from mulvul.agents.hierarchical_sampler import HierarchicalSampler
 from mulvul.agents.coevolutionary_trainer import CoevolutionaryTrainer
 from mulvul.data.cwe_hierarchy import cwe_to_major, cwe_to_middle
@@ -116,7 +117,10 @@ def balanced_sample(samples: List[Dict[str, Any]], seed: int) -> List[Dict[str, 
     return result
 
 
-def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
+def run_evolution_workflow(
+    config: EvolutionWorkflowConfig,
+    taxonomy: DynamicTaxonomy | None = None,
+) -> Dict[str, Any]:
     """Train the best prompt for each router/detector stage."""
 
     load_env_vars()
@@ -130,6 +134,7 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         sampler=sampler,
         retriever=retriever,
         output_dir=config.output_dir,
+        taxonomy=taxonomy,
     )
 
     trainer.train_all_levels(
