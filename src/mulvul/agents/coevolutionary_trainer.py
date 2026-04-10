@@ -155,6 +155,7 @@ class CoevolutionaryTrainer:
         retriever: Any | None = None,
         output_dir: str = "./outputs/coevolution",
         taxonomy: DynamicTaxonomy | None = None,
+        use_agentic: bool = False,
     ) -> None:
         self.llm_client = llm_client
         self.meta_llm = meta_llm_client or llm_client
@@ -162,6 +163,7 @@ class CoevolutionaryTrainer:
         self.retriever = retriever
         self.output_dir = output_dir
         self.taxonomy = taxonomy
+        self.use_agentic = use_agentic
         os.makedirs(output_dir, exist_ok=True)
 
         self.populations: Dict[str, NodePopulation] = {}
@@ -700,14 +702,27 @@ class CoevolutionaryTrainer:
             parent_middle = CWE_TO_MIDDLE.get(target, "Other")
             candidates = MIDDLE_TO_CWE.get(parent_middle, []) + ["Benign"]
 
-        detector = LevelDetector(
-            level=stage,
-            target=target,
-            llm_client=self.llm_client,
-            prompt=ind.prompt,
-            candidates=candidates,
-            retriever=self.retriever,
-        )
+        if self.use_agentic:
+            from mulvul.agents.agentic_detector import AgenticDetector
+            from mulvul.agents.detection_tools import ASTSummaryTool, CWELookupTool
+
+            tools = [CWELookupTool(), ASTSummaryTool()]
+            detector = AgenticDetector(
+                llm_client=self.llm_client,
+                tools=tools,
+                candidates=candidates,
+                target=target,
+                stage=stage,
+            )
+        else:
+            detector = LevelDetector(
+                level=stage,
+                target=target,
+                llm_client=self.llm_client,
+                prompt=ind.prompt,
+                candidates=candidates,
+                retriever=self.retriever,
+            )
 
         def _score_one(sample: TrainingSample) -> Tuple[str, bool, bool]:
             """Score a single sample. Returns (predicted, is_target, failed)."""
