@@ -45,6 +45,7 @@ class EvolutionWorkflowConfig:
     tournament_k: int = 3
     migration_rate: float = 0.2
     phase1_only: bool = False
+    use_agentic: bool = False
 
 
 @dataclass
@@ -130,6 +131,7 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         sampler=sampler,
         retriever=retriever,
         output_dir=config.output_dir,
+        use_agentic=config.use_agentic,
     )
 
     trainer.train_all_levels(
