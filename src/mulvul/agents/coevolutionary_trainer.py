@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from mulvul.agents.adaptive_hierarchy import DynamicTaxonomy
+from mulvul.agents.evolution_memory import EvolutionMemory, Experience
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
 from mulvul.data.cwe_hierarchy import (
@@ -167,7 +168,9 @@ class CoevolutionaryTrainer:
         self.best_prompts: Dict[str, str] = {}
         self.best_scores: Dict[str, float] = {}
         self._max_workers: int = 8
+        self._pending_mutations: Dict[str, float] = {}
         self.log = EvolutionLog(Path(output_dir) / "evolution.jsonl")
+        self.memory = EvolutionMemory(Path(output_dir) / "evolution_memory.jsonl")
 
     # ------------------------------------------------------------------
     # Public API
@@ -638,6 +641,21 @@ class CoevolutionaryTrainer:
                 },
             )
 
+            # Record evolution memory for pending mutations from previous gen
+            if key in self._pending_mutations:
+                f1_before = self._pending_mutations.pop(key)
+                f1_after = pop.best().node_fitness
+                delta = f1_after - f1_before
+                self.memory.record(Experience(
+                    node=key,
+                    action="mutation",
+                    description="Prompt was mutated in previous generation",
+                    f1_before=f1_before,
+                    f1_after=f1_after,
+                    delta=delta,
+                    generation=gen,
+                ))
+
             # Incremental save: persist best prompt per node immediately
             best_ind = pop.best()
             if key not in self.best_scores or best_ind.node_fitness > self.best_scores.get(key, 0):
@@ -914,6 +932,8 @@ class CoevolutionaryTrainer:
 
             # --- Mutation: rewrite worst individual using error feedback ---
             worst = pop.worst()
+            f1_before = worst.node_fitness
+            self._pending_mutations[key] = f1_before
             mutated_prompt = self._mutate_prompt(worst.prompt, node_errors, key)
             worst.prompt = mutated_prompt
             worst.origin = "mutation"
@@ -988,11 +1008,22 @@ class CoevolutionaryTrainer:
             return prompt
 
         error_summary = json.dumps(errors[:5], ensure_ascii=False)
+
+        # Retrieve relevant evolution memory
+        stage = node_key.split("_", 1)[0]
+        experiences = self.memory.retrieve(node_key, stage, top_k=5)
+        memory_context = self.memory.format_for_prompt(experiences)
+
+        memory_block = ""
+        if memory_context:
+            memory_block = f"\n{memory_context}\n\n"
+
         mutation_request = (
             f"Improve this vulnerability detection instruction for node '{node_key}'.\n\n"
             f"--- CURRENT INSTRUCTION ---\n{mutable.strip()}\n"
             f"--- END INSTRUCTION ---\n\n"
             f"Cascade errors attributed to this node:\n{error_summary}\n\n"
+            f"{memory_block}"
             "You may:\n"
             "- Add decision boundaries between candidates (e.g., 'Choose X only when...')\n"
             "- Add brief descriptions after candidate names\n"

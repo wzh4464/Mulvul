@@ -358,6 +358,7 @@ class TestConstrainedMutation:
             CoevolutionaryTrainer,
             EvolutionLog,
         )
+        from mulvul.agents.evolution_memory import EvolutionMemory
 
         class FakeMeta:
             def generate(self, prompt, **kw):
@@ -366,6 +367,7 @@ class TestConstrainedMutation:
         trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
         trainer.meta_llm = FakeMeta()
         trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+        trainer.memory = EvolutionMemory(tmp_path / "mem.jsonl")
 
         original = (
             "You are a security expert.\n"
@@ -423,6 +425,7 @@ class TestConstrainedMutation:
             CoevolutionaryTrainer,
             EvolutionLog,
         )
+        from mulvul.agents.evolution_memory import EvolutionMemory
 
         class FakeMeta:
             def generate(self, prompt, **kw):
@@ -431,6 +434,7 @@ class TestConstrainedMutation:
         trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
         trainer.meta_llm = FakeMeta()
         trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+        trainer.memory = EvolutionMemory(tmp_path / "mem.jsonl")
 
         original = "You are an expert.\n\n## Evidence:\n{evidence}\n\n## Code:\n{code}"
         errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
@@ -490,6 +494,7 @@ class TestConstrainedMutation:
             CoevolutionaryTrainer,
             EvolutionLog,
         )
+        from mulvul.agents.evolution_memory import EvolutionMemory
 
         captured_prompts = []
 
@@ -501,6 +506,7 @@ class TestConstrainedMutation:
         trainer = CoevolutionaryTrainer.__new__(CoevolutionaryTrainer)
         trainer.meta_llm = CapturingMeta()
         trainer.log = EvolutionLog(tmp_path / "test.jsonl")
+        trainer.memory = EvolutionMemory(tmp_path / "mem.jsonl")
 
         original = (
             "You are a security expert.\n"
