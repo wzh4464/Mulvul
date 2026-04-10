@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from mulvul.agents.adaptive_hierarchy import DynamicTaxonomy
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
 from mulvul.data.cwe_hierarchy import (
@@ -152,12 +153,14 @@ class CoevolutionaryTrainer:
         sampler: Any | None = None,
         retriever: Any | None = None,
         output_dir: str = "./outputs/coevolution",
+        taxonomy: DynamicTaxonomy | None = None,
     ) -> None:
         self.llm_client = llm_client
         self.meta_llm = meta_llm_client or llm_client
         self.sampler = sampler
         self.retriever = retriever
         self.output_dir = output_dir
+        self.taxonomy = taxonomy
         os.makedirs(output_dir, exist_ok=True)
 
         self.populations: Dict[str, NodePopulation] = {}
@@ -417,10 +420,14 @@ class CoevolutionaryTrainer:
     def _init_populations(self, population_size: int) -> None:
         """Seed every canonical taxonomy node with *population_size* prompt variants.
 
-        Uses the full taxonomy from ``MAJOR_TO_MIDDLE`` / ``MIDDLE_TO_CWE``
-        rather than what the sampler happens to cover, so the output artifact
-        is always complete even when the training dataset is sparse.
+        When ``self.taxonomy`` is set (a :class:`DynamicTaxonomy`), the tree
+        structure is derived from it.  Otherwise, falls back to the static maps
+        from ``MAJOR_TO_MIDDLE`` / ``MIDDLE_TO_CWE``.
         """
+
+        if self.taxonomy is not None:
+            self._init_populations_from_taxonomy(population_size)
+            return
 
         for major in MAJOR_TO_MIDDLE.keys():
             key = f"major_{major}"
@@ -459,6 +466,67 @@ class CoevolutionaryTrainer:
             individuals = [
                 PromptIndividual(
                     prompt=self._generate_seed_prompt("cwe", cwe, candidates),
+                    origin="seed",
+                )
+                for _ in range(population_size)
+            ]
+            self.populations[key] = NodePopulation(
+                node_key=key, stage="cwe", individuals=individuals
+            )
+
+    def _init_populations_from_taxonomy(self, population_size: int) -> None:
+        """Seed populations using a :class:`DynamicTaxonomy` tree.
+
+        Creates populations for:
+        - Root nodes (major stage)
+        - Intermediate nodes (middle stage — non-root, non-leaf)
+        - Leaf nodes (cwe stage)
+        """
+        tax = self.taxonomy
+        assert tax is not None
+
+        roots = set(tax.root_nodes())
+        leaves = set(tax.all_leaves())
+
+        # Major (root) populations
+        for node in sorted(roots):
+            key = f"major_{node}"
+            candidates = tax.candidates_for(node)
+            individuals = [
+                PromptIndividual(
+                    prompt=self._generate_seed_prompt("major", node, candidates),
+                    origin="seed",
+                )
+                for _ in range(population_size)
+            ]
+            self.populations[key] = NodePopulation(
+                node_key=key, stage="major", individuals=individuals
+            )
+
+        # Intermediate (middle) populations — non-root, non-leaf
+        for node in sorted(tax.parent_map):
+            if node in roots or node in leaves:
+                continue
+            key = f"middle_{node}"
+            candidates = tax.candidates_for(node)
+            individuals = [
+                PromptIndividual(
+                    prompt=self._generate_seed_prompt("middle", node, candidates),
+                    origin="seed",
+                )
+                for _ in range(population_size)
+            ]
+            self.populations[key] = NodePopulation(
+                node_key=key, stage="middle", individuals=individuals
+            )
+
+        # Leaf (cwe) populations
+        for leaf in sorted(leaves):
+            key = f"cwe_{leaf}"
+            candidates = tax.candidates_for(leaf)
+            individuals = [
+                PromptIndividual(
+                    prompt=self._generate_seed_prompt("cwe", leaf, candidates),
                     origin="seed",
                 )
                 for _ in range(population_size)
