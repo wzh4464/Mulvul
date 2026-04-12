@@ -45,6 +45,8 @@ class EvolutionWorkflowConfig:
     tournament_k: int = 3
     migration_rate: float = 0.2
     phase1_only: bool = False
+    elitism_threshold: float = 0.5
+    constrained_mutation: bool = True
 
 
 @dataclass
@@ -140,6 +142,8 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         migration_rate=config.migration_rate,
         max_workers=config.max_workers,
         phase1_only=config.phase1_only,
+        elitism_threshold=config.elitism_threshold,
+        constrained_mutation=config.constrained_mutation,
     )
     trainer.save_best_prompts()
 

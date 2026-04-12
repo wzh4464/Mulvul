@@ -40,6 +40,8 @@ class FakeTrainer:
         migration_rate=0.2,
         max_workers=8,
         phase1_only=False,
+        elitism_threshold=0.5,
+        constrained_mutation=True,
     ):
         return None
 

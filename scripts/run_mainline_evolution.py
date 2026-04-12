@@ -29,6 +29,10 @@ def main() -> int:
     parser.add_argument("--llm-type", default=None)
     parser.add_argument("--phase1-only", action="store_true",
                         help="Run only Phase 1 (tournament), skip cascade eval and evolution")
+    parser.add_argument("--elitism-threshold", type=float, default=0.5,
+                        help="Nodes with F1 >= threshold skip mutation. Set to 1.1 to disable.")
+    parser.add_argument("--no-constrained-mutation", action="store_true",
+                        help="Allow full prompt rewriting instead of constrained mutation")
     args = parser.parse_args()
 
     summary = run_evolution_workflow(
@@ -41,6 +45,8 @@ def main() -> int:
             max_workers=args.max_workers,
             llm_type=args.llm_type,
             phase1_only=args.phase1_only,
+            elitism_threshold=args.elitism_threshold,
+            constrained_mutation=not args.no_constrained_mutation,
         )
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
