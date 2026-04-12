@@ -153,12 +153,14 @@ class CoevolutionaryTrainer:
         sampler: Any | None = None,
         retriever: Any | None = None,
         output_dir: str = "./outputs/coevolution",
+        use_memory: bool = True,
     ) -> None:
         self.llm_client = llm_client
         self.meta_llm = meta_llm_client or llm_client
         self.sampler = sampler
         self.retriever = retriever
         self.output_dir = output_dir
+        self.use_memory = use_memory
         os.makedirs(output_dir, exist_ok=True)
 
         self.populations: Dict[str, NodePopulation] = {}
@@ -167,7 +169,7 @@ class CoevolutionaryTrainer:
         self._max_workers: int = 8
         self._pending_mutations: Dict[str, float] = {}
         self.log = EvolutionLog(Path(output_dir) / "evolution.jsonl")
-        self.memory = EvolutionMemory(Path(output_dir) / "evolution_memory.jsonl")
+        self.memory = EvolutionMemory(Path(output_dir) / "evolution_memory.jsonl") if use_memory else None
 
     # ------------------------------------------------------------------
     # Public API
@@ -284,9 +286,54 @@ class CoevolutionaryTrainer:
             )
 
             self._save_checkpoint(gen + 1, n_rounds, population_size)
+            self._save_generation_snapshot(gen)
 
         self.log.close()
         return self.best_prompts
+
+    def _save_generation_snapshot(self, gen: int) -> None:
+        """Save a snapshot of the current generation's prompts and scores.
+
+        Each generation gets its own file in outputs/generations/ so we can
+        review any generation's prompts later, not just the final one.
+        """
+        gen_dir = Path(self.output_dir) / "generations"
+        gen_dir.mkdir(parents=True, exist_ok=True)
+        save_path = gen_dir / f"gen_{gen:03d}.json"
+
+        # Collect population state for this generation
+        population_snapshot = {}
+        for key, pop in self.populations.items():
+            population_snapshot[key] = {
+                "best_prompt": pop.best().prompt,
+                "best_fitness": round(pop.best().node_fitness, 6),
+                "individuals": [
+                    {
+                        "prompt": ind.prompt,
+                        "node_fitness": round(ind.node_fitness, 6),
+                        "origin": ind.origin,
+                    }
+                    for ind in pop.individuals
+                ],
+            }
+
+        data = {
+            "generation": gen,
+            "timestamp": datetime.now().isoformat(),
+            "best_prompts": dict(self.best_prompts),
+            "best_scores": {k: round(v, 6) for k, v in self.best_scores.items()},
+            "populations": population_snapshot,
+            "summary": {
+                "node_count": len(self.best_prompts),
+                "avg_best_f1": round(
+                    sum(self.best_scores.values()) / max(len(self.best_scores), 1), 4
+                ),
+                "max_f1": round(max(self.best_scores.values()) if self.best_scores else 0, 4),
+                "min_f1": round(min(self.best_scores.values()) if self.best_scores else 0, 4),
+            },
+        }
+        with save_path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
     def save_best_prompts(self, path: str | None = None) -> None:
         """Persist the best prompts and scores to disk."""
@@ -574,19 +621,21 @@ class CoevolutionaryTrainer:
             )
 
             # Record evolution memory for pending mutations from previous gen
-            if key in self._pending_mutations:
-                f1_before = self._pending_mutations.pop(key)
+            # Only record meaningful experiences (|delta| > 0.01) to avoid noise
+            if self.memory and key in self._pending_mutations:
+                f1_before, mutation_desc = self._pending_mutations.pop(key)
                 f1_after = pop.best().node_fitness
                 delta = f1_after - f1_before
-                self.memory.record(Experience(
-                    node=key,
-                    action="mutation",
-                    description="Prompt was mutated in previous generation",
-                    f1_before=f1_before,
-                    f1_after=f1_after,
-                    delta=delta,
-                    generation=gen,
-                ))
+                if abs(delta) > 0.01:  # Filter out neutral experiences
+                    self.memory.record(Experience(
+                        node=key,
+                        action="mutation",
+                        description=mutation_desc,
+                        f1_before=f1_before,
+                        f1_after=f1_after,
+                        delta=delta,
+                        generation=gen,
+                    ))
 
             # Incremental save: persist best prompt per node immediately
             best_ind = pop.best()
@@ -865,8 +914,8 @@ class CoevolutionaryTrainer:
             # --- Mutation: rewrite worst individual using error feedback ---
             worst = pop.worst()
             f1_before = worst.node_fitness
-            self._pending_mutations[key] = f1_before
-            mutated_prompt = self._mutate_prompt(worst.prompt, node_errors, key)
+            mutated_prompt, mutation_desc = self._mutate_prompt(worst.prompt, node_errors, key)
+            self._pending_mutations[key] = (f1_before, mutation_desc)
             worst.prompt = mutated_prompt
             worst.origin = "mutation"
             worst.generation = gen
@@ -925,30 +974,34 @@ class CoevolutionaryTrainer:
         prompt: str,
         errors: List[Dict[str, Any]],
         node_key: str,
-    ) -> str:
+    ) -> Tuple[str, str]:
         """Use the meta-LLM to improve the mutable region of a prompt.
 
         The prompt is split at ``## Evidence:`` into a mutable header (role,
         candidates, rules) and a protected footer (evidence/code placeholders,
         JSON output format).  Only the header is sent for rewriting.
+
+        Returns:
+            A tuple of (mutated_prompt, description) where description summarizes
+            what was changed for evolution memory tracking.
         """
         if not errors:
-            return prompt
+            return prompt, "No errors to address"
 
         mutable, protected = self._split_prompt(prompt)
         if not mutable:
-            return prompt
+            return prompt, "No mutable region found"
 
         error_summary = json.dumps(errors[:5], ensure_ascii=False)
 
         # Retrieve relevant evolution memory
-        stage = node_key.split("_", 1)[0]
-        experiences = self.memory.retrieve(node_key, stage, top_k=5)
-        memory_context = self.memory.format_for_prompt(experiences)
-
         memory_block = ""
-        if memory_context:
-            memory_block = f"\n{memory_context}\n\n"
+        if self.memory:
+            stage = node_key.split("_", 1)[0]
+            experiences = self.memory.retrieve(node_key, stage, top_k=5)
+            memory_context = self.memory.format_for_prompt(experiences)
+            if memory_context:
+                memory_block = f"\n{memory_context}\n\n"
 
         mutation_request = (
             f"Improve this vulnerability detection instruction for node '{node_key}'.\n\n"
@@ -964,18 +1017,29 @@ class CoevolutionaryTrainer:
             "You must NOT:\n"
             "- Remove any candidate from the list\n"
             "- Add {{code}}, {{evidence}}, or JSON format — those are handled separately\n\n"
-            "Return ONLY the improved instruction text, nothing else."
+            "First, write a ONE-LINE summary of your changes (prefix with 'SUMMARY:').\n"
+            "Then return the improved instruction text.\n\n"
+            "Format:\nSUMMARY: <one-line description of changes>\n<improved instruction>"
         )
         try:
             result = self.meta_llm.generate(mutation_request)
             result = result.strip()
+
+            # Extract summary line if present
+            description = "Prompt mutation applied"
+            if result.startswith("SUMMARY:"):
+                lines = result.split("\n", 1)
+                description = lines[0].replace("SUMMARY:", "").strip()[:200]
+                if len(lines) > 1:
+                    result = lines[1].strip()
+
             # Basic validation
             if len(result) < _MIN_LLM_OUTPUT_LEN:
-                return prompt
+                return prompt, "Mutation rejected: output too short"
             # Reassemble
-            return self._reassemble(result, protected)
-        except Exception:
-            return prompt
+            return self._reassemble(result, protected), description
+        except Exception as e:
+            return prompt, f"Mutation failed: {type(e).__name__}"
 
     def _crossover_prompts(
         self, prompt_a: str, prompt_b: str, node_key: str

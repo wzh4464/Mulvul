@@ -18,14 +18,18 @@ logger = logging.getLogger(__name__)
 
 
 def load_env_vars():
-    """Load environment variables from .env file"""
+    """Load environment variables from .env file.
+
+    Only sets variables that are not already set in the environment,
+    allowing command-line overrides to take precedence.
+    """
     # Try multiple possible locations for .env file
     possible_paths = [
         Path(__file__).parent.parent.parent / '.env',  # From package structure
         Path.cwd() / '.env',  # From current working directory
         Path(__file__).parent.parent.parent.parent / '.env'  # One level up from src
     ]
-    
+
     for env_path in possible_paths:
         if env_path.exists():
             logger.debug(f"Loading .env from: {env_path}")
@@ -34,9 +38,12 @@ def load_env_vars():
                     line = line.strip()
                     if line and not line.startswith('#') and '=' in line:
                         key, value = line.split('=', 1)
-                        os.environ[key.strip()] = value.strip()
+                        key = key.strip()
+                        # Only set if not already in environment (allows CLI override)
+                        if key not in os.environ:
+                            os.environ[key] = value.strip()
             return
-    
+
     logger.warning("No .env file found in any expected location")
 
 
@@ -653,6 +660,9 @@ def create_llm_client(llm_type: str = None, **kwargs) -> LLMClient:
     elif llm_type.startswith("kimi"):
         # Use SVEN client for kimi models (requires different API format)
         return SVENLLMClient(model_name=llm_type, **kwargs)
+    elif "mlx" in llm_type or llm_type.startswith("gemma") or llm_type.startswith("llama"):
+        # Local MLX/llama.cpp servers are OpenAI-compatible
+        return OpenAICompatibleClient(model_name=llm_type, **kwargs)
     else:
         # Use local client for local models
         return LocalLLMClient(model_name=llm_type, **kwargs)

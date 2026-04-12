@@ -21,7 +21,8 @@ def main() -> int:
         description="Evolve the best prompt for each router/detector stage."
     )
     parser.add_argument("--train-file", required=True)
-    parser.add_argument("--output-dir", default="./outputs/mainline/evolution")
+    parser.add_argument("--output-dir", default=None,
+                        help="Output directory (default: auto-select based on --no-memory)")
     parser.add_argument("--kb-path", default=None)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--samples-per-class", type=int, default=50)
@@ -29,18 +30,39 @@ def main() -> int:
     parser.add_argument("--llm-type", default=None)
     parser.add_argument("--phase1-only", action="store_true",
                         help="Run only Phase 1 (tournament), skip cascade eval and evolution")
+    parser.add_argument("--no-memory", action="store_true",
+                        help="Disable evolution memory (for A/B testing)")
     args = parser.parse_args()
+
+    # Auto-select output directory to prevent checkpoint contamination
+    if args.output_dir is None:
+        if args.no_memory:
+            output_dir = "./outputs/mainline/evolution_no_memory"
+        else:
+            output_dir = "./outputs/mainline/evolution"
+    else:
+        output_dir = args.output_dir
+        # Warn if using explicit output-dir with checkpoint that may have different memory setting
+        checkpoint_path = Path(output_dir) / "checkpoint.json"
+        if checkpoint_path.exists() and args.no_memory:
+            print(
+                f"WARNING: Checkpoint exists at {checkpoint_path}. "
+                "Resuming with --no-memory may produce inconsistent results. "
+                "Consider using a different --output-dir or deleting the checkpoint.",
+                file=sys.stderr,
+            )
 
     summary = run_evolution_workflow(
         EvolutionWorkflowConfig(
             train_file=args.train_file,
-            output_dir=args.output_dir,
+            output_dir=output_dir,
             kb_path=args.kb_path,
             rounds=args.rounds,
             samples_per_class=args.samples_per_class,
             max_workers=args.max_workers,
             llm_type=args.llm_type,
             phase1_only=args.phase1_only,
+            use_memory=not args.no_memory,
         )
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
