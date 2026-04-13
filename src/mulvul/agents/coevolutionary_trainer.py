@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Tuple
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
 from mulvul.data.cwe_hierarchy import (
+    CWE_DESCRIPTIONS,
     CWE_TO_MIDDLE,
     MAJOR_TO_MIDDLE,
     MIDDLE_TO_CWE,
@@ -180,15 +181,23 @@ class CoevolutionaryTrainer:
         max_workers: int = 8,
         phase1_only: bool = False,
         elitism_threshold: float = 0.5,
+        constrained_mutation: bool = True,
     ) -> Dict[str, str]:
         """Run the full coevolutionary loop and return best prompts.
 
         Automatically resumes from the latest checkpoint if one exists in
         ``output_dir``.  A checkpoint is saved after every generation so
         long-running jobs can survive interruptions.
+
+        Args:
+            elitism_threshold: Nodes with F1 >= this value skip mutation/crossover.
+                Set to 1.1 to disable elitism (no node can reach it).
+            constrained_mutation: If True, only mutate the mutable header of prompts.
+                If False, allow full prompt rewriting.
         """
 
         self._max_workers = max_workers
+        self._constrained_mutation = constrained_mutation
         start_gen = self._try_restore_checkpoint(population_size)
 
         for gen in range(start_gen, n_rounds):
@@ -490,14 +499,28 @@ class CoevolutionaryTrainer:
                 "## Code:\n```\n{code}\n```\n\n"
                 '## Output (JSON):\n{{"predictions":[{{"category":"...","confidence":0.0}}]}}'
             )
-        # cwe
+        # cwe — include standard MITRE definitions
+        cwe_defs = self._format_cwe_definitions(candidates)
         return (
-            f"Identify if this code has {target}.\n"
-            f"Possible CWEs: {candidates_str}.\n\n"
+            f"Identify if this code has {target}.\n\n"
+            f"## CWE Definitions (MITRE standard):\n{cwe_defs}\n\n"
             "## Evidence:\n{evidence}\n\n"
             "## Code:\n```\n{code}\n```\n\n"
             '## Output (JSON):\n{{"predictions":[{{"cwe":"CWE-XXX","confidence":0.0}}]}}'
         )
+
+    def _format_cwe_definitions(self, cwes: List[str]) -> str:
+        """Format CWE definitions as a bulleted list."""
+
+        lines = []
+        for cwe in cwes:
+            if cwe == "Benign":
+                lines.append("- Benign: No vulnerability present")
+            elif cwe in CWE_DESCRIPTIONS:
+                lines.append(f"- {cwe}: {CWE_DESCRIPTIONS[cwe]}")
+            else:
+                lines.append(f"- {cwe}: (no standard description)")
+        return "\n".join(lines)
 
     # ------------------------------------------------------------------
     # Phase 1 -- Node-local tournament
@@ -833,7 +856,12 @@ class CoevolutionaryTrainer:
             if pop.size < 2:
                 continue
 
-            best_f1 = pop.best().node_fitness
+            # Use max node_fitness directly, not combined_fitness from pop.best()
+            # Handle potential None values in node_fitness
+            valid_fitness_scores = [ind.node_fitness for ind in pop.individuals if ind.node_fitness is not None]
+            if not valid_fitness_scores:
+                continue
+            best_f1 = max(valid_fitness_scores)
             if best_f1 >= elitism_threshold:
                 self.log.emit("elitism_skip", {
                     "node": key, "generation": gen,
@@ -900,79 +928,150 @@ class CoevolutionaryTrainer:
     # Constrained mutation / crossover
     # ------------------------------------------------------------------
 
+    def _validate_prompt_structure(self, prompt: str) -> bool:
+        """Validate that essential prompt structure is preserved."""
+        # Check for essential markers that downstream components depend on
+        required_markers = [
+            "## Code:",           # Code delimiter
+            "vulnerabilities",    # JSON output section
+        ]
+
+        prompt_lower = prompt.lower()
+        for marker in required_markers:
+            if marker.lower() not in prompt_lower:
+                return False
+
+        # Check that it looks like JSON output format is preserved
+        return ("{" in prompt and "}" in prompt) or ("json" in prompt_lower)
+
     def _mutate_prompt(
         self,
         prompt: str,
         errors: List[Dict[str, Any]],
         node_key: str,
     ) -> str:
-        """Use the meta-LLM to improve the mutable region of a prompt.
+        """Use the meta-LLM to improve a prompt.
 
-        The prompt is split at ``## Evidence:`` into a mutable header (role,
-        candidates, rules) and a protected footer (evidence/code placeholders,
-        JSON output format).  Only the header is sent for rewriting.
+        If constrained_mutation is enabled (default), the prompt is split at
+        ``## Evidence:`` into a mutable header (role, candidates, rules) and a
+        protected footer (evidence/code placeholders, JSON output format).
+        Only the header is sent for rewriting.
+
+        If constrained_mutation is disabled, the entire prompt is sent for
+        rewriting (unconstrained mutation).
         """
         if not errors:
             return prompt
 
-        mutable, protected = self._split_prompt(prompt)
-        if not mutable:
-            return prompt
-
         error_summary = json.dumps(errors[:5], ensure_ascii=False)
-        mutation_request = (
-            f"Improve this vulnerability detection instruction for node '{node_key}'.\n\n"
-            f"--- CURRENT INSTRUCTION ---\n{mutable.strip()}\n"
-            f"--- END INSTRUCTION ---\n\n"
-            f"Cascade errors attributed to this node:\n{error_summary}\n\n"
-            "You may:\n"
-            "- Add decision boundaries between candidates (e.g., 'Choose X only when...')\n"
-            "- Add brief descriptions after candidate names\n"
-            "- Refine the role description or task framing\n"
-            "- Add reasoning hints based on the error patterns\n\n"
-            "You must NOT:\n"
-            "- Remove any candidate from the list\n"
-            "- Add {{code}}, {{evidence}}, or JSON format — those are handled separately\n\n"
-            "Return ONLY the improved instruction text, nothing else."
-        )
-        try:
-            result = self.meta_llm.generate(mutation_request)
-            result = result.strip()
-            # Basic validation
-            if len(result) < _MIN_LLM_OUTPUT_LEN:
+
+        if getattr(self, "_constrained_mutation", True):
+            # Constrained: only mutate mutable header
+            mutable, protected = self._split_prompt(prompt)
+            if not mutable:
                 return prompt
-            # Reassemble
-            return self._reassemble(result, protected)
-        except Exception:
-            return prompt
+
+            mutation_request = (
+                f"Improve this vulnerability detection instruction for node '{node_key}'.\n\n"
+                f"--- CURRENT INSTRUCTION ---\n{mutable.strip()}\n"
+                f"--- END INSTRUCTION ---\n\n"
+                f"Cascade errors attributed to this node:\n{error_summary}\n\n"
+                "You may:\n"
+                "- Add decision boundaries between candidates (e.g., 'Choose X only when...')\n"
+                "- Add brief descriptions after candidate names\n"
+                "- Refine the role description or task framing\n"
+                "- Add reasoning hints based on the error patterns\n\n"
+                "You must NOT:\n"
+                "- Remove any candidate from the list\n"
+                "- Add {{code}}, {{evidence}}, or JSON format — those are handled separately\n\n"
+                "Return ONLY the improved instruction text, nothing else."
+            )
+            try:
+                result = self.meta_llm.generate(mutation_request)
+                result = result.strip()
+                if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    return prompt
+                return self._reassemble(result, protected)
+            except Exception:
+                return prompt
+        else:
+            # Unconstrained: rewrite entire prompt
+            mutation_request = (
+                f"Improve this vulnerability detection prompt for node '{node_key}'.\n\n"
+                f"--- CURRENT PROMPT ---\n{prompt.strip()}\n"
+                f"--- END PROMPT ---\n\n"
+                f"Cascade errors attributed to this node:\n{error_summary}\n\n"
+                "Rewrite the entire prompt to improve detection accuracy.\n"
+                "You may restructure, add examples, refine instructions, or change formatting.\n"
+                "Keep the same candidate list but improve how they are described.\n"
+                "Return ONLY the improved prompt text, nothing else."
+            )
+            try:
+                result = self.meta_llm.generate(mutation_request)
+                result = result.strip()
+                if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    return prompt
+                # Validate that essential structure is preserved
+                if not self._validate_prompt_structure(result):
+                    return prompt
+                return result
+            except Exception:
+                return prompt
 
     def _crossover_prompts(
         self, prompt_a: str, prompt_b: str, node_key: str
     ) -> str:
-        """Merge the mutable regions of two prompts, preserving protected structure."""
-        mutable_a, protected_a = self._split_prompt(prompt_a)
-        mutable_b, _ = self._split_prompt(prompt_b)
+        """Merge two prompts into one.
 
-        if not mutable_a or not mutable_b:
-            return prompt_a
+        If constrained_mutation is enabled, only mutable regions are merged
+        and protected structure is preserved. Otherwise, entire prompts are merged.
+        """
+        if getattr(self, "_constrained_mutation", True):
+            # Constrained: merge mutable regions only
+            mutable_a, protected_a = self._split_prompt(prompt_a)
+            mutable_b, _ = self._split_prompt(prompt_b)
 
-        crossover_request = (
-            f"Merge the strengths of these two instructions for node '{node_key}'.\n\n"
-            f"--- INSTRUCTION A ---\n{mutable_a.strip()}\n"
-            f"--- INSTRUCTION B ---\n{mutable_b.strip()}\n"
-            f"--- END ---\n\n"
-            "Create a single improved instruction combining the best elements.\n"
-            "Do NOT include {{code}}, {{evidence}}, or JSON output format.\n"
-            "Return ONLY the merged instruction text."
-        )
-        try:
-            result = self.meta_llm.generate(crossover_request)
-            result = result.strip()
-            if len(result) < _MIN_LLM_OUTPUT_LEN:
+            if not mutable_a or not mutable_b:
                 return prompt_a
-            return self._reassemble(result, protected_a)
-        except Exception:
-            return prompt_a
+
+            crossover_request = (
+                f"Merge the strengths of these two instructions for node '{node_key}'.\n\n"
+                f"--- INSTRUCTION A ---\n{mutable_a.strip()}\n"
+                f"--- INSTRUCTION B ---\n{mutable_b.strip()}\n"
+                f"--- END ---\n\n"
+                "Create a single improved instruction combining the best elements.\n"
+                "Do NOT include {{code}}, {{evidence}}, or JSON output format.\n"
+                "Return ONLY the merged instruction text."
+            )
+            try:
+                result = self.meta_llm.generate(crossover_request)
+                result = result.strip()
+                if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    return prompt_a
+                return self._reassemble(result, protected_a)
+            except Exception:
+                return prompt_a
+        else:
+            # Unconstrained: merge entire prompts
+            crossover_request = (
+                f"Merge the strengths of these two prompts for node '{node_key}'.\n\n"
+                f"--- PROMPT A ---\n{prompt_a.strip()}\n"
+                f"--- PROMPT B ---\n{prompt_b.strip()}\n"
+                f"--- END ---\n\n"
+                "Create a single improved prompt combining the best elements from both.\n"
+                "Return ONLY the merged prompt text."
+            )
+            try:
+                result = self.meta_llm.generate(crossover_request)
+                result = result.strip()
+                if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    return prompt_a
+                # Validate that essential structure is preserved
+                if not self._validate_prompt_structure(result):
+                    return prompt_a
+                return result
+            except Exception:
+                return prompt_a
 
     def _migrate_across_stage(self) -> None:
         """Best-in-stage donates its prompt style to the worst-in-stage.

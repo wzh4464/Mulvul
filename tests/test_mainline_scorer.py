@@ -6,8 +6,10 @@ from mulvul.mainline.scorer import LLMNodeScorer
 class StubLLMClient:
     def __init__(self, response: str):
         self.response = response
+        self.prompts = []
 
     def generate(self, prompt: str, **kwargs) -> str:
+        self.prompts.append(prompt)
         return self.response
 
 
@@ -142,3 +144,17 @@ def test_llm_node_scorer_accepts_top_level_list_and_deduplicates_by_max_confiden
 
     assert result.ranking == [("Memory", 0.91), ("Benign", 0.2)]
     assert result.decision == "accept"
+
+
+def test_llm_node_scorer_uses_configurable_prompt_code_limit():
+    bundle = _make_bundle()
+    bundle.defaults.scorer_config["prompt_code_max_chars"] = 12
+    node, ctx = _make_ctx(bundle)
+    ctx.code = "ABCDEFGHIJKLMNO"
+    client = StubLLMClient('{"predictions":[{"category":"Memory","confidence":0.91}]}')
+    scorer = LLMNodeScorer(client, bundle)
+
+    scorer.score(node, ctx)
+
+    assert "ABCDEFGHIJKL" in client.prompts[0]
+    assert "ABCDEFGHIJKLM" not in client.prompts[0]

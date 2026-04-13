@@ -1,61 +1,21 @@
 """Async LLM client for high-performance concurrent requests"""
 
 import asyncio
-import aiohttp
-import time
 import logging
 import os
-from typing import Dict, Any, Optional, List, Union
-from pathlib import Path
+import time
+from typing import Any, Dict, List, Optional, Union
+
+import aiohttp
+
+from .helpers import (
+    get_env_float,
+    get_env_int,
+    load_env_vars,
+    truncate_task_response,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def load_env_vars():
-    """Load environment variables from .env file"""
-    # Try multiple possible locations for .env file
-    possible_paths = [
-        Path(__file__).parent.parent.parent / '.env',  # From package structure
-        Path.cwd() / '.env',  # From current working directory
-        Path(__file__).parent.parent.parent.parent / '.env'  # One level up from src
-    ]
-    
-    for env_path in possible_paths:
-        if env_path.exists():
-            logger.debug(f"Loading .env from: {env_path}")
-            with open(env_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        os.environ[key.strip()] = value.strip()
-            return
-    
-    logger.warning("No .env file found in any expected location")
-
-
-def _get_env_int(name: str, default: int) -> int:
-    """Read an integer environment variable with fallback."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    try:
-        return int(value)
-    except ValueError:
-        logger.warning("Invalid integer for %s: %s; using %s", name, value, default)
-        return default
-
-
-def _get_env_float(name: str, default: float) -> float:
-    """Read a float environment variable with fallback."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    try:
-        return float(value)
-    except ValueError:
-        logger.warning("Invalid float for %s: %s; using %s", name, value, default)
-        return default
 
 
 # Load environment variables at module level
@@ -82,9 +42,9 @@ class AsyncLLMClient:
         self.backup_api_base = os.getenv("BACKUP_API_BASE_URL", "https://newapi.aicohere.org/v1")
         
         self.max_concurrency = max_concurrency
-        self.max_retries = _get_env_int("ASYNC_LLM_MAX_RETRIES", max_retries)
-        self.retry_delay = _get_env_float("ASYNC_LLM_RETRY_DELAY", retry_delay)
-        self.timeout = _get_env_float("ASYNC_LLM_TIMEOUT", timeout)
+        self.max_retries = get_env_int("ASYNC_LLM_MAX_RETRIES", max_retries)
+        self.retry_delay = get_env_float("ASYNC_LLM_RETRY_DELAY", retry_delay)
+        self.timeout = get_env_float("ASYNC_LLM_TIMEOUT", timeout)
         
         if not self.api_key:
             raise ValueError("API_KEY not found. Please set it in .env file or environment variable.")
@@ -187,7 +147,10 @@ class AsyncLLMClient:
         
         # Task-oriented truncation (like SVEN)
         if task:
-            result = result.split("\n\n")[0]
+            result = truncate_task_response(
+                result,
+                strategy=kwargs.get("task_truncation_strategy"),
+            )
         
         return result
     

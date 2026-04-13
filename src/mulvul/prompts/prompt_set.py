@@ -34,6 +34,12 @@ class PromptSet:
     ) -> None:
         self._templates[(layer, category)] = template
 
+    def clone(self) -> "PromptSet":
+        """Return a shallow structural copy for immutable-style updates."""
+        cloned = PromptSet()
+        cloned._templates = dict(self._templates)
+        return cloned
+
     def count_templates(self) -> int:
         return len(self._templates)
 

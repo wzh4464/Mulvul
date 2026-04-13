@@ -102,21 +102,66 @@ MAJOR_CATEGORIES = [*MAJOR_TO_MIDDLE.keys(), BENIGN_LABEL]
 MIDDLE_CATEGORIES = list(MIDDLE_TO_CWE.keys())
 
 # CWE descriptions for prompts and docs.
+# Source: MITRE CWE (https://cwe.mitre.org/)
 CWE_DESCRIPTIONS: dict[str, str] = {
-    "CWE-20": "Improper input validation - insufficient validation of user input",
-    "CWE-22": "Path traversal - accessing files outside intended directory",
-    "CWE-78": "OS command injection - executing arbitrary system commands",
-    "CWE-89": "SQL injection - executing arbitrary SQL queries",
-    "CWE-119": "Buffer overflow - operations exceed memory buffer bounds",
-    "CWE-120": "Classic buffer overflow - copying data without bounds checking",
-    "CWE-125": "Out-of-bounds read - reading beyond allocated memory",
-    "CWE-190": "Integer overflow - arithmetic operation exceeds integer limits",
-    "CWE-200": "Information exposure - leaking sensitive data",
-    "CWE-362": "Race condition - concurrent access to shared resource",
-    "CWE-415": "Double free - freeing memory that was already freed",
-    "CWE-416": "Use after free - accessing memory after it has been freed",
-    "CWE-476": "NULL pointer dereference - accessing memory through null pointer",
-    "CWE-787": "Out-of-bounds write - writing beyond allocated memory",
+    # Input Validation
+    "CWE-20": "Improper Input Validation - insufficient validation of user input allowing malicious data",
+    "CWE-22": "Path Traversal - accessing files outside intended directory via '../' sequences",
+    "CWE-703": "Improper Check or Handling of Exceptional Conditions - failing to handle errors properly",
+    # Injection
+    "CWE-74": "Injection - improper neutralization of special elements in output used by downstream component",
+    "CWE-77": "Command Injection - constructing commands using externally-influenced input",
+    "CWE-78": "OS Command Injection - executing arbitrary system commands via shell",
+    "CWE-79": "Cross-site Scripting (XSS) - injecting malicious scripts into web pages",
+    "CWE-89": "SQL Injection - executing arbitrary SQL queries through untrusted input",
+    "CWE-94": "Code Injection - improper control of code generation allowing arbitrary code execution",
+    # Buffer Errors
+    "CWE-119": "Buffer Overflow - operations exceed memory buffer bounds causing memory corruption",
+    "CWE-120": "Classic Buffer Overflow - copying data without checking size of input",
+    "CWE-121": "Stack-based Buffer Overflow - buffer overflow in stack memory",
+    "CWE-122": "Heap-based Buffer Overflow - buffer overflow in heap memory",
+    "CWE-125": "Out-of-bounds Read - reading beyond allocated memory boundaries",
+    "CWE-131": "Incorrect Calculation of Buffer Size - miscalculating required buffer size",
+    "CWE-787": "Out-of-bounds Write - writing beyond allocated memory boundaries",
+    "CWE-805": "Buffer Access with Incorrect Length Value - accessing buffer with wrong length",
+    # Memory Management
+    "CWE-401": "Missing Release of Memory (Memory Leak) - not freeing allocated memory after use",
+    "CWE-415": "Double Free - freeing memory that was already freed",
+    "CWE-416": "Use After Free - accessing memory after it has been freed",
+    "CWE-772": "Missing Release of Resource - not releasing resource after effective lifetime",
+    # Pointer Issues
+    "CWE-476": "NULL Pointer Dereference - accessing memory through null pointer",
+    "CWE-617": "Reachable Assertion - assertion that can be triggered by attacker",
+    # Integer Errors
+    "CWE-189": "Numeric Errors - general numeric calculation problems (category)",
+    "CWE-190": "Integer Overflow or Wraparound - arithmetic exceeds integer limits wrapping around",
+    "CWE-191": "Integer Underflow - arithmetic goes below minimum value wrapping around",
+    "CWE-369": "Divide By Zero - division or modulo operation with zero divisor",
+    # Concurrency
+    "CWE-362": "Race Condition - concurrent access to shared resource without proper synchronization",
+    "CWE-667": "Improper Locking - incorrect use of locks leading to deadlock or race conditions",
+    # Information Exposure
+    "CWE-200": "Information Exposure - leaking sensitive data to unauthorized actors",
+    "CWE-209": "Error Message Information Exposure - error messages revealing sensitive information",
+    # Access Control
+    "CWE-254": "Security Features - 7PK security features category",
+    "CWE-264": "Permissions, Privileges, and Access Controls - improper permission management (category)",
+    "CWE-269": "Improper Privilege Management - incorrect assignment or handling of privileges",
+    "CWE-284": "Improper Access Control - failing to restrict access to authorized users",
+    # Path/Link Issues
+    "CWE-59": "Improper Link Resolution (Link Following) - following symbolic links to unintended files",
+    # Resource Management
+    "CWE-399": "Resource Management Errors - improper management of system resources (category)",
+    "CWE-400": "Uncontrolled Resource Consumption - allowing excessive resource usage (DoS)",
+    "CWE-770": "Allocation Without Limits or Throttling - allocating resources without caps or rate limits",
+    "CWE-835": "Infinite Loop - loop with unreachable exit condition causing hang or DoS",
+    # Cryptography
+    "CWE-310": "Cryptographic Issues - general cryptography problems (category)",
+    "CWE-311": "Missing Encryption of Sensitive Data - transmitting/storing sensitive data unencrypted",
+    "CWE-312": "Cleartext Storage of Sensitive Information - storing passwords/keys in plaintext",
+    "CWE-326": "Inadequate Encryption Strength - using weak encryption algorithms or key sizes",
+    "CWE-327": "Use of Broken or Risky Cryptographic Algorithm - using deprecated/weak crypto",
+    "CWE-330": "Use of Insufficiently Random Values - predictable random number generation",
 }
 
 _CWE_REGEX = re.compile(r"CWE-(\d+)")

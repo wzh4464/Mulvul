@@ -591,7 +591,7 @@ class PromptBundleAdapter:
             schema_version="2",
             taxonomy=taxonomy,
             nodes=nodes,
-            defaults=BundleDefaults(default_threshold=0.5),
+            defaults=BundleDefaults(),
             training_metadata=normalized_training_metadata,
             data_fingerprint=data_fingerprint,
             code_revision=code_revision,

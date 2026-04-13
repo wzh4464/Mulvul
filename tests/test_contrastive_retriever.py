@@ -161,3 +161,23 @@ def test_clean_pool_seed_determinism():
     assert [e.code for e in pool1] == [e.code for e in pool2]
     # Different seed = different result
     assert [e.code for e in pool1] != [e.code for e in pool3]
+
+
+def test_similarity_cache_avoids_repeat_tokenization(monkeypatch):
+    """Repeated similarity checks should reuse cached token sets/results."""
+    kb = KnowledgeBase()
+    retriever = CodeSimilarityRetriever(kb)
+    calls = []
+    original = retriever._tokenize
+
+    def counting_tokenize(code):
+        calls.append(code)
+        return original(code)
+
+    monkeypatch.setattr(retriever, "_tokenize", counting_tokenize)
+
+    score1 = retriever._compute_similarity("int a = user_input;", "int a = safe_input;")
+    score2 = retriever._compute_similarity("int a = user_input;", "int a = safe_input;")
+
+    assert score1 == score2
+    assert len(calls) == 2
