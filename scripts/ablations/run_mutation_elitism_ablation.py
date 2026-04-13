@@ -119,6 +119,9 @@ def run_single_experiment(
     start_time = datetime.now()
 
     try:
+        # Security note: cmd is a list (not shell=True), and all user-controlled
+        # inputs (llm_type) are validated above to contain only safe characters.
+        # No shell injection is possible with this approach.
         result = subprocess.run(
             cmd,
             capture_output=True,

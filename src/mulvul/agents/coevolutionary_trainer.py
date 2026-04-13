@@ -11,7 +11,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
@@ -946,6 +946,52 @@ class CoevolutionaryTrainer:
     # Prompt splitting helper
     # ------------------------------------------------------------------
 
+    def _validate_prompt_structure(self, prompt: str) -> bool:
+        """Validate that a prompt maintains essential structural elements.
+
+        This is used for unconstrained mutation/crossover to ensure the LLM
+        doesn't accidentally break the prompt contract. Checks are flexible
+        to support different template styles.
+        """
+        prompt_lower = prompt.lower()
+
+        # Check for essential structural markers - be flexible about exact format
+        has_evidence_marker = any(marker in prompt_lower for marker in [
+            "evidence", "{evidence}", "## evidence", "# evidence"
+        ])
+        has_code_marker = any(marker in prompt_lower for marker in [
+            "code", "{code}", "## code", "# code", "```"
+        ])
+
+        # Check for JSON output indicators - support multiple formats
+        has_json_output = any(marker in prompt_lower for marker in [
+            "json", "predictions", "category", "confidence", "cwe", "output"
+        ])
+
+        # Must have at least basic structure
+        return has_evidence_marker and has_code_marker and has_json_output
+
+    def _safe_generate(
+        self,
+        request: str,
+        validate_structure: bool = False,
+    ) -> Optional[str]:
+        """Safely generate LLM output with optional structure validation.
+
+        Centralizes common LLM invocation patterns and error handling for
+        mutation/crossover operations.
+        """
+        try:
+            result = self.meta_llm.generate(request).strip()
+        except Exception:
+            return None
+
+        if len(result) < _MIN_LLM_OUTPUT_LEN:
+            return None
+        if validate_structure and not self._validate_prompt_structure(result):
+            return None
+        return result
+
     @staticmethod
     def _reassemble(mutable: str, protected: str) -> str:
         """Join mutable header and protected footer with normalized spacing."""
@@ -1028,29 +1074,21 @@ class CoevolutionaryTrainer:
                 "- Add {{code}}, {{evidence}}, or JSON format — those are handled separately\n\n"
                 "Return ONLY the improved instruction text, nothing else."
             )
-            try:
-                result = self.meta_llm.generate(mutation_request)
-                result = result.strip()
-                if len(result) < _MIN_LLM_OUTPUT_LEN:
-                    self.log.emit("mutation_skipped", {
-                        "node": node_key, "reason": "output_too_short",
-                        "output_len": len(result),
-                    })
-                    return prompt
-                new_prompt = self._reassemble(result, protected)
-                self.log.emit("mutation_applied", {
-                    "node": node_key,
-                    "mode": "constrained",
-                    "prompt_before": prompt,
-                    "prompt_after": new_prompt,
-                    "error_count": len(errors),
-                })
-                return new_prompt
-            except Exception as exc:
-                self.log.emit("mutation_failed", {
-                    "node": node_key, "error": str(exc),
+            result = self._safe_generate(mutation_request)
+            if not result:
+                self.log.emit("mutation_skipped", {
+                    "node": node_key, "reason": "generation_failed_or_too_short",
                 })
                 return prompt
+            new_prompt = self._reassemble(result, protected)
+            self.log.emit("mutation_applied", {
+                "node": node_key,
+                "mode": "constrained",
+                "prompt_before": prompt,
+                "prompt_after": new_prompt,
+                "error_count": len(errors),
+            })
+            return new_prompt
         else:
             # Unconstrained: rewrite entire prompt
             mutation_request = (
@@ -1063,28 +1101,20 @@ class CoevolutionaryTrainer:
                 "Keep the same candidate list but improve how they are described.\n"
                 "Return ONLY the improved prompt text, nothing else."
             )
-            try:
-                result = self.meta_llm.generate(mutation_request)
-                result = result.strip()
-                if len(result) < _MIN_LLM_OUTPUT_LEN:
-                    self.log.emit("mutation_skipped", {
-                        "node": node_key, "reason": "output_too_short",
-                        "output_len": len(result),
-                    })
-                    return prompt
-                self.log.emit("mutation_applied", {
-                    "node": node_key,
-                    "mode": "unconstrained",
-                    "prompt_before": prompt,
-                    "prompt_after": result,
-                    "error_count": len(errors),
-                })
-                return result
-            except Exception as exc:
-                self.log.emit("mutation_failed", {
-                    "node": node_key, "error": str(exc),
+            result = self._safe_generate(mutation_request, validate_structure=True)
+            if not result:
+                self.log.emit("mutation_skipped", {
+                    "node": node_key, "reason": "generation_failed_or_invalid_structure",
                 })
                 return prompt
+            self.log.emit("mutation_applied", {
+                "node": node_key,
+                "mode": "unconstrained",
+                "prompt_before": prompt,
+                "prompt_after": result,
+                "error_count": len(errors),
+            })
+            return result
 
     def _crossover_prompts(
         self, prompt_a: str, prompt_b: str, node_key: str
@@ -1111,25 +1141,21 @@ class CoevolutionaryTrainer:
                 "Do NOT include {{code}}, {{evidence}}, or JSON output format.\n"
                 "Return ONLY the merged instruction text."
             )
-            try:
-                result = self.meta_llm.generate(crossover_request)
-                result = result.strip()
-                if len(result) < _MIN_LLM_OUTPUT_LEN:
-                    return prompt_a
-                child = self._reassemble(result, protected_a)
-                self.log.emit("crossover_applied", {
-                    "node": node_key,
-                    "mode": "constrained",
-                    "parent_a": prompt_a,
-                    "parent_b": prompt_b,
-                    "child": child,
-                })
-                return child
-            except Exception as exc:
+            result = self._safe_generate(crossover_request)
+            if not result:
                 self.log.emit("crossover_failed", {
-                    "node": node_key, "error": str(exc),
+                    "node": node_key, "reason": "generation_failed_or_too_short",
                 })
                 return prompt_a
+            child = self._reassemble(result, protected_a)
+            self.log.emit("crossover_applied", {
+                "node": node_key,
+                "mode": "constrained",
+                "parent_a": prompt_a,
+                "parent_b": prompt_b,
+                "child": child,
+            })
+            return child
         else:
             # Unconstrained: merge entire prompts
             crossover_request = (
@@ -1140,24 +1166,20 @@ class CoevolutionaryTrainer:
                 "Create a single improved prompt combining the best elements from both.\n"
                 "Return ONLY the merged prompt text."
             )
-            try:
-                result = self.meta_llm.generate(crossover_request)
-                result = result.strip()
-                if len(result) < _MIN_LLM_OUTPUT_LEN:
-                    return prompt_a
-                self.log.emit("crossover_applied", {
-                    "node": node_key,
-                    "mode": "unconstrained",
-                    "parent_a": prompt_a,
-                    "parent_b": prompt_b,
-                    "child": result,
-                })
-                return result
-            except Exception as exc:
+            result = self._safe_generate(crossover_request, validate_structure=True)
+            if not result:
                 self.log.emit("crossover_failed", {
-                    "node": node_key, "error": str(exc),
+                    "node": node_key, "reason": "generation_failed_or_invalid_structure",
                 })
                 return prompt_a
+            self.log.emit("crossover_applied", {
+                "node": node_key,
+                "mode": "unconstrained",
+                "parent_a": prompt_a,
+                "parent_b": prompt_b,
+                "child": result,
+            })
+            return result
 
     def _migrate_across_stage(self) -> None:
         """Best-in-stage donates its prompt style to the worst-in-stage.
