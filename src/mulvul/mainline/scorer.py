@@ -31,6 +31,8 @@ ParseStatus = Literal["ok", "fallback", "error"]
 class LLMNodeScorer:
     """Default prompt-rendering LLM scorer for v2 bundles."""
 
+    DEFAULT_PROMPT_CODE_MAX_CHARS = 4000
+
     def __init__(self, llm_client: Any, bundle: PromptBundle):
         self.llm_client = llm_client
         self.bundle = bundle
@@ -122,15 +124,34 @@ class LLMNodeScorer:
             return node.threshold
         return self.bundle.defaults.default_threshold
 
+    def _scorer_config_value(self, key: str, default: Any) -> Any:
+        return self.bundle.defaults.scorer_config.get(key, default)
+
+    def _prompt_code_snippet(self, code: str) -> str:
+        limit = self._scorer_config_value(
+            "prompt_code_max_chars",
+            self.DEFAULT_PROMPT_CODE_MAX_CHARS,
+        )
+        if limit is None:
+            return code
+        try:
+            max_chars = int(limit)
+        except (TypeError, ValueError):
+            return code[: self.DEFAULT_PROMPT_CODE_MAX_CHARS]
+        if max_chars <= 0:
+            return code
+        return code[:max_chars]
+
     def _render_prompt(self, node: NodeSpec, ctx: ScorerContext) -> str:
         evidence_text = self._render_evidence(node, ctx.evidence)
         query_text = self._render_query(node, ctx)
         parent_label = ctx.parent_result.target_label if ctx.parent_result else ""
         candidates = ", ".join(ctx.candidate_labels)
+        prompt_code = self._prompt_code_snippet(ctx.code)
         return safe_format(
             node.instruction_template,
-            code=ctx.code[:4000],
-            input=ctx.code[:4000],
+            code=prompt_code,
+            input=prompt_code,
             evidence=evidence_text,
             candidates=candidates,
             query=query_text,

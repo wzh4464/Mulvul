@@ -5,7 +5,6 @@ simultaneously using PromptSet as the unit of evolution.
 """
 from __future__ import annotations
 
-import copy
 import random
 from typing import (
     Any, Callable, Dict, List, Optional, Tuple,
@@ -58,10 +57,21 @@ class MultiLayerPopulation:
             key=lambda x: x.fitness or 0,
         )
 
+    def _is_sorted_by_fitness(self, reverse: bool) -> bool:
+        comparator = (
+            (lambda left, right: left >= right)
+            if reverse
+            else (lambda left, right: left <= right)
+        )
+        scores = [individual.fitness or 0 for individual in self.individuals]
+        return all(comparator(scores[idx], scores[idx + 1]) for idx in range(len(scores) - 1))
+
     def sort_by_fitness(
         self, reverse: bool = True
     ) -> None:
         """Sort individuals by fitness (descending)."""
+        if len(self.individuals) <= 1 or self._is_sorted_by_fitness(reverse):
+            return
         self.individuals.sort(
             key=lambda x: x.fitness or 0,
             reverse=reverse,
@@ -173,10 +183,7 @@ class MultiLayerEvolution:
         the LLM to combine trainable sections from
         both parents.
         """
-        new_ps_dict = copy.deepcopy(
-            parent1.prompt_set.to_dict()
-        )
-        new_ps = PromptSet.from_dict(new_ps_dict)
+        new_ps = parent1.prompt_set.clone()
 
         t1 = parent1.prompt_set.get_template(
             layer, category
@@ -245,10 +252,7 @@ class MultiLayerEvolution:
         then uses the LLM to improve the trainable
         content.
         """
-        new_ps_dict = copy.deepcopy(
-            individual.prompt_set.to_dict()
-        )
-        new_ps = PromptSet.from_dict(new_ps_dict)
+        new_ps = individual.prompt_set.clone()
 
         template = new_ps.get_template(
             layer, category
@@ -317,7 +321,7 @@ class MultiLayerEvolution:
         """
         population = MultiLayerPopulation([
             MultiLayerIndividual(
-                prompt_set=copy.deepcopy(ps)
+                prompt_set=ps.clone()
             )
             for ps in initial_prompt_sets
         ])

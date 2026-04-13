@@ -41,9 +41,20 @@ class Population:
     def worst(self) -> Individual:
         """Get the worst individual by fitness."""
         return min(self.individuals, key=lambda x: x.fitness or 0)
-        
+
+    def _is_sorted_by_fitness(self, reverse: bool) -> bool:
+        comparator = (
+            (lambda left, right: left >= right)
+            if reverse
+            else (lambda left, right: left <= right)
+        )
+        scores = [individual.fitness or 0 for individual in self.individuals]
+        return all(comparator(scores[idx], scores[idx + 1]) for idx in range(len(scores) - 1))
+
     def sort_by_fitness(self, reverse: bool = True):
         """Sort population by fitness."""
+        if len(self.individuals) <= 1 or self._is_sorted_by_fitness(reverse):
+            return
         self.individuals.sort(key=lambda x: x.fitness or 0, reverse=reverse)
 
 

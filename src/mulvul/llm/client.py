@@ -1,12 +1,12 @@
 """LLM client implementations compatible with SVEN."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List, Union
-import requests
-import time
-import logging
 import os
-from pathlib import Path
+import logging
+import time
+from typing import Any, Dict, List, Optional, Union
+
+import requests
 
 try:
     from openai import OpenAI
@@ -14,54 +14,17 @@ try:
 except ImportError:
     HAS_OPENAI = False
 
+from .helpers import (
+    get_env_float,
+    get_env_int,
+    get_env_bool,
+    load_env_vars,
+    resolve_llm_cache_dir,
+    truncate_task_response,
+)
+from .runtime import LLMRuntime, LLMRuntimeConfig
+
 logger = logging.getLogger(__name__)
-
-
-def load_env_vars():
-    """Load environment variables from .env file"""
-    # Try multiple possible locations for .env file
-    possible_paths = [
-        Path(__file__).parent.parent.parent / '.env',  # From package structure
-        Path.cwd() / '.env',  # From current working directory
-        Path(__file__).parent.parent.parent.parent / '.env'  # One level up from src
-    ]
-    
-    for env_path in possible_paths:
-        if env_path.exists():
-            logger.debug(f"Loading .env from: {env_path}")
-            with open(env_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        os.environ[key.strip()] = value.strip()
-            return
-    
-    logger.warning("No .env file found in any expected location")
-
-
-def _get_env_int(name: str, default: int) -> int:
-    """Read an integer environment variable with fallback."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    try:
-        return int(value)
-    except ValueError:
-        logger.warning("Invalid integer for %s: %s; using %s", name, value, default)
-        return default
-
-
-def _get_env_float(name: str, default: float) -> float:
-    """Read a float environment variable with fallback."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    try:
-        return float(value)
-    except ValueError:
-        logger.warning("Invalid float for %s: %s; using %s", name, value, default)
-        return default
 
 
 # Load environment variables at module level
@@ -100,9 +63,9 @@ class SVENLLMClient(LLMClient):
         self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o")
         self.backup_api_base = os.getenv("BACKUP_API_BASE_URL", "https://newapi.aicohere.org/v1")
         
-        self.max_retries = _get_env_int("SVEN_LLM_MAX_RETRIES", max_retries)
-        self.retry_delay = _get_env_float("SVEN_LLM_RETRY_DELAY", retry_delay)
-        self.request_timeout = _get_env_float("SVEN_LLM_TIMEOUT", 30.0)
+        self.max_retries = get_env_int("SVEN_LLM_MAX_RETRIES", max_retries)
+        self.retry_delay = get_env_float("SVEN_LLM_RETRY_DELAY", retry_delay)
+        self.request_timeout = get_env_float("SVEN_LLM_TIMEOUT", 30.0)
         self.max_concurrency = max_concurrency
         
         if not self.api_key:
@@ -184,7 +147,10 @@ class SVENLLMClient(LLMClient):
 
         # Task-oriented truncation (like SVEN)
         if task:
-            result = result.split("\n\n")[0]
+            result = truncate_task_response(
+                result,
+                strategy=kwargs.get("task_truncation_strategy"),
+            )
 
         return result
     
@@ -335,10 +301,10 @@ class OpenAICompatibleClient(LLMClient):
         self.api_key = api_key or os.getenv("API_KEY", "")
         self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-3.5-turbo")
         
-        self.max_retries = _get_env_int("OPENAI_CLIENT_MAX_RETRIES", max_retries)
-        self.retry_delay = _get_env_float("OPENAI_CLIENT_RETRY_DELAY", retry_delay)
-        self.request_timeout = _get_env_float("OPENAI_CLIENT_TIMEOUT", 60.0)
-        self.max_concurrency = _get_env_int("OPENAI_CLIENT_MAX_CONCURRENCY", 16)
+        self.max_retries = get_env_int("OPENAI_CLIENT_MAX_RETRIES", max_retries)
+        self.retry_delay = get_env_float("OPENAI_CLIENT_RETRY_DELAY", retry_delay)
+        self.request_timeout = get_env_float("OPENAI_CLIENT_TIMEOUT", 60.0)
+        self.max_concurrency = get_env_int("OPENAI_CLIENT_MAX_CONCURRENCY", 16)
         
         if not self.api_key:
             raise ValueError("API_KEY not found. Please set it in .env file or environment variable.")
@@ -407,7 +373,10 @@ class OpenAICompatibleClient(LLMClient):
 
         # Task-oriented truncation (like SVEN)
         if task:
-            result = result.split("\n\n")[0]
+            result = truncate_task_response(
+                result,
+                strategy=kwargs.get("task_truncation_strategy"),
+            )
 
         return result
     
@@ -640,22 +609,69 @@ class LocalLLMClient(LLMClient):
         return results
 
 
+def _runtime_enabled(enable_cache: Optional[bool]) -> bool:
+    if enable_cache is not None:
+        return enable_cache
+    return get_env_bool("MULVUL_ENABLE_LLM_CACHE", True)
+
+
+def _wrap_with_runtime_cache(
+    backend: LLMClient,
+    *,
+    enable_cache: Optional[bool],
+    cache_dir: Optional[str],
+    cache_namespace: str,
+) -> LLMClient:
+    runtime_config = LLMRuntimeConfig(
+        enable_cache=_runtime_enabled(enable_cache),
+        cache_dir=resolve_llm_cache_dir(
+            namespace=cache_namespace,
+            cache_dir=cache_dir,
+        ),
+        model_name=str(getattr(backend, "model_name", "")),
+    )
+    if not runtime_config.enable_cache:
+        return backend
+    return LLMRuntime(backend=backend, config=runtime_config)
+
+
 def create_llm_client(llm_type: str = None, **kwargs) -> LLMClient:
     """Factory function to create LLM clients."""
+    enable_cache = kwargs.pop("enable_cache", None)
+    cache_dir = kwargs.pop("cache_dir", None)
+    cache_namespace = kwargs.pop("cache_namespace", "default")
+    model_name_override = kwargs.pop("model_name", None)
+
     # Use OpenAI-compatible client as default (ModelScope)
     if llm_type is None or llm_type in ["openai", "modelscope", "default"]:
-        return OpenAICompatibleClient(**kwargs)
+        backend: LLMClient = OpenAICompatibleClient(
+            model_name=model_name_override,
+            **kwargs,
+        )
     elif llm_type in ["sven"]:
-        return SVENLLMClient(**kwargs)
+        backend = SVENLLMClient(model_name=model_name_override, **kwargs)
     elif llm_type.startswith("gpt-") or llm_type.startswith("text-davinci") or llm_type.startswith("Qwen/"):
         # Use OpenAI client for OpenAI and Qwen models
-        return OpenAICompatibleClient(model_name=llm_type, **kwargs)
+        backend = OpenAICompatibleClient(
+            model_name=model_name_override or llm_type,
+            **kwargs,
+        )
     elif llm_type.startswith("kimi"):
         # Use SVEN client for kimi models (requires different API format)
-        return SVENLLMClient(model_name=llm_type, **kwargs)
+        backend = SVENLLMClient(
+            model_name=model_name_override or llm_type,
+            **kwargs,
+        )
     else:
         # Use local client for local models
-        return LocalLLMClient(model_name=llm_type, **kwargs)
+        backend = LocalLLMClient(model_name=model_name_override or llm_type, **kwargs)
+
+    return _wrap_with_runtime_cache(
+        backend,
+        enable_cache=enable_cache,
+        cache_dir=cache_dir,
+        cache_namespace=cache_namespace,
+    )
 
 
 # Compatibility functions for SVEN integration - now uses OpenAI client as default
@@ -694,16 +710,32 @@ def create_default_client(model_name: Optional[str] = None, api_base: Optional[s
     model = model_name or os.getenv("MODEL_NAME", None)
     base = api_base or os.getenv("API_BASE_URL", None)
     key = api_key or os.getenv("API_KEY", None)
-    return OpenAICompatibleClient(model_name=model, api_base=base, api_key=key)
+    return create_llm_client(
+        llm_type=model or "default",
+        model_name=model,
+        api_base=base,
+        api_key=key,
+        cache_namespace="default",
+    )
 
 
 def create_meta_prompt_client(
     model_name: Optional[str] = None,
     api_base: Optional[str] = None,
     api_key: Optional[str] = None,
+    **kwargs,
 ) -> LLMClient:
     """Create LLM client dedicated to meta-prompt evolution."""
     meta_model = model_name or os.getenv("META_MODEL_NAME", "claude-sonnet-4-5-20250929-thinking")
     meta_base = api_base or os.getenv("META_API_BASE_URL") or os.getenv("API_BASE_URL")
     meta_key = api_key or os.getenv("META_API_KEY") or os.getenv("API_KEY")
-    return OpenAICompatibleClient(model_name=meta_model, api_base=meta_base, api_key=meta_key)
+    return create_llm_client(
+        llm_type=meta_model,
+        model_name=meta_model,
+        api_base=meta_base,
+        api_key=meta_key,
+        cache_namespace=kwargs.pop("cache_namespace", "meta"),
+        enable_cache=kwargs.pop("enable_cache", None),
+        cache_dir=kwargs.pop("cache_dir", None),
+        **kwargs,
+    )

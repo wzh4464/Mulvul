@@ -3,9 +3,10 @@
 Retrieves similar code examples from knowledge base and formats them for prompt enhancement.
 """
 
-from typing import List, Optional, Tuple
+import hashlib
 import re
 from dataclasses import dataclass
+from typing import List, Optional, Tuple
 
 from .knowledge_base import KnowledgeBase, CodeExample
 from ..prompts.hierarchical_three_layer import (
@@ -86,6 +87,8 @@ class CodeSimilarityRetriever:
         self.clean_pool_seed = clean_pool_seed
         self.debug = debug
         self._subsampled_clean_pool: Optional[List[CodeExample]] = None
+        self._token_cache: dict[str, frozenset[str]] = {}
+        self._similarity_cache: dict[tuple[str, str], float] = {}
 
     def retrieve_for_major_category(
         self,
@@ -448,9 +451,13 @@ class CodeSimilarityRetriever:
         Returns:
             Similarity score in [0, 1]
         """
-        # Tokenize (simple approach)
-        tokens1 = set(self._tokenize(code1))
-        tokens2 = set(self._tokenize(code2))
+        cache_key = self._similarity_cache_key(code1, code2)
+        cached = self._similarity_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        tokens1 = self._token_set(code1)
+        tokens2 = self._token_set(code2)
 
         if not tokens1 or not tokens2:
             return 0.0
@@ -459,7 +466,23 @@ class CodeSimilarityRetriever:
         intersection = len(tokens1 & tokens2)
         union = len(tokens1 | tokens2)
 
-        return intersection / union if union > 0 else 0.0
+        similarity = intersection / union if union > 0 else 0.0
+        self._similarity_cache[cache_key] = similarity
+        return similarity
+
+    def _similarity_cache_key(self, code1: str, code2: str) -> tuple[str, str]:
+        left = hashlib.sha1(code1.encode("utf-8")).hexdigest()
+        right = hashlib.sha1(code2.encode("utf-8")).hexdigest()
+        return (left, right) if left <= right else (right, left)
+
+    def _token_set(self, code: str) -> frozenset[str]:
+        key = hashlib.sha1(code.encode("utf-8")).hexdigest()
+        cached = self._token_cache.get(key)
+        if cached is not None:
+            return cached
+        tokens = frozenset(self._tokenize(code))
+        self._token_cache[key] = tokens
+        return tokens
 
     def _tokenize(self, code: str) -> List[str]:
         """Simple tokenization of code.
@@ -605,6 +628,8 @@ class MulVulRetriever:
         self.by_major = {}
         self.by_middle = {}
         self.by_cwe = {}
+        self._token_cache: dict[str, frozenset[str]] = {}
+        self._similarity_cache: dict[tuple[str, str], float] = {}
 
         if knowledge_base_path:
             self._load_from_json(knowledge_base_path)
@@ -692,12 +717,33 @@ class MulVulRetriever:
 
     def _compute_similarity(self, code1: str, code2: str) -> float:
         """Compute Jaccard similarity on token sets."""
-        tokens1 = set(re.findall(r'\w+', code1.lower()))
-        tokens2 = set(re.findall(r'\w+', code2.lower()))
+        cache_key = self._similarity_cache_key(code1, code2)
+        cached = self._similarity_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        tokens1 = self._token_set(code1)
+        tokens2 = self._token_set(code2)
 
         if not tokens1 or not tokens2:
             return 0.0
 
         intersection = len(tokens1 & tokens2)
         union = len(tokens1 | tokens2)
-        return intersection / union if union > 0 else 0.0
+        similarity = intersection / union if union > 0 else 0.0
+        self._similarity_cache[cache_key] = similarity
+        return similarity
+
+    def _similarity_cache_key(self, code1: str, code2: str) -> tuple[str, str]:
+        left = hashlib.sha1(code1.encode("utf-8")).hexdigest()
+        right = hashlib.sha1(code2.encode("utf-8")).hexdigest()
+        return (left, right) if left <= right else (right, left)
+
+    def _token_set(self, code: str) -> frozenset[str]:
+        key = hashlib.sha1(code.encode("utf-8")).hexdigest()
+        cached = self._token_cache.get(key)
+        if cached is not None:
+            return cached
+        tokens = frozenset(re.findall(r"\w+", code.lower()))
+        self._token_cache[key] = tokens
+        return tokens

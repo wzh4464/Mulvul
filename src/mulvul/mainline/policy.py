@@ -193,97 +193,157 @@ class GreedyCascadePolicy:
         scorer: NodeScorer,
         code: str,
     ) -> InferenceResult:
-        stage_results: dict[str, list[NodeScoreResult]] = {
+        stage_results = self._empty_stage_results()
+        candidate_paths: list[DetectionPath] = []
+        accepted_major = self._major_stage(bundle, scorer, code, stage_results)
+
+        for major_result in accepted_major:
+            self._middle_stage(
+                bundle,
+                scorer,
+                code,
+                major_result,
+                stage_results,
+                candidate_paths,
+            )
+
+        self._finalize_stage_results(stage_results)
+        return self._build_inference_result(
+            bundle,
+            stage_results,
+            accepted_major,
+            candidate_paths,
+        )
+
+    def _empty_stage_results(self) -> dict[str, list[NodeScoreResult]]:
+        return {
             "major": [],
             "middle": [],
             "cwe": [],
         }
-        candidate_paths: list[DetectionPath] = []
 
+    def _major_stage(
+        self,
+        bundle: PromptBundle,
+        scorer: NodeScorer,
+        code: str,
+        stage_results: dict[str, list[NodeScoreResult]],
+    ) -> list[NodeScoreResult]:
         major_ids = self._existing_node_ids(
-            bundle, bundle.taxonomy.node_ids_for_stage("major")
+            bundle,
+            bundle.taxonomy.node_ids_for_stage("major"),
         )
         major_results = self._score_nodes(
-            bundle, scorer, major_ids, code=code, parent_result=None
+            bundle,
+            scorer,
+            major_ids,
+            code=code,
+            parent_result=None,
         )
         stage_results["major"] = self._sort_results(major_results)
-
-        accepted_major = [
+        return [
             result for result in stage_results["major"] if result.decision == "accept"
         ][: self.major_top_k]
 
-        for major_result in accepted_major:
-            middle_ids = self._existing_node_ids(
-                bundle,
-                bundle.taxonomy.children_of(major_result.node_id),
-            )
-            if not middle_ids:
-                candidate_paths.append(self._path_from_results([major_result]))
-                continue
+    def _middle_stage(
+        self,
+        bundle: PromptBundle,
+        scorer: NodeScorer,
+        code: str,
+        major_result: NodeScoreResult,
+        stage_results: dict[str, list[NodeScoreResult]],
+        candidate_paths: list[DetectionPath],
+    ) -> None:
+        middle_ids = self._existing_node_ids(
+            bundle,
+            bundle.taxonomy.children_of(major_result.node_id),
+        )
+        if not middle_ids:
+            candidate_paths.append(self._path_from_results([major_result]))
+            return
 
-            middle_results = self._score_nodes(
+        middle_results = self._score_nodes(
+            bundle,
+            scorer,
+            middle_ids,
+            code=code,
+            parent_result=major_result,
+        )
+        sorted_middle_results = self._sort_results(middle_results)
+        stage_results["middle"].extend(sorted_middle_results)
+        accepted_middle = [
+            result for result in sorted_middle_results if result.decision == "accept"
+        ][: self.middle_top_k]
+
+        if not accepted_middle:
+            candidate_paths.append(self._path_from_results([major_result]))
+            return
+
+        for middle_result in accepted_middle:
+            self._cwe_stage(
                 bundle,
                 scorer,
-                middle_ids,
-                code=code,
-                parent_result=major_result,
+                code,
+                major_result,
+                middle_result,
+                stage_results,
+                candidate_paths,
             )
-            sorted_middle_results = self._sort_results(middle_results)
-            stage_results["middle"].extend(sorted_middle_results)
 
-            accepted_middle = [
-                result
-                for result in sorted_middle_results
-                if result.decision == "accept"
-            ][: self.middle_top_k]
+    def _cwe_stage(
+        self,
+        bundle: PromptBundle,
+        scorer: NodeScorer,
+        code: str,
+        major_result: NodeScoreResult,
+        middle_result: NodeScoreResult,
+        stage_results: dict[str, list[NodeScoreResult]],
+        candidate_paths: list[DetectionPath],
+    ) -> None:
+        cwe_ids = self._existing_node_ids(
+            bundle,
+            bundle.taxonomy.children_of(middle_result.node_id),
+        )
+        if not cwe_ids:
+            candidate_paths.append(self._path_from_results([major_result, middle_result]))
+            return
 
-            if not accepted_middle:
-                candidate_paths.append(self._path_from_results([major_result]))
-                continue
+        cwe_results = self._score_nodes(
+            bundle,
+            scorer,
+            cwe_ids,
+            code=code,
+            parent_result=middle_result,
+        )
+        sorted_cwe_results = self._sort_results(cwe_results)
+        stage_results["cwe"].extend(sorted_cwe_results)
+        accepted_cwes = [
+            result for result in sorted_cwe_results if result.decision == "accept"
+        ]
 
-            for middle_result in accepted_middle:
-                cwe_ids = self._existing_node_ids(
-                    bundle,
-                    bundle.taxonomy.children_of(middle_result.node_id),
-                )
-                if not cwe_ids:
-                    candidate_paths.append(
-                        self._path_from_results([major_result, middle_result])
-                    )
-                    continue
+        if not accepted_cwes:
+            candidate_paths.append(self._path_from_results([major_result, middle_result]))
+            return
 
-                cwe_results = self._score_nodes(
-                    bundle,
-                    scorer,
-                    cwe_ids,
-                    code=code,
-                    parent_result=middle_result,
-                )
-                sorted_cwe_results = self._sort_results(cwe_results)
-                stage_results["cwe"].extend(sorted_cwe_results)
+        for cwe_result in accepted_cwes:
+            candidate_paths.append(
+                self._path_from_results([major_result, middle_result, cwe_result])
+            )
 
-                accepted_cwes = [
-                    result
-                    for result in sorted_cwe_results
-                    if result.decision == "accept"
-                ]
-
-                if not accepted_cwes:
-                    candidate_paths.append(
-                        self._path_from_results([major_result, middle_result])
-                    )
-                    continue
-
-                for cwe_result in accepted_cwes:
-                    candidate_paths.append(
-                        self._path_from_results(
-                            [major_result, middle_result, cwe_result]
-                        )
-                    )
-
+    def _finalize_stage_results(
+        self,
+        stage_results: dict[str, list[NodeScoreResult]],
+    ) -> None:
         for stage in stage_results:
             stage_results[stage] = self._sort_results(stage_results[stage])
 
+    def _build_inference_result(
+        self,
+        bundle: PromptBundle,
+        stage_results: dict[str, list[NodeScoreResult]],
+        accepted_major: list[NodeScoreResult],
+        candidate_paths: list[DetectionPath],
+    ) -> InferenceResult:
         nodes_scored = sum(len(results) for results in stage_results.values())
         nodes_skipped = max(len(bundle.nodes) - nodes_scored, 0)
 

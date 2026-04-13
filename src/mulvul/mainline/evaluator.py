@@ -56,6 +56,21 @@ class EvaluationResult:
     metadata: dict[str, object] = field(default_factory=dict)
 
 
+@dataclass
+class _EvaluationAccumulator:
+    route_counts: defaultdict[str, float]
+    path_margins: list[float]
+    node_counters: defaultdict[str, NodeCounter]
+    final_pairs: list[tuple[str, str]]
+    major_pairs: list[tuple[str, str]]
+    middle_pairs: list[tuple[str, str]]
+    cwe_pairs: list[tuple[str, str]]
+    binary_pairs: list[tuple[str, str]]
+    nodes_scored_total: float
+    major_top_k: int
+    middle_top_k: int
+
+
 class Evaluator(Protocol):
     """Evaluator contract."""
 
@@ -72,6 +87,21 @@ class Evaluator(Protocol):
 class MainlineEvaluator:
     """Minimal evaluator for v2 mainline bundles."""
 
+    def _new_accumulator(self, policy: InferencePolicy) -> _EvaluationAccumulator:
+        return _EvaluationAccumulator(
+            route_counts=defaultdict(float),
+            path_margins=[],
+            node_counters=defaultdict(self._new_node_counter),
+            final_pairs=[],
+            major_pairs=[],
+            middle_pairs=[],
+            cwe_pairs=[],
+            binary_pairs=[],
+            nodes_scored_total=0.0,
+            major_top_k=max(1, getattr(policy, "major_top_k", 1)),
+            middle_top_k=max(1, getattr(policy, "middle_top_k", 1)),
+        )
+
     def evaluate(
         self,
         bundle: PromptBundle,
@@ -79,163 +109,184 @@ class MainlineEvaluator:
         policy: InferencePolicy,
         dataset: Sequence[EvaluationSample],
     ) -> EvaluationResult:
-        route_counts: defaultdict[str, float] = defaultdict(float)
-        path_margins: list[float] = []
-        node_counters: defaultdict[str, NodeCounter] = defaultdict(
-            self._new_node_counter
-        )
-
-        final_pairs: list[tuple[str, str]] = []
-        major_pairs: list[tuple[str, str]] = []
-        middle_pairs: list[tuple[str, str]] = []
-        cwe_pairs: list[tuple[str, str]] = []
-        binary_pairs: list[tuple[str, str]] = []
-        nodes_scored_total = 0.0
-
-        major_top_k = max(1, getattr(policy, "major_top_k", 1))
-        middle_top_k = max(1, getattr(policy, "middle_top_k", 1))
-
+        accumulator = self._new_accumulator(policy)
         for sample in dataset:
             inference = policy.run(bundle, scorer, sample.code)
-            final_pairs.append((sample.final_label, inference.prediction))
-            nodes_scored_total += inference.nodes_scored
+            self._record_prediction_pairs(bundle, sample, inference, accumulator)
+            self._record_route_metrics(bundle, sample, inference, accumulator)
+            self._record_node_metrics(bundle, sample, inference, accumulator)
+        return self._build_result(dataset, accumulator)
 
-            pred_major, pred_middle, pred_cwe = self._extract_predicted_labels(
-                inference,
-                benign_label=bundle.taxonomy.benign_label,
+    def _record_prediction_pairs(
+        self,
+        bundle: PromptBundle,
+        sample: EvaluationSample,
+        inference: InferenceResult,
+        accumulator: _EvaluationAccumulator,
+    ) -> None:
+        accumulator.final_pairs.append((sample.final_label, inference.prediction))
+        accumulator.nodes_scored_total += inference.nodes_scored
+
+        pred_major, pred_middle, pred_cwe = self._extract_predicted_labels(
+            inference,
+            benign_label=bundle.taxonomy.benign_label,
+        )
+        accumulator.major_pairs.append(
+            (
+                sample.major_label or bundle.taxonomy.benign_label,
+                pred_major,
             )
-            major_pairs.append(
+        )
+        if sample.final_label != bundle.taxonomy.benign_label:
+            accumulator.middle_pairs.append(
+                (sample.middle_label or "Unknown", pred_middle or "Unknown")
+            )
+            accumulator.cwe_pairs.append(
+                (sample.cwe_label or "Unknown", pred_cwe or "Unknown")
+            )
+
+        accumulator.binary_pairs.append(
+            (
                 (
-                    sample.major_label or bundle.taxonomy.benign_label,
-                    pred_major,
-                )
-            )
-            if sample.final_label != bundle.taxonomy.benign_label:
-                middle_pairs.append(
-                    (sample.middle_label or "Unknown", pred_middle or "Unknown")
-                )
-                cwe_pairs.append((sample.cwe_label or "Unknown", pred_cwe or "Unknown"))
-            binary_pairs.append(
+                    "Vulnerable"
+                    if sample.final_label != bundle.taxonomy.benign_label
+                    else bundle.taxonomy.benign_label
+                ),
                 (
-                    (
-                        "Vulnerable"
-                        if sample.final_label != bundle.taxonomy.benign_label
-                        else bundle.taxonomy.benign_label
-                    ),
-                    (
-                        "Vulnerable"
-                        if inference.prediction != bundle.taxonomy.benign_label
-                        else bundle.taxonomy.benign_label
-                    ),
-                )
+                    "Vulnerable"
+                    if inference.prediction != bundle.taxonomy.benign_label
+                    else bundle.taxonomy.benign_label
+                ),
             )
+        )
 
-            if sample.major_label:
-                major_ranked = [
-                    result.target_label for result in inference.stage_results["major"]
-                ]
-                if major_ranked[:1] and major_ranked[0] == sample.major_label:
-                    route_counts["major_route_recall_at_1"] += 1
-                if sample.major_label in major_ranked[:major_top_k]:
-                    route_counts["major_route_recall_at_k"] += 1
+    def _record_route_metrics(
+        self,
+        bundle: PromptBundle,
+        sample: EvaluationSample,
+        inference: InferenceResult,
+        accumulator: _EvaluationAccumulator,
+    ) -> None:
+        if sample.major_label:
+            major_ranked = [
+                result.target_label for result in inference.stage_results["major"]
+            ]
+            if major_ranked[:1] and major_ranked[0] == sample.major_label:
+                accumulator.route_counts["major_route_recall_at_1"] += 1
+            if sample.major_label in major_ranked[: accumulator.major_top_k]:
+                accumulator.route_counts["major_route_recall_at_k"] += 1
 
-            if sample.middle_label:
-                middle_ranked = [
-                    result.target_label for result in inference.stage_results["middle"]
-                ]
-                if middle_ranked[:1] and middle_ranked[0] == sample.middle_label:
-                    route_counts["middle_route_recall_at_1"] += 1
-                if sample.middle_label in middle_ranked[:middle_top_k]:
-                    route_counts["middle_route_recall_at_k"] += 1
+        if sample.middle_label:
+            middle_ranked = [
+                result.target_label for result in inference.stage_results["middle"]
+            ]
+            if middle_ranked[:1] and middle_ranked[0] == sample.middle_label:
+                accumulator.route_counts["middle_route_recall_at_1"] += 1
+            if sample.middle_label in middle_ranked[: accumulator.middle_top_k]:
+                accumulator.route_counts["middle_route_recall_at_k"] += 1
 
-            if (
-                sample.final_label != bundle.taxonomy.benign_label
-                and inference.candidate_paths
-            ):
-                route_counts["path_coverage"] += 1
+        if sample.final_label != bundle.taxonomy.benign_label and inference.candidate_paths:
+            accumulator.route_counts["path_coverage"] += 1
 
-            if len(inference.candidate_paths) >= 2:
-                path_margins.append(
-                    inference.candidate_paths[0].score
-                    - inference.candidate_paths[1].score
-                )
-            elif len(inference.candidate_paths) == 1:
-                path_margins.append(inference.candidate_paths[0].score)
+        if len(inference.candidate_paths) >= 2:
+            accumulator.path_margins.append(
+                inference.candidate_paths[0].score
+                - inference.candidate_paths[1].score
+            )
+        elif len(inference.candidate_paths) == 1:
+            accumulator.path_margins.append(inference.candidate_paths[0].score)
 
-            sample_labels = {
-                "major": sample.major_label,
-                "middle": sample.middle_label,
-                "cwe": sample.cwe_label,
-            }
-            for stage_results in inference.stage_results.values():
-                for result in stage_results:
-                    node_label = sample_labels[result.stage]
-                    counters = node_counters[result.node_id]
-                    counters["total"] += 1
+    def _record_node_metrics(
+        self,
+        bundle: PromptBundle,
+        sample: EvaluationSample,
+        inference: InferenceResult,
+        accumulator: _EvaluationAccumulator,
+    ) -> None:
+        sample_labels = {
+            "major": sample.major_label,
+            "middle": sample.middle_label,
+            "cwe": sample.cwe_label,
+        }
+        for stage_results in inference.stage_results.values():
+            for result in stage_results:
+                node_label = sample_labels[result.stage]
+                counters = accumulator.node_counters[result.node_id]
+                counters["total"] += 1
 
-                    if sample.final_label == bundle.taxonomy.benign_label:
-                        sample_kind = "benign"
-                    elif node_label == result.target_label:
-                        sample_kind = "target"
+                if sample.final_label == bundle.taxonomy.benign_label:
+                    sample_kind = "benign"
+                elif node_label == result.target_label:
+                    sample_kind = "target"
+                else:
+                    sample_kind = "hard_negative"
+
+                if sample_kind == "target":
+                    counters["target_total"] += 1
+                    if result.decision == "accept":
+                        counters["target_accept"] += 1
+                        counters["tp"] += 1
                     else:
-                        sample_kind = "hard_negative"
-
-                    if sample_kind == "target":
-                        counters["target_total"] += 1
-                        if result.decision == "accept":
-                            counters["target_accept"] += 1
-                            counters["tp"] += 1
-                        else:
-                            counters["fn"] += 1
+                        counters["fn"] += 1
+                else:
+                    if sample_kind == "hard_negative":
+                        counters["hard_negative_total"] += 1
                     else:
+                        counters["benign_total"] += 1
+
+                    if result.decision == "accept":
+                        counters["fp"] += 1
+                    else:
+                        counters["tn"] += 1
                         if sample_kind == "hard_negative":
-                            counters["hard_negative_total"] += 1
+                            counters["hard_negative_reject"] += 1
                         else:
-                            counters["benign_total"] += 1
+                            counters["benign_reject"] += 1
 
-                        if result.decision == "accept":
-                            counters["fp"] += 1
-                        else:
-                            counters["tn"] += 1
-                            if sample_kind == "hard_negative":
-                                counters["hard_negative_reject"] += 1
-                            else:
-                                counters["benign_reject"] += 1
+                if result.decision == "abstain":
+                    counters["abstain"] += 1
+                elif result.decision == "error":
+                    counters["error"] += 1
 
-                    if result.decision == "abstain":
-                        counters["abstain"] += 1
-                    elif result.decision == "error":
-                        counters["error"] += 1
-
+    def _build_result(
+        self,
+        dataset: Sequence[EvaluationSample],
+        accumulator: _EvaluationAccumulator,
+    ) -> EvaluationResult:
         total_samples = max(len(dataset), 1)
         node_metrics = {
             node_id: self._finalize_node_metrics(counters)
-            for node_id, counters in node_counters.items()
+            for node_id, counters in accumulator.node_counters.items()
         }
         route_metrics = {
-            "major_route_recall_at_1": route_counts["major_route_recall_at_1"]
+            "major_route_recall_at_1": accumulator.route_counts["major_route_recall_at_1"]
             / total_samples,
-            "major_route_recall_at_k": route_counts["major_route_recall_at_k"]
+            "major_route_recall_at_k": accumulator.route_counts["major_route_recall_at_k"]
             / total_samples,
-            "middle_route_recall_at_1": route_counts["middle_route_recall_at_1"]
+            "middle_route_recall_at_1": accumulator.route_counts["middle_route_recall_at_1"]
             / total_samples,
-            "middle_route_recall_at_k": route_counts["middle_route_recall_at_k"]
+            "middle_route_recall_at_k": accumulator.route_counts["middle_route_recall_at_k"]
             / total_samples,
-            "path_coverage": route_counts["path_coverage"] / total_samples,
+            "path_coverage": accumulator.route_counts["path_coverage"] / total_samples,
             "top1_top2_margin_mean": (
-                sum(path_margins) / len(path_margins) if path_margins else 0.0
+                sum(accumulator.path_margins) / len(accumulator.path_margins)
+                if accumulator.path_margins
+                else 0.0
             ),
         }
         end_to_end_metrics = {
-            "final_exact_match": self._accuracy(final_pairs),
-            "major_accuracy": self._accuracy(major_pairs),
-            "middle_accuracy": self._accuracy(middle_pairs),
-            "cwe_accuracy": self._accuracy(cwe_pairs),
-            "vuln_vs_benign_f1": self._binary_f1(binary_pairs, positive="Vulnerable"),
-            "macro_f1": self._macro_f1(final_pairs),
+            "final_exact_match": self._accuracy(accumulator.final_pairs),
+            "major_accuracy": self._accuracy(accumulator.major_pairs),
+            "middle_accuracy": self._accuracy(accumulator.middle_pairs),
+            "cwe_accuracy": self._accuracy(accumulator.cwe_pairs),
+            "vuln_vs_benign_f1": self._binary_f1(
+                accumulator.binary_pairs,
+                positive="Vulnerable",
+            ),
+            "macro_f1": self._macro_f1(accumulator.final_pairs),
         }
         cost_metrics = {
-            "avg_nodes_scored_per_sample": nodes_scored_total / total_samples,
+            "avg_nodes_scored_per_sample": accumulator.nodes_scored_total / total_samples,
             "avg_tokens_per_sample": 0.0,
             "avg_cost_per_sample": 0.0,
         }

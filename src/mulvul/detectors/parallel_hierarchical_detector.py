@@ -328,8 +328,9 @@ class ParallelHierarchicalDetector:
         if self.config.enable_rag and self.retriever is None:
             raise ValueError("enable_rag=True requires a retriever to be provided")
 
-        # Semaphore for controlling concurrent requests
-        self._semaphore = asyncio.Semaphore(self.config.max_concurrent_requests)
+        # Lazily create the semaphore inside a running event loop.
+        self._semaphore: Optional[asyncio.Semaphore] = None
+        self._semaphore_loop: Optional[asyncio.AbstractEventLoop] = None
 
         # Per-detect RAG metadata and cache
         self._last_rag_metadata: Dict[str, Any] = {}
@@ -692,12 +693,21 @@ class ParallelHierarchicalDetector:
         Returns:
             List of LLM responses
         """
+        semaphore = self._get_semaphore()
+
         async def generate_one(prompt: str) -> str:
-            async with self._semaphore:
+            async with semaphore:
                 return await self.llm_client.generate_async(prompt)
         
         tasks = [generate_one(p) for p in prompts]
         return await asyncio.gather(*tasks, return_exceptions=False)
+
+    def _get_semaphore(self) -> asyncio.Semaphore:
+        loop = asyncio.get_running_loop()
+        if self._semaphore is None or self._semaphore_loop is not loop:
+            self._semaphore = asyncio.Semaphore(self.config.max_concurrent_requests)
+            self._semaphore_loop = loop
+        return self._semaphore
     
     def _parse_confidence(self, response: str) -> float:
         """Parse confidence score from LLM response.

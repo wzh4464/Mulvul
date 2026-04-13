@@ -6,6 +6,8 @@ import json
 import pytest
 from pathlib import Path
 
+from mulvul.llm.client import create_llm_client
+from mulvul.llm.helpers import truncate_task_response
 from mulvul.llm.stub import DeterministicStubClient
 from mulvul.llm.cache import ResponseCache
 from mulvul.llm.runtime import LLMRuntime, LLMRuntimeConfig
@@ -195,3 +197,38 @@ class TestLLMRuntime:
         runtime.generate("prompt")
         runtime.generate("prompt")
         assert stub.call_count == 2  # Called both times
+
+
+def test_create_llm_client_wraps_backend_with_cache(tmp_path, monkeypatch):
+    class FakeBackend:
+        def __init__(self, model_name=None, **kwargs):
+            self.model_name = model_name or "fake-model"
+            self.call_count = 0
+
+        def generate(self, prompt: str, **kwargs) -> str:
+            self.call_count += 1
+            return f"resp:{prompt}"
+
+        def batch_generate(self, prompts, **kwargs):
+            self.call_count += len(prompts)
+            return [f"resp:{prompt}" for prompt in prompts]
+
+    monkeypatch.setenv("MULVUL_ENABLE_LLM_CACHE", "1")
+    monkeypatch.setattr("mulvul.llm.client.OpenAICompatibleClient", FakeBackend)
+
+    client = create_llm_client(cache_dir=str(tmp_path / "cache"))
+
+    assert client.generate("same prompt") == "resp:same prompt"
+    assert client.generate("same prompt") == "resp:same prompt"
+    assert client.call_count == 1
+    assert client.model_name == "fake-model"
+
+
+def test_truncate_task_response_supports_configurable_strategies():
+    response = "Summary line\nMore detail\n\nSecond paragraph"
+
+    assert (
+        truncate_task_response(response, strategy="first_nonempty_line")
+        == "Summary line"
+    )
+    assert truncate_task_response(response, strategy="none") == response
