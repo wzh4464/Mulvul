@@ -11,8 +11,11 @@ import requests
 try:
     from openai import OpenAI
     HAS_OPENAI = True
-except ImportError:
+    OPENAI_IMPORT_ERROR: Exception | None = None
+except Exception as exc:
+    OpenAI = None  # type: ignore[assignment]
     HAS_OPENAI = False
+    OPENAI_IMPORT_ERROR = exc
 
 from .helpers import (
     get_env_float,
@@ -342,7 +345,14 @@ class OpenAICompatibleClient(LLMClient):
         retry_delay: float = 1.0
     ):
         if not HAS_OPENAI:
-            raise ImportError("OpenAI library not installed. Install with: pip install openai")
+            detail = ""
+            if OPENAI_IMPORT_ERROR is not None:
+                detail = f" Original import error: {OPENAI_IMPORT_ERROR}"
+            raise ImportError(
+                "OpenAI-compatible client is unavailable. "
+                "Install or repair the `openai` dependency stack."
+                f"{detail}"
+            )
             
         # Get configuration from environment or parameters
         self.api_base = api_base or os.getenv("API_BASE_URL", "https://api.chatanywhere.tech/v1")
@@ -692,7 +702,7 @@ def create_llm_client(llm_type: str = None, **kwargs) -> LLMClient:
 
     # Use OpenAI-compatible client as default (ModelScope)
     if llm_type is None or llm_type in ["openai", "modelscope", "default"]:
-        backend: LLMClient = OpenAICompatibleClient(
+        backend: LLMClient = _create_openai_client_with_fallback(
             model_name=model_name_override,
             **kwargs,
         )
@@ -700,7 +710,7 @@ def create_llm_client(llm_type: str = None, **kwargs) -> LLMClient:
         backend = SVENLLMClient(model_name=model_name_override, **kwargs)
     elif llm_type.startswith("gpt-") or llm_type.startswith("text-davinci") or llm_type.startswith("Qwen/"):
         # Use OpenAI client for OpenAI and Qwen models
-        backend = OpenAICompatibleClient(
+        backend = _create_openai_client_with_fallback(
             model_name=model_name_override or llm_type,
             **kwargs,
         )
@@ -787,3 +797,26 @@ def create_meta_prompt_client(
         cache_dir=kwargs.pop("cache_dir", None),
         **kwargs,
     )
+
+
+def _create_openai_client_with_fallback(**kwargs) -> LLMClient:
+    """Prefer the OpenAI SDK client, but fall back to the requests client.
+
+    Some local environments have the ``openai`` package present but broken
+    because a compiled dependency such as ``pydantic_core`` is missing. That
+    should not block startup when the configured backend still speaks the same
+    OpenAI-compatible chat-completions API that ``SVENLLMClient`` supports.
+    """
+    if HAS_OPENAI:
+        return OpenAICompatibleClient(**kwargs)
+
+    if OPENAI_IMPORT_ERROR is not None:
+        logger.warning(
+            "OpenAI SDK client unavailable (%s); falling back to SVENLLMClient.",
+            OPENAI_IMPORT_ERROR,
+        )
+    else:
+        logger.warning(
+            "OpenAI SDK client unavailable; falling back to SVENLLMClient."
+        )
+    return SVENLLMClient(**kwargs)

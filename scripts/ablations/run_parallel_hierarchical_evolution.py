@@ -21,17 +21,13 @@ from dataclasses import dataclass, field, asdict
 from tqdm import tqdm
 
 # 添加项目路径
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from mulvul.llm.client import create_default_client
-from mulvul.algorithms.genetic import GeneticAlgorithm
-from mulvul.algorithms.base import Individual
-from mulvul.prompts import (
-    load_seeds_for_ga,
-    get_task_context,
-    LAYER1_SEED_PROMPTS,
-)
+from mulvul.prompts.evolution_prompts import get_task_context
+from mulvul.prompts.seed_loader import load_seeds_for_ga
+from mulvul.prompts.seed_prompts import LAYER1_SEED_PROMPTS
 from mulvul.data.dataset import PrimevulDataset
 from mulvul.data.sampler import sample_primevul_1percent
 from mulvul.utils.text import safe_format
@@ -468,13 +464,12 @@ class ParallelHierarchicalEvolutionPipeline:
             generation_results = checkpoint.generation_results
             print(f"   📂 从 checkpoint 恢复: 第 {start_gen} 代, Prompt {start_prompt_idx}, 样本 {start_sample_idx}")
         else:
-            # 创建 GA 并获取种子 prompts
-            ga = GeneticAlgorithm.with_seed_prompts(
-                self.ga_config,
+            # 获取种子 prompts 作为初始种群
+            prompts = load_seeds_for_ga(
+                population_size=self.ga_config["population_size"],
                 layer=1,
-                category=category
+                category=category,
             )
-            prompts = ga._seed_prompts
             start_gen = 0
             start_prompt_idx = 0
             start_sample_idx = 0

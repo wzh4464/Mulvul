@@ -21,12 +21,19 @@ class EvolutionEngine:
         self.llm_client = llm_client
         self.config = config or {}
         
-    def evolve(self) -> Dict[str, Any]:
-        """Run the evolution process."""
+    def evolve(self, **overrides: Any) -> Dict[str, Any]:
+        """Run the evolution process.
+
+        Callers can pass per-run overrides such as ``initial_prompts`` that
+        should be forwarded to the underlying algorithm in addition to the
+        engine's base config.
+        """
+        evolution_config = dict(self.config)
+        evolution_config.update(overrides)
         return self.algorithm.evolve(
             evaluator=self.evaluator,
             llm_client=self.llm_client,
-            **self.config
+            **evolution_config
         )
 
 
