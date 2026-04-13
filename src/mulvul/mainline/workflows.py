@@ -27,7 +27,7 @@ from .system import MainlineDetectorSystem
 
 REQUIRED_DATASET_FIELDS: tuple[str, ...] = ("func", "target", "cwe")
 MAINLINE_ROOT = Path(__file__).resolve().parents[3]
-MAX_SUMMARY_RECORDS = 100
+MAX_SUMMARY_RECORDS = 100_000  # Save all records by default
 
 
 @dataclass
@@ -342,6 +342,13 @@ def run_evaluation_workflow(config: EvaluationWorkflowConfig) -> Dict[str, Any]:
     summary_path = output_dir / "summary.json"
     with summary_path.open("w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2, ensure_ascii=False)
+
+    # Save per-sample detection details for full traceability
+    details_path = output_dir / "evaluation_details.jsonl"
+    with details_path.open("w", encoding="utf-8") as handle:
+        for rec in records:
+            handle.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
     return summary
 
 

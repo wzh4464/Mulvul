@@ -135,10 +135,45 @@ class LLMRuntime:
         return [result or "" for result in results]
 
     async def batch_generate_async(self, prompts: List[str], **kwargs) -> List[str]:
+        # If there is no cache and the backend supports batch async generation,
+        # delegate the whole batch to the backend implementation.
         if not self._cache and hasattr(self.backend, "batch_generate_async"):
             return await self.backend.batch_generate_async(prompts, **kwargs)
 
-        results: list[str] = []
-        for prompt in prompts:
-            results.append(await self.generate_async(prompt, **kwargs))
-        return results
+        # When caching is enabled and the backend supports batch async generation,
+        # mirror the cache-miss behavior of the synchronous batch_generate:
+        # - serve cached entries directly
+        # - batch only missing prompts through backend.batch_generate_async
+        if self._cache and hasattr(self.backend, "batch_generate_async"):
+            results: list[str | None] = [None] * len(prompts)
+            missing_prompts: list[str] = []
+            missing_indices: list[int] = []
+
+            for idx, prompt in enumerate(prompts):
+                cached_response = self._cache.get(
+                    prompt,
+                    model=self.config.model_name,
+                    temperature=kwargs.get("temperature", self.config.temperature),
+                )
+                if cached_response is not None:
+                    results[idx] = cached_response
+                else:
+                    missing_prompts.append(prompt)
+                    missing_indices.append(idx)
+
+            if missing_prompts:
+                backend_results = await self.backend.batch_generate_async(missing_prompts, **kwargs)
+                for i, response in zip(missing_indices, backend_results):
+                    results[i] = response
+                    self._cache.put(
+                        prompts[i],
+                        response,
+                        model=self.config.model_name,
+                        temperature=kwargs.get("temperature", self.config.temperature),
+                    )
+
+            return [result or "" for result in results]
+
+        # Fallback: use concurrent generate_async calls (with or without cache)
+        tasks = [self.generate_async(prompt, **kwargs) for prompt in prompts]
+        return await asyncio.gather(*tasks)

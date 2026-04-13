@@ -232,7 +232,7 @@ class CoevolutionaryTrainer:
                 continue
 
             # Phase 2 -- cascade evaluation
-            e2e_accuracy, errors, detect_failures = self._phase2_cascade_eval(
+            e2e_accuracy, errors, detect_failures, cascade_sample_details = self._phase2_cascade_eval(
                 representatives, n_samples=n_samples_per_class
             )
 
@@ -249,6 +249,7 @@ class CoevolutionaryTrainer:
                     "error_count": len(errors),
                     "error_distribution": dict(error_distribution),
                     "detect_failures": detect_failures,
+                    "sample_details": cascade_sample_details,
                 },
             )
 
@@ -662,6 +663,7 @@ class CoevolutionaryTrainer:
         fp = 0
         fn = 0
         failure_count = 0
+        sample_details: List[Dict[str, Any]] = []
 
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = [executor.submit(_score_one, s) for s in samples]
@@ -676,12 +678,30 @@ class CoevolutionaryTrainer:
                     fp += 1
                 elif is_target and not pred_is_target:
                     fn += 1
+                sample_details.append({
+                    "predicted": predicted,
+                    "is_target_sample": is_target,
+                    "failed": failed,
+                })
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        if precision + recall > 0:
-            return 2 * precision * recall / (precision + recall), failure_count
-        return 0.0, failure_count
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+
+        self.log.emit("individual_scored", {
+            "stage": stage,
+            "target": target,
+            "prompt": ind.prompt,
+            "f1": round(f1, 4),
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "tp": tp, "fp": fp, "fn": fn,
+            "failure_count": failure_count,
+            "sample_count": len(samples),
+            "sample_details": sample_details,
+        })
+
+        return f1, failure_count
 
     # ------------------------------------------------------------------
     # Phase 2 -- End-to-end cascade evaluation
@@ -691,12 +711,13 @@ class CoevolutionaryTrainer:
         self,
         representatives: Dict[str, PromptIndividual],
         n_samples: int,
-    ) -> Tuple[float, List[Dict[str, Any]], int]:
+    ) -> Tuple[float, List[Dict[str, Any]], int, List[Dict[str, Any]]]:
         """Evaluate the assembled prompt artifact end-to-end.
 
         Returns:
-            A ``(accuracy, errors, detect_failures)`` tuple where
-            *detect_failures* counts how many ``system.detect()`` calls raised.
+            A ``(accuracy, errors, detect_failures, sample_details)`` tuple where
+            *detect_failures* counts how many ``system.detect()`` calls raised and
+            *sample_details* contains per-sample truth vs prediction data.
         """
 
         # Build the PromptArtifact from representative prompts
@@ -706,7 +727,7 @@ class CoevolutionaryTrainer:
             system = MainlineDetectorSystem(self.llm_client, artifact)
         except Exception as exc:
             logger.warning("Cascade eval failed to build system: %s", exc)
-            return 0.0, [], 0
+            return 0.0, [], 0, []
 
         # Gather a small evaluation set — keep it small since each sample
         # triggers a full 3-level cascade (3-6 LLM calls sequentially).
@@ -718,11 +739,12 @@ class CoevolutionaryTrainer:
             )
 
         if not eval_samples:
-            return 0.0, [], 0
+            return 0.0, [], 0, []
 
         correct = 0
         detect_failures = 0
         errors: List[Dict[str, Any]] = []
+        cascade_sample_details: List[Dict[str, Any]] = []
 
         for sample in eval_samples:
             try:
@@ -749,6 +771,17 @@ class CoevolutionaryTrainer:
                 pred_cwe=pred_cwe,
             )
 
+            cascade_sample_details.append({
+                "true_major": true_major,
+                "pred_major": pred_major,
+                "true_middle": true_middle,
+                "pred_middle": pred_middle,
+                "true_cwe": true_cwe,
+                "pred_cwe": pred_cwe,
+                "error_stage": stage_err,
+                "failed": detect_failures > 0 and pred_major == "Benign" and true_major != "Benign",
+            })
+
             if stage_err is None:
                 correct += 1
             else:
@@ -772,7 +805,7 @@ class CoevolutionaryTrainer:
             )
 
         accuracy = correct / len(eval_samples) if eval_samples else 0.0
-        return accuracy, errors, detect_failures
+        return accuracy, errors, detect_failures, cascade_sample_details
 
     # ------------------------------------------------------------------
     # Error routing helper
@@ -826,6 +859,15 @@ class CoevolutionaryTrainer:
             # A node with many errors gets a lower cascade fitness
             node_error_rate = error_counts.get(key, 0) / total_errors
             rep.cascade_fitness = e2e_accuracy * (1.0 - node_error_rate)
+
+            self.log.emit("fitness_propagated", {
+                "node": key,
+                "e2e_accuracy": round(e2e_accuracy, 4),
+                "node_error_count": error_counts.get(key, 0),
+                "node_error_rate": round(node_error_rate, 4),
+                "cascade_fitness": round(rep.cascade_fitness, 4),
+                "node_fitness": round(rep.node_fitness, 4),
+            })
 
     # ------------------------------------------------------------------
     # Phase 4 -- Evolution (mutation, crossover, migration)
@@ -990,9 +1032,24 @@ class CoevolutionaryTrainer:
                 result = self.meta_llm.generate(mutation_request)
                 result = result.strip()
                 if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    self.log.emit("mutation_skipped", {
+                        "node": node_key, "reason": "output_too_short",
+                        "output_len": len(result),
+                    })
                     return prompt
-                return self._reassemble(result, protected)
-            except Exception:
+                new_prompt = self._reassemble(result, protected)
+                self.log.emit("mutation_applied", {
+                    "node": node_key,
+                    "mode": "constrained",
+                    "prompt_before": prompt,
+                    "prompt_after": new_prompt,
+                    "error_count": len(errors),
+                })
+                return new_prompt
+            except Exception as exc:
+                self.log.emit("mutation_failed", {
+                    "node": node_key, "error": str(exc),
+                })
                 return prompt
         else:
             # Unconstrained: rewrite entire prompt
@@ -1010,12 +1067,23 @@ class CoevolutionaryTrainer:
                 result = self.meta_llm.generate(mutation_request)
                 result = result.strip()
                 if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    self.log.emit("mutation_skipped", {
+                        "node": node_key, "reason": "output_too_short",
+                        "output_len": len(result),
+                    })
                     return prompt
-                # Validate that essential structure is preserved
-                if not self._validate_prompt_structure(result):
-                    return prompt
+                self.log.emit("mutation_applied", {
+                    "node": node_key,
+                    "mode": "unconstrained",
+                    "prompt_before": prompt,
+                    "prompt_after": result,
+                    "error_count": len(errors),
+                })
                 return result
-            except Exception:
+            except Exception as exc:
+                self.log.emit("mutation_failed", {
+                    "node": node_key, "error": str(exc),
+                })
                 return prompt
 
     def _crossover_prompts(
@@ -1048,8 +1116,19 @@ class CoevolutionaryTrainer:
                 result = result.strip()
                 if len(result) < _MIN_LLM_OUTPUT_LEN:
                     return prompt_a
-                return self._reassemble(result, protected_a)
-            except Exception:
+                child = self._reassemble(result, protected_a)
+                self.log.emit("crossover_applied", {
+                    "node": node_key,
+                    "mode": "constrained",
+                    "parent_a": prompt_a,
+                    "parent_b": prompt_b,
+                    "child": child,
+                })
+                return child
+            except Exception as exc:
+                self.log.emit("crossover_failed", {
+                    "node": node_key, "error": str(exc),
+                })
                 return prompt_a
         else:
             # Unconstrained: merge entire prompts
@@ -1066,11 +1145,18 @@ class CoevolutionaryTrainer:
                 result = result.strip()
                 if len(result) < _MIN_LLM_OUTPUT_LEN:
                     return prompt_a
-                # Validate that essential structure is preserved
-                if not self._validate_prompt_structure(result):
-                    return prompt_a
+                self.log.emit("crossover_applied", {
+                    "node": node_key,
+                    "mode": "unconstrained",
+                    "parent_a": prompt_a,
+                    "parent_b": prompt_b,
+                    "child": result,
+                })
                 return result
-            except Exception:
+            except Exception as exc:
+                self.log.emit("crossover_failed", {
+                    "node": node_key, "error": str(exc),
+                })
                 return prompt_a
 
     def _migrate_across_stage(self) -> None:
@@ -1119,7 +1205,29 @@ class CoevolutionaryTrainer:
                 result = self.meta_llm.generate(migrate_request)
                 result = result.strip()
                 if len(result) >= _MIN_LLM_OUTPUT_LEN:
-                    recipient.prompt = self._reassemble(result, protected_recipient)
+                    new_prompt = self._reassemble(result, protected_recipient)
+                    self.log.emit("migration_applied", {
+                        "stage": stage,
+                        "donor_node": best_pop.node_key,
+                        "recipient_node": worst_pop.node_key,
+                        "donor_fitness": round(donor.combined_fitness, 4),
+                        "recipient_fitness_before": round(recipient.combined_fitness, 4),
+                        "prompt_before": recipient.prompt,
+                        "prompt_after": new_prompt,
+                    })
+                    recipient.prompt = new_prompt
                     recipient.origin = "migration"
-            except Exception:
-                pass
+                else:
+                    self.log.emit("migration_skipped", {
+                        "stage": stage,
+                        "donor_node": best_pop.node_key,
+                        "recipient_node": worst_pop.node_key,
+                        "reason": "output_too_short",
+                    })
+            except Exception as exc:
+                self.log.emit("migration_failed", {
+                    "stage": stage,
+                    "donor_node": best_pop.node_key,
+                    "recipient_node": worst_pop.node_key,
+                    "error": str(exc),
+                })

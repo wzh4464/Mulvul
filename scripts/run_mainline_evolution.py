@@ -33,6 +33,8 @@ def main() -> int:
                         help="Nodes with F1 >= threshold skip mutation. Set to 1.1 to disable.")
     parser.add_argument("--no-constrained-mutation", action="store_true",
                         help="Allow full prompt rewriting instead of constrained mutation")
+    parser.add_argument("--population-size", type=int, default=5,
+                        help="Number of prompt variants per node population")
     args = parser.parse_args()
 
     summary = run_evolution_workflow(
@@ -47,6 +49,7 @@ def main() -> int:
             phase1_only=args.phase1_only,
             elitism_threshold=args.elitism_threshold,
             constrained_mutation=not args.no_constrained_mutation,
+            population_size=args.population_size,
         )
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
