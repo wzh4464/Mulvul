@@ -100,6 +100,9 @@ def run_single_experiment(
         cmd.append("--no-constrained-mutation")
 
     if llm_type:
+        # Validate llm_type to prevent command injection
+        if not isinstance(llm_type, str) or not llm_type.replace('-', '').replace('_', '').isalnum():
+            raise ValueError(f"Invalid llm_type: {llm_type}. Must be alphanumeric with hyphens/underscores only.")
         cmd.extend(["--llm-type", llm_type])
 
     print(f"[{config.name}] Starting: {config.description}")

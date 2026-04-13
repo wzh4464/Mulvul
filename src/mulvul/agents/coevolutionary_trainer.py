@@ -857,7 +857,11 @@ class CoevolutionaryTrainer:
                 continue
 
             # Use max node_fitness directly, not combined_fitness from pop.best()
-            best_f1 = max(ind.node_fitness for ind in pop.individuals)
+            # Handle potential None values in node_fitness
+            valid_fitness_scores = [ind.node_fitness for ind in pop.individuals if ind.node_fitness is not None]
+            if not valid_fitness_scores:
+                continue
+            best_f1 = max(valid_fitness_scores)
             if best_f1 >= elitism_threshold:
                 self.log.emit("elitism_skip", {
                     "node": key, "generation": gen,

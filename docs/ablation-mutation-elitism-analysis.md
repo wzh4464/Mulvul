@@ -32,7 +32,7 @@
 | middle_Memory Management | no_constrained | 0.190 | 0.561 | **+0.371** | crossover |
 | middle_Memory Management | baseline | 0.205 | 0.478 | +0.273 | mutation |
 | cwe_CWE-189 | baseline | 0.176 | 0.444 | +0.268 | crossover |
-| no_elitism | cwe_CWE-200 | 0.065 | 0.229 | +0.164 | crossover |
+| cwe_CWE-200 | no_elitism | 0.065 | 0.229 | +0.164 | crossover |
 
 ### 成功的 Prompt 改写模式
 

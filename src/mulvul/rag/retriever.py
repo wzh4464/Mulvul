@@ -70,7 +70,8 @@ class CodeSimilarityRetriever:
         contrastive: bool = False,
         clean_pool_frac: float = 1.0,
         clean_pool_seed: int = 42,
-        debug: bool = False
+        debug: bool = False,
+        max_cache_size: int = 10000
     ):
         """Initialize retriever.
 
@@ -80,12 +81,14 @@ class CodeSimilarityRetriever:
             clean_pool_frac: Fraction of clean pool to subsample (0.0 to 1.0)
             clean_pool_seed: Random seed for clean pool subsampling
             debug: Enable debug output
+            max_cache_size: Maximum cache size before cleanup (default: 10000)
         """
         self.kb = knowledge_base
         self.contrastive = contrastive
         self.clean_pool_frac = clean_pool_frac
         self.clean_pool_seed = clean_pool_seed
         self.debug = debug
+        self.max_cache_size = max_cache_size
         self._subsampled_clean_pool: Optional[List[CodeExample]] = None
         self._token_cache: dict[str, frozenset[str]] = {}
         self._similarity_cache: dict[tuple[str, str], float] = {}
@@ -467,6 +470,7 @@ class CodeSimilarityRetriever:
         union = len(tokens1 | tokens2)
 
         similarity = intersection / union if union > 0 else 0.0
+        self._clear_cache_if_needed()
         self._similarity_cache[cache_key] = similarity
         return similarity
 
@@ -475,11 +479,26 @@ class CodeSimilarityRetriever:
         right = hashlib.sha1(code2.encode("utf-8")).hexdigest()
         return (left, right) if left <= right else (right, left)
 
+    def _clear_cache_if_needed(self) -> None:
+        """Clear half of the cache entries if cache size exceeds limit."""
+        if len(self._token_cache) > self.max_cache_size:
+            # Remove oldest half of entries (simple FIFO strategy)
+            keys_to_remove = list(self._token_cache.keys())[: len(self._token_cache) // 2]
+            for key in keys_to_remove:
+                self._token_cache.pop(key, None)
+
+        if len(self._similarity_cache) > self.max_cache_size:
+            keys_to_remove = list(self._similarity_cache.keys())[: len(self._similarity_cache) // 2]
+            for key in keys_to_remove:
+                self._similarity_cache.pop(key, None)
+
     def _token_set(self, code: str) -> frozenset[str]:
         key = hashlib.sha1(code.encode("utf-8")).hexdigest()
         cached = self._token_cache.get(key)
         if cached is not None:
             return cached
+
+        self._clear_cache_if_needed()
         tokens = frozenset(self._tokenize(code))
         self._token_cache[key] = tokens
         return tokens
@@ -618,13 +637,15 @@ class MulVulRetriever:
 
     MAJOR_CATEGORIES = ["Memory", "Injection", "Logic", "Input", "Crypto"]
 
-    def __init__(self, knowledge_base_path: str = None, knowledge_base: KnowledgeBase = None):
+    def __init__(self, knowledge_base_path: str = None, knowledge_base: KnowledgeBase = None, max_cache_size: int = 10000):
         """Initialize retriever.
 
         Args:
             knowledge_base_path: Path to JSON knowledge base file
             knowledge_base: Legacy KnowledgeBase object
+            max_cache_size: Maximum cache size before cleanup (default: 10000)
         """
+        self.max_cache_size = max_cache_size
         self.by_major = {}
         self.by_middle = {}
         self.by_cwe = {}
@@ -731,8 +752,22 @@ class MulVulRetriever:
         intersection = len(tokens1 & tokens2)
         union = len(tokens1 | tokens2)
         similarity = intersection / union if union > 0 else 0.0
+        self._clear_cache_if_needed()
         self._similarity_cache[cache_key] = similarity
         return similarity
+
+    def _clear_cache_if_needed(self) -> None:
+        """Clear half of the cache entries if cache size exceeds limit."""
+        if len(self._token_cache) > self.max_cache_size:
+            # Remove oldest half of entries (simple FIFO strategy)
+            keys_to_remove = list(self._token_cache.keys())[: len(self._token_cache) // 2]
+            for key in keys_to_remove:
+                self._token_cache.pop(key, None)
+
+        if len(self._similarity_cache) > self.max_cache_size:
+            keys_to_remove = list(self._similarity_cache.keys())[: len(self._similarity_cache) // 2]
+            for key in keys_to_remove:
+                self._similarity_cache.pop(key, None)
 
     def _similarity_cache_key(self, code1: str, code2: str) -> tuple[str, str]:
         left = hashlib.sha1(code1.encode("utf-8")).hexdigest()
@@ -744,6 +779,7 @@ class MulVulRetriever:
         cached = self._token_cache.get(key)
         if cached is not None:
             return cached
+        self._clear_cache_if_needed()
         tokens = frozenset(re.findall(r"\w+", code.lower()))
         self._token_cache[key] = tokens
         return tokens
