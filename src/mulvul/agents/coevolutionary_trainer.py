@@ -989,6 +989,12 @@ class CoevolutionaryTrainer:
         if len(result) < _MIN_LLM_OUTPUT_LEN:
             return None
         if validate_structure and not self._validate_prompt_structure(result):
+            # Log rejected unconstrained rewrites for visibility during experimentation
+            logger.debug(
+                "Unconstrained prompt rewrite rejected by structural validator; "
+                "original prompt retained. Preview of candidate rewrite: %s",
+                result[:500],
+            )
             return None
         return result
 

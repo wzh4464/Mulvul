@@ -8,6 +8,32 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
+
+def compute_jaccard_similarity(code1: str, code2: str) -> float:
+    """Compute Jaccard similarity between two code snippets.
+
+    Uses tokenization and set-based similarity for efficiency.
+    For production, consider using embeddings.
+
+    Args:
+        code1: First code snippet
+        code2: Second code snippet
+
+    Returns:
+        Similarity score in [0, 1]
+    """
+    # Tokenize both code snippets
+    tokens1 = set(re.findall(r'\w+', code1.lower()))
+    tokens2 = set(re.findall(r'\w+', code2.lower()))
+
+    if not tokens1 or not tokens2:
+        return 0.0
+
+    # Jaccard similarity = |intersection| / |union|
+    intersection = len(tokens1 & tokens2)
+    union = len(tokens1 | tokens2)
+    return intersection / union if union > 0 else 0.0
+
 from .knowledge_base import KnowledgeBase, CodeExample
 from ..prompts.hierarchical_three_layer import (
     MAJOR_TO_MIDDLE,
@@ -444,8 +470,7 @@ class CodeSimilarityRetriever:
     def _compute_similarity(self, code1: str, code2: str) -> float:
         """Compute simple lexical similarity between two code snippets.
 
-        Uses Jaccard similarity on token sets for efficiency.
-        For production, consider using embeddings.
+        Uses shared Jaccard similarity implementation for consistency.
 
         Args:
             code1: First code snippet
@@ -454,54 +479,7 @@ class CodeSimilarityRetriever:
         Returns:
             Similarity score in [0, 1]
         """
-        cache_key = self._similarity_cache_key(code1, code2)
-        cached = self._similarity_cache.get(cache_key)
-        if cached is not None:
-            return cached
-
-        tokens1 = self._token_set(code1)
-        tokens2 = self._token_set(code2)
-
-        if not tokens1 or not tokens2:
-            return 0.0
-
-        # Jaccard similarity
-        intersection = len(tokens1 & tokens2)
-        union = len(tokens1 | tokens2)
-
-        similarity = intersection / union if union > 0 else 0.0
-        self._clear_cache_if_needed()
-        self._similarity_cache[cache_key] = similarity
-        return similarity
-
-    def _similarity_cache_key(self, code1: str, code2: str) -> tuple[str, str]:
-        left = hashlib.sha1(code1.encode("utf-8")).hexdigest()
-        right = hashlib.sha1(code2.encode("utf-8")).hexdigest()
-        return (left, right) if left <= right else (right, left)
-
-    def _clear_cache_if_needed(self) -> None:
-        """Clear half of the cache entries if cache size exceeds limit."""
-        if len(self._token_cache) > self.max_cache_size:
-            # Remove oldest half of entries (simple FIFO strategy)
-            keys_to_remove = list(self._token_cache.keys())[: len(self._token_cache) // 2]
-            for key in keys_to_remove:
-                self._token_cache.pop(key, None)
-
-        if len(self._similarity_cache) > self.max_cache_size:
-            keys_to_remove = list(self._similarity_cache.keys())[: len(self._similarity_cache) // 2]
-            for key in keys_to_remove:
-                self._similarity_cache.pop(key, None)
-
-    def _token_set(self, code: str) -> frozenset[str]:
-        key = hashlib.sha1(code.encode("utf-8")).hexdigest()
-        cached = self._token_cache.get(key)
-        if cached is not None:
-            return cached
-
-        self._clear_cache_if_needed()
-        tokens = frozenset(self._tokenize(code))
-        self._token_cache[key] = tokens
-        return tokens
+        return compute_jaccard_similarity(code1, code2)
 
     def _tokenize(self, code: str) -> List[str]:
         """Simple tokenization of code.
@@ -737,49 +715,5 @@ class MulVulRetriever:
         ]
 
     def _compute_similarity(self, code1: str, code2: str) -> float:
-        """Compute Jaccard similarity on token sets."""
-        cache_key = self._similarity_cache_key(code1, code2)
-        cached = self._similarity_cache.get(cache_key)
-        if cached is not None:
-            return cached
-
-        tokens1 = self._token_set(code1)
-        tokens2 = self._token_set(code2)
-
-        if not tokens1 or not tokens2:
-            return 0.0
-
-        intersection = len(tokens1 & tokens2)
-        union = len(tokens1 | tokens2)
-        similarity = intersection / union if union > 0 else 0.0
-        self._clear_cache_if_needed()
-        self._similarity_cache[cache_key] = similarity
-        return similarity
-
-    def _clear_cache_if_needed(self) -> None:
-        """Clear half of the cache entries if cache size exceeds limit."""
-        if len(self._token_cache) > self.max_cache_size:
-            # Remove oldest half of entries (simple FIFO strategy)
-            keys_to_remove = list(self._token_cache.keys())[: len(self._token_cache) // 2]
-            for key in keys_to_remove:
-                self._token_cache.pop(key, None)
-
-        if len(self._similarity_cache) > self.max_cache_size:
-            keys_to_remove = list(self._similarity_cache.keys())[: len(self._similarity_cache) // 2]
-            for key in keys_to_remove:
-                self._similarity_cache.pop(key, None)
-
-    def _similarity_cache_key(self, code1: str, code2: str) -> tuple[str, str]:
-        left = hashlib.sha1(code1.encode("utf-8")).hexdigest()
-        right = hashlib.sha1(code2.encode("utf-8")).hexdigest()
-        return (left, right) if left <= right else (right, left)
-
-    def _token_set(self, code: str) -> frozenset[str]:
-        key = hashlib.sha1(code.encode("utf-8")).hexdigest()
-        cached = self._token_cache.get(key)
-        if cached is not None:
-            return cached
-        self._clear_cache_if_needed()
-        tokens = frozenset(re.findall(r"\w+", code.lower()))
-        self._token_cache[key] = tokens
-        return tokens
+        """Compute similarity using shared Jaccard implementation."""
+        return compute_jaccard_similarity(code1, code2)
