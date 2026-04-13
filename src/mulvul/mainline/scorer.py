@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any, Literal, Mapping, Protocol
 
@@ -36,6 +37,7 @@ class LLMNodeScorer:
     def __init__(self, llm_client: Any, bundle: PromptBundle):
         self.llm_client = llm_client
         self.bundle = bundle
+        self.logger = logging.getLogger(__name__)
 
     def score(self, node: NodeSpec, ctx: ScorerContext) -> NodeScoreResult:
         """Score one node using the bundle-configured prompt contract."""
@@ -137,6 +139,10 @@ class LLMNodeScorer:
         try:
             max_chars = int(limit)
         except (TypeError, ValueError):
+            self.logger.warning(
+                "Invalid prompt_code_max_chars configuration: %r. Falling back to default %d",
+                limit, self.DEFAULT_PROMPT_CODE_MAX_CHARS
+            )
             return code[: self.DEFAULT_PROMPT_CODE_MAX_CHARS]
         if max_chars <= 0:
             return code
