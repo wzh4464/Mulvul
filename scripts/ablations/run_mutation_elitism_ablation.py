@@ -100,9 +100,17 @@ def run_single_experiment(
         cmd.append("--no-constrained-mutation")
 
     if llm_type:
-        # Validate llm_type to prevent command injection
-        if not isinstance(llm_type, str) or not llm_type.replace('-', '').replace('_', '').isalnum():
-            raise ValueError(f"Invalid llm_type: {llm_type}. Must be alphanumeric with hyphens/underscores only.")
+        # Basic sanity check for llm_type; this is passed as a single argv element,
+        # so it is not a command injection risk. Allow common model ID characters.
+        if not isinstance(llm_type, str):
+            raise ValueError(f"Invalid llm_type: {llm_type!r}. Must be a string.")
+        # Allow alphanumerics, underscore, dash, dot, slash and colon
+        allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-./:")
+        if not llm_type or any(ch not in allowed_chars for ch in llm_type):
+            raise ValueError(
+                f"Invalid llm_type: {llm_type!r}. "
+                "Allowed characters: letters, digits, '_', '-', '.', '/', ':'."
+            )
         cmd.extend(["--llm-type", llm_type])
 
     print(f"[{config.name}] Starting: {config.description}")

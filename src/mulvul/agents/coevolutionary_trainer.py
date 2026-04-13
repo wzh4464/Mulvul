@@ -928,6 +928,22 @@ class CoevolutionaryTrainer:
     # Constrained mutation / crossover
     # ------------------------------------------------------------------
 
+    def _validate_prompt_structure(self, prompt: str) -> bool:
+        """Validate that essential prompt structure is preserved."""
+        # Check for essential markers that downstream components depend on
+        required_markers = [
+            "## Code:",           # Code delimiter
+            "vulnerabilities",    # JSON output section
+        ]
+
+        prompt_lower = prompt.lower()
+        for marker in required_markers:
+            if marker.lower() not in prompt_lower:
+                return False
+
+        # Check that it looks like JSON output format is preserved
+        return ("{" in prompt and "}" in prompt) or ("json" in prompt_lower)
+
     def _mutate_prompt(
         self,
         prompt: str,
@@ -995,6 +1011,9 @@ class CoevolutionaryTrainer:
                 result = result.strip()
                 if len(result) < _MIN_LLM_OUTPUT_LEN:
                     return prompt
+                # Validate that essential structure is preserved
+                if not self._validate_prompt_structure(result):
+                    return prompt
                 return result
             except Exception:
                 return prompt
@@ -1046,6 +1065,9 @@ class CoevolutionaryTrainer:
                 result = self.meta_llm.generate(crossover_request)
                 result = result.strip()
                 if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    return prompt_a
+                # Validate that essential structure is preserved
+                if not self._validate_prompt_structure(result):
                     return prompt_a
                 return result
             except Exception:
