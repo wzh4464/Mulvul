@@ -1,0 +1,844 @@
+{
+  "run_name": "rerun_cwd1015_parallel",
+  "model": "openai/gpt-5.4",
+  "seed": 42,
+  "timestamp": "2026-04-15 00:46:47",
+  "dataset_recipe": {
+    "target_pos_available_clean": 11,
+    "target_pos_removed_as_noise": [
+      {
+        "sample_id": "cwd_000053::vuln",
+        "reason": "destination-side write into sendMsg + packLen via memset_s; this is CWD-1016-style, not source-side read length"
+      },
+      {
+        "sample_id": "cwd_000061::vuln",
+        "reason": "visible bound check keeps source read within packet; current snippet looks safe / mislabeled as vulnerable"
+      },
+      {
+        "sample_id": "cwd_000062::vuln",
+        "reason": "destination-side destmax/count issue on memcpy_s(buffer, count, ...); this is CWD-1016-style, not source-side"
+      }
+    ],
+    "parent_fp_available_union": 28,
+    "same_middle_vuln_available": 235,
+    "other_memory_vuln_available": 438,
+    "target_benign_available": 10,
+    "dev": {
+      "selected_pos": 5,
+      "selected_neg": 5,
+      "neg_source_mix": {
+        "parent_fp": 2,
+        "other_memory_vuln": 3
+      },
+      "sample_ids": [
+        "cwd_000048::vuln",
+        "cwd_000699::vuln",
+        "cwd_000057::vuln",
+        "cwd_001197::vuln",
+        "cwd_000066::benign",
+        "majorfp_74",
+        "cwd_000040::vuln",
+        "cwd_000046::vuln",
+        "cwd_000060::vuln",
+        "cwd_000138::vuln"
+      ]
+    },
+    "holdout": {
+      "selected_pos": 6,
+      "selected_neg": 6,
+      "neg_source_mix": {
+        "parent_fp": 3,
+        "other_memory_vuln": 3
+      },
+      "sample_ids": [
+        "cwd_000044::vuln",
+        "cwd_000093::vuln",
+        "cwd_001180::vuln",
+        "cwd_000050::vuln",
+        "cwd_000024::benign",
+        "cwd_000043::vuln",
+        "majorfp_96",
+        "cwd_000056::vuln",
+        "cwd_000055::vuln",
+        "majorfp_91",
+        "cwd_000059::vuln",
+        "cwd_000662::vuln"
+      ]
+    }
+  },
+  "prompts": {
+    "v1": "Target node: CWD-1015 源缓冲区访问长度不正确\nTarget meaning: Source Buffer Access with Incorrect Length Value\n\nJudge only source-side read extent.\n\nOutput VULNERABLE when the visible code reads, compares, scans, or copies from a source using a length that is not proven by the true source extent, including these forms:\n- copy/read length comes from destination size, fixed packet/block size, requested output length, or unrelated constant rather than source length\n- source pointer is advanced with an offset, but the read length still uses the original/full-buffer length\n- a loop or repeated copy consumes a moving source pointer without tracking remaining source bytes\n- a caller-provided length or struct field is used to read from a source buffer without visible proof the source is that long\n- a compare/read helper uses a count derived from the other operand or caller input while the source side may be shorter\n\nDo NOT classify as CWD-1015 when:\n- the visible issue is destination capacity / destmax / write-side overflow -> CWD-1016\n- the snippet is just a generic helper wrapper with no visible reason the count is too large for the source\n- the only issue is raw array index -> CWD-1028\n- the only issue is container/list/vector/map access -> CWD-1043\n\nBENIGN when the visible code proves the source extent before the read, for example source-derived length, validated remaining bytes, or a guard that bounds the source side.\nIf uncertain, output BENIGN.\nReturn exactly one token: VULNERABLE or BENIGN.",
+    "v2": "Target node: CWD-1015 源缓冲区访问长度不正确\n\nThis leaf is source-side only. Ask one question: is the read/copy/compare length too large for the source buffer?\n\nVULNERABLE when any visible source-side pattern appears:\n- `memcpy`/`memcpy_s`/`memcmp`/scan reads `src` with a length tied to destination size, full record size, block size, loop size, or external count instead of real source extent\n- `src + offset` is read using an unchanged full length\n- repeated reads advance the source pointer but never reduce remaining source length\n- a field like `len`, `count`, `actualAcrLength[i]`, or packet option length is used to read from a source buffer with no visible proof enough bytes remain on the source side\n- a compare uses `strlen(a)` or another operand's length against `b`, while `b` may be shorter\n\nBENIGN when any visible source-side proof appears:\n- the bound is derived from the source itself, such as `strlen(src)`, validated `srcLen`, or remaining bytes after offset\n- the code checks remaining source bytes before the read\n- the code only writes to destination and the source-read extent is not the problem\n\nNot this node:\n- `sendMsg + packLen`, `dst + used`, `aucData + offset`, or similar destination-tail write problems -> CWD-1016\n- safe destination writes with correct source-derived length -> BENIGN\n- generic wrappers with no visible bad bound -> BENIGN\n\nIf ambiguity remains, choose BENIGN.\nReturn exactly one token: VULNERABLE or BENIGN.",
+    "v3": "Target node: CWD-1015 源缓冲区访问长度不正确\n\nUse a strict sibling boundary.\n\nClassify as VULNERABLE only if the missing safety proof is on the source extent.\nTypical positive evidence:\n- source is shorter because code reads from `src + offset` or `packet + pos + k`, but still copies a larger/fixed length\n- code copies or compares `N` bytes from a source field/buffer where `N` comes from destination capacity, unrelated constant, or other operand length\n- a moving source pointer is repeatedly consumed with per-iteration length from metadata, but there is no visible remaining-source bound\n- source-side guard is wrong for the compared/copied operand, such as checking one string length then reading another buffer for that many bytes\n\nClassify as BENIGN when any of these apply:\n- the real issue is destination capacity, destmax, or write into a sub-buffer / advanced destination pointer\n- the snippet shows a correct remaining-length guard before reading the source\n- the snippet is only a helper function whose count parameter could be safe or unsafe depending on callers not shown\n\nWhen both source and destination seem risky, choose CWD-1015 only if the source proof is what is missing. Otherwise BENIGN.\nReturn exactly one token: VULNERABLE or BENIGN.",
+    "v4": "Target node: CWD-1015 源缓冲区访问长度不正确\n\nPrefer precision over recall. This node is about over-reading the source, not about unsafe APIs in general.\n\nVULNERABLE only when the snippet itself shows one of:\n- source offset plus oversized read length\n- source compared/copied with length taken from the other operand or destination-side bound\n- source walking loop where remaining source bytes are not tracked but per-step read length continues\n- source buffer from caller/database/message body read with external length and no visible source-side validation\n\nBENIGN when:\n- there is a visible source-side bound/remaining-length check\n- the snippet only shows a destination write-side problem\n- the snippet is a generic `memcmp`/`memcpy` wrapper with no visible bad bound in the snippet itself\n\nHard boundary examples:\n- `memset_s(msg, ..., sizeof(msg))` on `sendMsg + packLen` is not this node\n- `memcpy_s(dstBuf, J_BYTE_LEN_MODE_16, srcBuf, len)` is destination-side, not this node\n- `memcmp(a, b, strlen(a))` can be this node only when the snippet also shows `b` may be shorter\n\nIf uncertain, output BENIGN.\nReturn exactly one token: VULNERABLE or BENIGN."
+  },
+  "dev_results": {
+    "v1": {
+      "prompt_name": "v1",
+      "accuracy": 0.7,
+      "n": 10,
+      "errors": {
+        "false_negatives": 1,
+        "fp_other_memory_vuln": 0,
+        "fp_parent_fp": 2,
+        "fp_other": 0
+      },
+      "examples": {
+        "false_negatives": [
+          {
+            "sample_id": "cwd_000040::vuln",
+            "source_cwd": "CWD-1015",
+            "language": "cpp",
+            "pred": "BENIGN",
+            "expected": "VULNERABLE"
+          }
+        ],
+        "fp_other_memory_vuln": [],
+        "fp_parent_fp": [
+          {
+            "sample_id": "cwd_000066::benign",
+            "source_cwd": "CWD-1016",
+            "language": "cpp",
+            "pred": "VULNERABLE",
+            "expected": "BENIGN"
+          },
+          {
+            "sample_id": "majorfp_74",
+            "source_cwd": null,
+            "language": "cpp",
+            "pred": "VULNERABLE",
+            "expected": "BENIGN"
+          }
+        ],
+        "fp_other": []
+      },
+      "results": [
+        {
+          "sample_id": "cwd_000040::vuln",
+          "expected": "VULNERABLE",
+          "pred": "BENIGN",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000046::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000048::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000057::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000060::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000066::benign",
+          "expected": "BENIGN",
+          "pred": "VULNERABLE",
+          "source_kind": "parent_fp",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000138::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000699::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1028",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_001197::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1043",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "majorfp_74",
+          "expected": "BENIGN",
+          "pred": "VULNERABLE",
+          "source_kind": "parent_fp",
+          "source_cwd": null,
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        }
+      ]
+    },
+    "v2": {
+      "prompt_name": "v2",
+      "accuracy": 0.7,
+      "n": 10,
+      "errors": {
+        "false_negatives": 1,
+        "fp_other_memory_vuln": 0,
+        "fp_parent_fp": 2,
+        "fp_other": 0
+      },
+      "examples": {
+        "false_negatives": [
+          {
+            "sample_id": "cwd_000040::vuln",
+            "source_cwd": "CWD-1015",
+            "language": "cpp",
+            "pred": "BENIGN",
+            "expected": "VULNERABLE"
+          }
+        ],
+        "fp_other_memory_vuln": [],
+        "fp_parent_fp": [
+          {
+            "sample_id": "cwd_000066::benign",
+            "source_cwd": "CWD-1016",
+            "language": "cpp",
+            "pred": "VULNERABLE",
+            "expected": "BENIGN"
+          },
+          {
+            "sample_id": "majorfp_74",
+            "source_cwd": null,
+            "language": "cpp",
+            "pred": "VULNERABLE",
+            "expected": "BENIGN"
+          }
+        ],
+        "fp_other": []
+      },
+      "results": [
+        {
+          "sample_id": "cwd_000040::vuln",
+          "expected": "VULNERABLE",
+          "pred": "BENIGN",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000046::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000048::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000057::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000060::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000066::benign",
+          "expected": "BENIGN",
+          "pred": "VULNERABLE",
+          "source_kind": "parent_fp",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000138::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000699::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1028",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_001197::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1043",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "majorfp_74",
+          "expected": "BENIGN",
+          "pred": "VULNERABLE",
+          "source_kind": "parent_fp",
+          "source_cwd": null,
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        }
+      ]
+    },
+    "v3": {
+      "prompt_name": "v3",
+      "accuracy": 0.9,
+      "n": 10,
+      "errors": {
+        "false_negatives": 1,
+        "fp_other_memory_vuln": 0,
+        "fp_parent_fp": 0,
+        "fp_other": 0
+      },
+      "examples": {
+        "false_negatives": [
+          {
+            "sample_id": "cwd_000040::vuln",
+            "source_cwd": "CWD-1015",
+            "language": "cpp",
+            "pred": "BENIGN",
+            "expected": "VULNERABLE"
+          }
+        ],
+        "fp_other_memory_vuln": [],
+        "fp_parent_fp": [],
+        "fp_other": []
+      },
+      "results": [
+        {
+          "sample_id": "cwd_000040::vuln",
+          "expected": "VULNERABLE",
+          "pred": "BENIGN",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000046::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000048::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000057::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000060::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000066::benign",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "parent_fp",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000138::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000699::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1028",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_001197::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1043",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "majorfp_74",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "parent_fp",
+          "source_cwd": null,
+          "language": "cpp",
+          "raw": "BENIGN"
+        }
+      ]
+    },
+    "v4": {
+      "prompt_name": "v4",
+      "accuracy": 0.9,
+      "n": 10,
+      "errors": {
+        "false_negatives": 1,
+        "fp_other_memory_vuln": 0,
+        "fp_parent_fp": 0,
+        "fp_other": 0
+      },
+      "examples": {
+        "false_negatives": [
+          {
+            "sample_id": "cwd_000040::vuln",
+            "source_cwd": "CWD-1015",
+            "language": "cpp",
+            "pred": "BENIGN",
+            "expected": "VULNERABLE"
+          }
+        ],
+        "fp_other_memory_vuln": [],
+        "fp_parent_fp": [],
+        "fp_other": []
+      },
+      "results": [
+        {
+          "sample_id": "cwd_000040::vuln",
+          "expected": "VULNERABLE",
+          "pred": "BENIGN",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000046::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000048::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000057::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000060::vuln",
+          "expected": "VULNERABLE",
+          "pred": "VULNERABLE",
+          "source_kind": "target_pos",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "raw": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000066::benign",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "parent_fp",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000138::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1016",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_000699::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1028",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "cwd_001197::vuln",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "other_memory_vuln",
+          "source_cwd": "CWD-1043",
+          "language": "cpp",
+          "raw": "BENIGN"
+        },
+        {
+          "sample_id": "majorfp_74",
+          "expected": "BENIGN",
+          "pred": "BENIGN",
+          "source_kind": "parent_fp",
+          "source_cwd": null,
+          "language": "cpp",
+          "raw": "BENIGN"
+        }
+      ]
+    }
+  },
+  "best_prompt_name": "v3",
+  "best_prompt": "Target node: CWD-1015 源缓冲区访问长度不正确\n\nUse a strict sibling boundary.\n\nClassify as VULNERABLE only if the missing safety proof is on the source extent.\nTypical positive evidence:\n- source is shorter because code reads from `src + offset` or `packet + pos + k`, but still copies a larger/fixed length\n- code copies or compares `N` bytes from a source field/buffer where `N` comes from destination capacity, unrelated constant, or other operand length\n- a moving source pointer is repeatedly consumed with per-iteration length from metadata, but there is no visible remaining-source bound\n- source-side guard is wrong for the compared/copied operand, such as checking one string length then reading another buffer for that many bytes\n\nClassify as BENIGN when any of these apply:\n- the real issue is destination capacity, destmax, or write into a sub-buffer / advanced destination pointer\n- the snippet shows a correct remaining-length guard before reading the source\n- the snippet is only a helper function whose count parameter could be safe or unsafe depending on callers not shown\n\nWhen both source and destination seem risky, choose CWD-1015 only if the source proof is what is missing. Otherwise BENIGN.\nReturn exactly one token: VULNERABLE or BENIGN.",
+  "best_dev_metric": {
+    "prompt_name": "v3",
+    "accuracy": 0.9,
+    "n": 10,
+    "errors": {
+      "false_negatives": 1,
+      "fp_other_memory_vuln": 0,
+      "fp_parent_fp": 0,
+      "fp_other": 0
+    },
+    "examples": {
+      "false_negatives": [
+        {
+          "sample_id": "cwd_000040::vuln",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "pred": "BENIGN",
+          "expected": "VULNERABLE"
+        }
+      ],
+      "fp_other_memory_vuln": [],
+      "fp_parent_fp": [],
+      "fp_other": []
+    },
+    "results": [
+      {
+        "sample_id": "cwd_000040::vuln",
+        "expected": "VULNERABLE",
+        "pred": "BENIGN",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000046::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000048::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000057::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000060::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000066::benign",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "parent_fp",
+        "source_cwd": "CWD-1016",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000138::vuln",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "other_memory_vuln",
+        "source_cwd": "CWD-1016",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000699::vuln",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "other_memory_vuln",
+        "source_cwd": "CWD-1028",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_001197::vuln",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "other_memory_vuln",
+        "source_cwd": "CWD-1043",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "majorfp_74",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "parent_fp",
+        "source_cwd": null,
+        "language": "cpp",
+        "raw": "BENIGN"
+      }
+    ]
+  },
+  "holdout_metric": {
+    "prompt_name": "v3",
+    "accuracy": 0.75,
+    "n": 12,
+    "errors": {
+      "false_negatives": 3,
+      "fp_other_memory_vuln": 0,
+      "fp_parent_fp": 0,
+      "fp_other": 0
+    },
+    "examples": {
+      "false_negatives": [
+        {
+          "sample_id": "cwd_000043::vuln",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "pred": "BENIGN",
+          "expected": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000056::vuln",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "pred": "BENIGN",
+          "expected": "VULNERABLE"
+        },
+        {
+          "sample_id": "cwd_000059::vuln",
+          "source_cwd": "CWD-1015",
+          "language": "cpp",
+          "pred": "BENIGN",
+          "expected": "VULNERABLE"
+        }
+      ],
+      "fp_other_memory_vuln": [],
+      "fp_parent_fp": [],
+      "fp_other": []
+    },
+    "results": [
+      {
+        "sample_id": "cwd_000024::benign",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "parent_fp",
+        "source_cwd": "CWD-1005",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000043::vuln",
+        "expected": "VULNERABLE",
+        "pred": "BENIGN",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000044::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000050::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000055::vuln",
+        "expected": "VULNERABLE",
+        "pred": "VULNERABLE",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "VULNERABLE"
+      },
+      {
+        "sample_id": "cwd_000056::vuln",
+        "expected": "VULNERABLE",
+        "pred": "BENIGN",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000059::vuln",
+        "expected": "VULNERABLE",
+        "pred": "BENIGN",
+        "source_kind": "target_pos",
+        "source_cwd": "CWD-1015",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000093::vuln",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "other_memory_vuln",
+        "source_cwd": "CWD-1016",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_000662::vuln",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "other_memory_vuln",
+        "source_cwd": "CWD-1028",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "cwd_001180::vuln",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "other_memory_vuln",
+        "source_cwd": "CWD-1043",
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "majorfp_91",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "parent_fp",
+        "source_cwd": null,
+        "language": "cpp",
+        "raw": "BENIGN"
+      },
+      {
+        "sample_id": "majorfp_96",
+        "expected": "BENIGN",
+        "pred": "BENIGN",
+        "source_kind": "parent_fp",
+        "source_cwd": null,
+        "language": "cpp",
+        "raw": "BENIGN"
+      }
+    ]
+  },
+  "final_status": "needs_more_iteration"
+}

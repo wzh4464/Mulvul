@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from mulvul.data.cwe_hierarchy import MAJOR_TO_MIDDLE
 from mulvul.mainline.artifacts import PromptArtifact
 from mulvul.mainline.bundle import (
     BundleDefaults,
@@ -19,22 +20,15 @@ def test_taxonomy_graph_round_trip_and_decision_labels():
     reloaded = TaxonomyGraph.from_dict(graph.to_dict())
     memory_id = reloaded.node_id_for_label("major", "Memory")
     buffer_id = reloaded.node_id_for_label("middle", "Buffer Errors")
+    expected_memory_middles = MAJOR_TO_MIDDLE["Memory"]
 
     assert reloaded.stage_order == ("major", "middle", "cwe")
     assert reloaded.node(buffer_id).display_name == "Buffer Errors"
     assert reloaded.parent_of(buffer_id) == memory_id
     assert reloaded.children_of(memory_id) == [
-        reloaded.node_id_for_label("middle", "Buffer Errors"),
-        reloaded.node_id_for_label("middle", "Memory Management"),
-        reloaded.node_id_for_label("middle", "Pointer Dereference"),
-        reloaded.node_id_for_label("middle", "Integer Errors"),
+        reloaded.node_id_for_label("middle", middle) for middle in expected_memory_middles
     ]
-    assert reloaded.decision_labels_for(buffer_id) == [
-        "Buffer Errors",
-        "Memory Management",
-        "Pointer Dereference",
-        "Integer Errors",
-    ]
+    assert reloaded.decision_labels_for(buffer_id) == expected_memory_middles
 
 
 def test_prompt_bundle_adapter_maps_v1_labels_to_stable_v2_node_ids_and_defaults():

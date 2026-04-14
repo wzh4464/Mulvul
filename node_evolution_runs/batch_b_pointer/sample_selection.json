@@ -1,0 +1,206 @@
+{
+  "CWD-1029": {
+    "pos_selected": 32,
+    "neg_selected": 32,
+    "dev_selected": 16,
+    "holdout_selected": 48,
+    "dev_pos": 8,
+    "dev_neg": 8,
+    "hold_pos": 24,
+    "hold_neg": 24,
+    "noise": [
+      {
+        "node": "CWD-1029",
+        "sample_idx": 7,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 33,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 35,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 37,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 39,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 41,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 66,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "sample_idx": 74,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "17e0ad10cdfd14167899b6400c2400317dbb7f8a"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "200037412c0135cbac05871c74b9d8b36644a75c"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "3fd7331f52092696235f5dca302a9b7ee1bf622f"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "6cf92d609316733aff310830cf5974a17aa80c2e"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "71a7e92e639cdadc92ff0a5c79baac23acf2c029"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "8cbd78742e1c736b6a3d761573039604df98083d"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "a1fbe0f08ff5d8767129502002cccd6b76817e7d"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "aa2974ce0c54b384557294d28c20bc65d322bda6"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "b86ef585b21a66af312a772c50e9125942c9d546"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "c2f24eef9698f708fabc59599419f7bad22dc39e"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "d81aa8799ff6bc297f7bb35b5ac7dd8427e434b4"
+      },
+      {
+        "node": "CWD-1029",
+        "kind": "cross_label_collision",
+        "code_sha1": "edc00dfd5c9ad747bad723e75491660ed61a15ed"
+      }
+    ]
+  },
+  "CWD-1030": {
+    "pos_selected": 8,
+    "neg_selected": 8,
+    "dev_selected": 4,
+    "holdout_selected": 12,
+    "dev_pos": 2,
+    "dev_neg": 2,
+    "hold_pos": 6,
+    "hold_neg": 6,
+    "noise": [
+      {
+        "node": "CWD-1030",
+        "kind": "cross_label_collision",
+        "code_sha1": "d263957c2b88976690bd7fd6d9b367f412972d95"
+      },
+      {
+        "node": "CWD-1030",
+        "kind": "cross_label_collision",
+        "code_sha1": "d74d16e898ebbcccd9ecebe5fa7e30ce87446262"
+      }
+    ]
+  },
+  "CWD-1031": {
+    "pos_selected": 48,
+    "neg_selected": 48,
+    "dev_selected": 24,
+    "holdout_selected": 72,
+    "dev_pos": 12,
+    "dev_neg": 12,
+    "hold_pos": 36,
+    "hold_neg": 36,
+    "noise": [
+      {
+        "node": "CWD-1031",
+        "sample_idx": 70,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1031",
+        "sample_idx": 208,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1031",
+        "kind": "cross_label_collision",
+        "code_sha1": "09f198b464353e11d394d09391787421f6c79c4d"
+      },
+      {
+        "node": "CWD-1031",
+        "kind": "cross_label_collision",
+        "code_sha1": "431a77225ba96b6def5c3261a594037b763c2b9e"
+      },
+      {
+        "node": "CWD-1031",
+        "kind": "cross_label_collision",
+        "code_sha1": "570d97b6a93fa89b92859dbc59db612f81c8e789"
+      },
+      {
+        "node": "CWD-1031",
+        "kind": "cross_label_collision",
+        "code_sha1": "ed6f57df4e3063fbba5e27ee6fe9b72b1d10f2bd"
+      }
+    ]
+  },
+  "CWD-1034": {
+    "status": "blocked_by_samples",
+    "pos_available": 1,
+    "neg_available": 201,
+    "noise": []
+  },
+  "CWD-1038": {
+    "pos_selected": 13,
+    "neg_selected": 13,
+    "dev_selected": 7,
+    "holdout_selected": 19,
+    "dev_pos": 3,
+    "dev_neg": 4,
+    "hold_pos": 10,
+    "hold_neg": 9,
+    "noise": [
+      {
+        "node": "CWD-1038",
+        "sample_idx": 2,
+        "kind": "same_sample_identical_vuln_benign"
+      },
+      {
+        "node": "CWD-1038",
+        "kind": "cross_label_collision",
+        "code_sha1": "4e5062d85f2e3a5f30313ff9da5dc75b9f9343be"
+      }
+    ]
+  }
+}

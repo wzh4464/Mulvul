@@ -479,7 +479,33 @@ class CodeSimilarityRetriever:
         Returns:
             Similarity score in [0, 1]
         """
-        return compute_jaccard_similarity(code1, code2)
+        cache_key = (code1, code2)
+        if cache_key in self._similarity_cache:
+            return self._similarity_cache[cache_key]
+
+        reverse_cache_key = (code2, code1)
+        if reverse_cache_key in self._similarity_cache:
+            return self._similarity_cache[reverse_cache_key]
+
+        tokens1 = self._token_cache.get(code1)
+        if tokens1 is None:
+            tokens1 = frozenset(self._tokenize(code1))
+            self._token_cache[code1] = tokens1
+
+        tokens2 = self._token_cache.get(code2)
+        if tokens2 is None:
+            tokens2 = frozenset(self._tokenize(code2))
+            self._token_cache[code2] = tokens2
+
+        if not tokens1 or not tokens2:
+            score = 0.0
+        else:
+            intersection = len(tokens1 & tokens2)
+            union = len(tokens1 | tokens2)
+            score = intersection / union if union > 0 else 0.0
+
+        self._similarity_cache[cache_key] = score
+        return score
 
     def _tokenize(self, code: str) -> List[str]:
         """Simple tokenization of code.

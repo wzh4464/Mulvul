@@ -1,0 +1,62 @@
+[
+  {
+    "cwd": "CWD-1005",
+    "benchmark_snippet_total": 2,
+    "benchmark_unique_labeled": {
+      "VULNERABLE": 1,
+      "BENIGN": 1
+    },
+    "weakness_case_code_files": [
+      "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+      "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.cpp"
+    ],
+    "duplicate_groups": []
+  },
+  {
+    "cwd": "CWD-1007",
+    "benchmark_snippet_total": 2,
+    "benchmark_unique_labeled": {
+      "VULNERABLE": 1,
+      "BENIGN": 1
+    },
+    "weakness_case_code_files": [
+      "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1007/CWD-1007-001/bit_by_bit_copy_classObj_with_virFunc/bit_by_bit_copy_classObj_with_virFunc.cpp"
+    ],
+    "duplicate_groups": []
+  },
+  {
+    "cwd": "CWD-1008",
+    "benchmark_snippet_total": 2,
+    "benchmark_unique_labeled": {
+      "VULNERABLE": 1,
+      "BENIGN": 1
+    },
+    "weakness_case_code_files": [
+      "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1008/CWD-1008-001/using_std-vector-bool_type_obj_error/using_std-vector-bool_type_obj_error.cpp"
+    ],
+    "duplicate_groups": []
+  },
+  {
+    "cwd": "CWD-1039",
+    "benchmark_snippet_total": 2,
+    "benchmark_unique_labeled": {
+      "VULNERABLE": 1,
+      "BENIGN": 1
+    },
+    "weakness_case_code_files": [
+      "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1039/CWD-1039-001/cast_ptr_to_int_data_truncation_01/cast_ptr_to_int_data_truncation_01.c",
+      "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp"
+    ],
+    "duplicate_groups": []
+  },
+  {
+    "cwd": "CWD-1093",
+    "benchmark_snippet_total": 4,
+    "benchmark_unique_labeled": {
+      "VULNERABLE": 2,
+      "BENIGN": 2
+    },
+    "weakness_case_code_files": [],
+    "duplicate_groups": []
+  }
+]

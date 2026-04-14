@@ -1,0 +1,1116 @@
+{
+  "model": "openai/gpt-5.4",
+  "api_base": "https://openrouter.ai/api/v1",
+  "nodes": {
+    "CWD-1005": {
+      "node": "CWD-1005",
+      "name": "不正确的字节序",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "target_pos_available": 3,
+        "target_neg_available": 3,
+        "sibling_pos_available": {
+          "CWD-1006": 6,
+          "CWD-1007": 4,
+          "CWD-1008": 4
+        },
+        "selected_pos": 3,
+        "selected_neg": 3,
+        "selected_total": 6,
+        "neg_source_mix": {
+          "sibling_pos": 1,
+          "target_neg": 2
+        }
+      },
+      "extra_sample_recovery": "yes",
+      "prompt_results": [
+        {
+          "variant": "baseline",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1005: 不正确的字节序.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nNetwork or serialized multi-byte data is used with the wrong endianness, or the required hton/ntoh-style conversion is missing or applied in the wrong direction.\n\nClosest sibling boundaries to reject:\nCWD-1006, CWD-1007, CWD-1008\n\nNegative class:\nNot this node when the issue is bitfield layout, object byte-copying, vector<bool>, memcpy overlap, or a different memory-management bug.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If every multi-byte field that needs byte-order conversion is converted with hton/ntoh or an equivalent safe helper, answer BENIGN.\n- If the snippet only shows a bitfield or a raw copy but not endianness-sensitive field handling, answer BENIGN.\n- If the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.6666666666666666,
+          "holdout_metric": 0.0,
+          "dev_records": [
+            {
+              "id": "weak:C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+              "source_node": "CWD-1005",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "static int32_t StructBitfieldBad(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  // 获取结构体指针\n\n    // 尝试直接通过指针赋值 (二进制: 10111001)，0xB9 = 10111001\n\n    // 输出结果依赖系统字节序:\n    // 小端系统: mode=0b01, state=0b110, error=0b101\n    // 大端系统: mode=0b10, state=0b011, error=0b110\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1005:1:vuln",
+              "path": "cpp/CWD-1005/1/vuln",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <arpa/inet.h>  \n\n\n#define IPV6_ADDR_LENGTH 16\n#define UCHAR unsigned char\n#define COPY_IPV6_ADDR(d, s) do {                   \\\n    int i = 0;                               \\\n    for (; i < IPV6_ADDR_LENGTH; i++) {                  \\\n        ((UCHAR*)(d))[i] = ((UCHAR*)(s))[i]; \\\n    }                                          \\\n} while (0)\n\ntypedef struct {\n    uint8_t spare;\n    uint8_t ipv4Flag;\n    uint8_t ipv6Flag;\n    uint64_t identifier;\n    union {\n        uint32_t ipv4Addr;\n        uint8_t ipv6Addr[IPV6_ADDR_LENGTH];\n    } ip;\n} DataStructure;\n\nvoid TGTcase(void *indata, void *outdata)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  \n\n    if (input->ipv4Flag) {\n        output->ip.ipv4Addr = input->ip.ipv4Addr;  \n    } else if (input->ipv6Flag) {\n        \n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:CPP/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.cpp",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1005:0:benign",
+              "path": "cpp/CWD-1005/0/benign",
+              "source_node": "CWD-1005",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <arpa/inet.h>  \n\n\n#define IPV6_ADDR_LENGTH 16\n#define UCHAR unsigned char\n#define COPY_IPV6_ADDR(d, s) do {                   \\\n    int i = 0;                               \\\n    for (; i < IPV6_ADDR_LENGTH; i++) {                  \\\n        ((UCHAR*)(d))[i] = ((UCHAR*)(s))[i]; \\\n    }                                          \\\n} while (0)\n\ntypedef struct {\n    uint8_t spare;\n    uint8_t ipv4Flag;\n    uint8_t ipv6Flag;\n    uint64_t identifier;\n    union {\n        uint32_t ipv4Addr;\n        uint8_t ipv6Addr[IPV6_ADDR_LENGTH];\n    } ip;\n} DataStructure;\n\nvoid TGTcase(void *indata, void *outdata)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  \n\n    if (input->ipv4Flag) {\n        output->ip.ipv4Addr = htonl(input->ip.ipv4Addr);  \n    } else if (input->ipv6Flag) {\n        \n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 2,
+            "sibling_pos": 0,
+            "target_hard_benign": 1,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 3,
+            "holdout_total": 3,
+            "dev_pos": 2,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        },
+        {
+          "variant": "contrastive",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1005: 不正确的字节序.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nNetwork or serialized multi-byte data is used with the wrong endianness, or the required hton/ntoh-style conversion is missing or applied in the wrong direction.\n\nClosest sibling boundaries to reject:\nCWD-1006, CWD-1007, CWD-1008\n\nNegative class:\nNot this node when the issue is bitfield layout, object byte-copying, vector<bool>, memcpy overlap, or a different memory-management bug.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If every multi-byte field that needs byte-order conversion is converted with hton/ntoh or an equivalent safe helper, answer BENIGN.\n- If the snippet only shows a bitfield or a raw copy but not endianness-sensitive field handling, answer BENIGN.\n- If the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: output->ip.ipv4Addr = input->ip.ipv4Addr;\n- BENIGN: output->ip.ipv4Addr = htonl(input->ip.ipv4Addr);\n- BENIGN: ptr[0] = 0xB9;\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.6666666666666666,
+          "holdout_metric": 0.0,
+          "dev_records": [
+            {
+              "id": "weak:C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+              "source_node": "CWD-1005",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "static int32_t StructBitfieldBad(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  // 获取结构体指针\n\n    // 尝试直接通过指针赋值 (二进制: 10111001)，0xB9 = 10111001\n\n    // 输出结果依赖系统字节序:\n    // 小端系统: mode=0b01, state=0b110, error=0b101\n    // 大端系统: mode=0b10, state=0b011, error=0b110\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1005:1:vuln",
+              "path": "cpp/CWD-1005/1/vuln",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <arpa/inet.h>  \n\n\n#define IPV6_ADDR_LENGTH 16\n#define UCHAR unsigned char\n#define COPY_IPV6_ADDR(d, s) do {                   \\\n    int i = 0;                               \\\n    for (; i < IPV6_ADDR_LENGTH; i++) {                  \\\n        ((UCHAR*)(d))[i] = ((UCHAR*)(s))[i]; \\\n    }                                          \\\n} while (0)\n\ntypedef struct {\n    uint8_t spare;\n    uint8_t ipv4Flag;\n    uint8_t ipv6Flag;\n    uint64_t identifier;\n    union {\n        uint32_t ipv4Addr;\n        uint8_t ipv6Addr[IPV6_ADDR_LENGTH];\n    } ip;\n} DataStructure;\n\nvoid TGTcase(void *indata, void *outdata)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  \n\n    if (input->ipv4Flag) {\n        output->ip.ipv4Addr = input->ip.ipv4Addr;  \n    } else if (input->ipv6Flag) {\n        \n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:CPP/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.cpp",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1005:0:benign",
+              "path": "cpp/CWD-1005/0/benign",
+              "source_node": "CWD-1005",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <arpa/inet.h>  \n\n\n#define IPV6_ADDR_LENGTH 16\n#define UCHAR unsigned char\n#define COPY_IPV6_ADDR(d, s) do {                   \\\n    int i = 0;                               \\\n    for (; i < IPV6_ADDR_LENGTH; i++) {                  \\\n        ((UCHAR*)(d))[i] = ((UCHAR*)(s))[i]; \\\n    }                                          \\\n} while (0)\n\ntypedef struct {\n    uint8_t spare;\n    uint8_t ipv4Flag;\n    uint8_t ipv6Flag;\n    uint64_t identifier;\n    union {\n        uint32_t ipv4Addr;\n        uint8_t ipv6Addr[IPV6_ADDR_LENGTH];\n    } ip;\n} DataStructure;\n\nvoid TGTcase(void *indata, void *outdata)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  \n\n    if (input->ipv4Flag) {\n        output->ip.ipv4Addr = htonl(input->ip.ipv4Addr);  \n    } else if (input->ipv6Flag) {\n        \n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 2,
+            "sibling_pos": 0,
+            "target_hard_benign": 1,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 3,
+            "holdout_total": 3,
+            "dev_pos": 2,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        }
+      ],
+      "best_prompt": "You are a strict binary classifier for CWD node CWD-1005: 不正确的字节序.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nNetwork or serialized multi-byte data is used with the wrong endianness, or the required hton/ntoh-style conversion is missing or applied in the wrong direction.\n\nClosest sibling boundaries to reject:\nCWD-1006, CWD-1007, CWD-1008\n\nNegative class:\nNot this node when the issue is bitfield layout, object byte-copying, vector<bool>, memcpy overlap, or a different memory-management bug.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If every multi-byte field that needs byte-order conversion is converted with hton/ntoh or an equivalent safe helper, answer BENIGN.\n- If the snippet only shows a bitfield or a raw copy but not endianness-sensitive field handling, answer BENIGN.\n- If the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: output->ip.ipv4Addr = input->ip.ipv4Addr;\n- BENIGN: output->ip.ipv4Addr = htonl(input->ip.ipv4Addr);\n- BENIGN: ptr[0] = 0xB9;\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+      "best_variant": "contrastive",
+      "dev_metric": 0.6666666666666666,
+      "holdout_metric": 0.0,
+      "main_error_buckets": {
+        "target_fn": 2,
+        "sibling_pos": 0,
+        "target_hard_benign": 1,
+        "other": 0
+      },
+      "final_status": "blocked_by_samples",
+      "sample_split": {
+        "dev_total": 3,
+        "holdout_total": 3,
+        "dev_pos": 2,
+        "dev_neg": 1,
+        "holdout_pos": 2,
+        "holdout_neg": 1
+      }
+    },
+    "CWD-1006": {
+      "node": "CWD-1006",
+      "name": "依赖带位域的结构体的内存布局",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "target_pos_available": 3,
+        "target_neg_available": 3,
+        "sibling_pos_available": {
+          "CWD-1005": 6,
+          "CWD-1007": 4,
+          "CWD-1008": 4
+        },
+        "selected_pos": 3,
+        "selected_neg": 3,
+        "selected_total": 6,
+        "neg_source_mix": {
+          "sibling_pos": 1,
+          "target_neg": 2
+        }
+      },
+      "extra_sample_recovery": "yes",
+      "prompt_results": [
+        {
+          "variant": "baseline",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1006: 依赖带位域的结构体的内存布局.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nCode writes, reads, copies, or subscript-indexes bitfield-backed structs in a way that assumes a stable in-memory layout across compilers or platforms.\n\nClosest sibling boundaries to reject:\nCWD-1005, CWD-1007, CWD-1008\n\nNegative class:\nNot this node when the code is about endianness conversion, object byte-copying of classes, vector<bool>, or a different memory bug.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code only assigns named bitfield members directly, answer BENIGN.\n- If the code does not depend on the raw in-memory layout of the bitfield struct, answer BENIGN.\n- If the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 1.0,
+          "holdout_metric": 0.6666666666666666,
+          "dev_records": [
+            {
+              "id": "benchmark:cpp:CWD-1006:0:vuln",
+              "path": "cpp/CWD-1006/0/vuln",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state : 3;  \n    uint8_t error : 3;  \n} DeviceStatus;\n\nstatic int32_t structbitfieldTGT(char *outbuf, size_t buflen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  \n    \n    \n    ptr[0] = 0xB9;\t\n    \n    \n    \n    \n\t(void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1006:1:benign",
+              "path": "cpp/CWD-1006/1/benign",
+              "source_node": "CWD-1006",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state : 3;  \n    uint8_t error : 3;  \n} DeviceStatus;\n\nstatic int32_t structbitfieldTGT(char *outbuf, size_t buflen)\n{\n    DeviceStatus dev = { 0 };\n    \n    \n    dev.mode  = 0x1;\t\n    dev.state = 0x6;\t\n    dev.error = 0x5;\t\n    \n    \n    \n\t(void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\\n\", dev.mode, dev.state, dev.error);\t\n    return 0;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "static int32_t StructBitfieldBad(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  // 获取结构体指针\n\n    // 尝试直接通过指针赋值 (二进制: 10111001)，0xB9 = 10111001\n\n    // 输出结果依赖系统字节序:\n    // 小端系统: mode=0b01, state=0b110, error=0b101\n    // 大端系统: mode=0b10, state=0b011, error=0b110\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c",
+              "source_node": "CWD-1006",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "static int32_t StructBitfieldGood(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n\n    // 直接对位域成员赋值\n\n    // 输出结果始终一致:\n    // mode: 1, state: 6, error: 5\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\\n\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:CPP/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.cpp",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "static int32_t StructBitfieldBad(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  // 获取结构体指针\n\n    // 尝试直接通过指针赋值 (二进制: 10111001)，0xB9 = 10111001\n\n    // 输出结果依赖系统字节序:\n    // 小端系统: mode=0b01, state=0b110, error=0b101\n    // 大端系统: mode=0b10, state=0b011, error=0b110\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 1,
+            "sibling_pos": 0,
+            "target_hard_benign": 0,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 3,
+            "holdout_total": 3,
+            "dev_pos": 2,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        },
+        {
+          "variant": "contrastive",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1006: 依赖带位域的结构体的内存布局.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nCode writes, reads, copies, or subscript-indexes bitfield-backed structs in a way that assumes a stable in-memory layout across compilers or platforms.\n\nClosest sibling boundaries to reject:\nCWD-1005, CWD-1007, CWD-1008\n\nNegative class:\nNot this node when the code is about endianness conversion, object byte-copying of classes, vector<bool>, or a different memory bug.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code only assigns named bitfield members directly, answer BENIGN.\n- If the code does not depend on the raw in-memory layout of the bitfield struct, answer BENIGN.\n- If the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: uint8_t *ptr = (uint8_t *)&dev; ptr[0] = 0xB9;\n- BENIGN: dev.mode = 0x1; dev.state = 0x6; dev.error = 0x5;\n- BENIGN: output->ip.ipv4Addr = htonl(input->ip.ipv4Addr);\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.6666666666666666,
+          "holdout_metric": 1.0,
+          "dev_records": [
+            {
+              "id": "weak:C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1005/CWD-1005-001/incorrect_struct_byte_order_01/incorrect_struct_byte_order_01.c",
+              "source_node": "CWD-1005",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void GoodCase(void *inData, void *outData)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  // 转换64位整数的字节序\n\n    if (input->ipv4Flag) {\n    } else if (input->ipv6Flag) {\n        // 模拟 IPv6 地址拷贝\n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1006:0:vuln",
+              "path": "cpp/CWD-1006/0/vuln",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state : 3;  \n    uint8_t error : 3;  \n} DeviceStatus;\n\nstatic int32_t structbitfieldTGT(char *outbuf, size_t buflen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  \n    \n    \n    ptr[0] = 0xB9;\t\n    \n    \n    \n    \n\t(void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1006:1:benign",
+              "path": "cpp/CWD-1006/1/benign",
+              "source_node": "CWD-1006",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state : 3;  \n    uint8_t error : 3;  \n} DeviceStatus;\n\nstatic int32_t structbitfieldTGT(char *outbuf, size_t buflen)\n{\n    DeviceStatus dev = { 0 };\n    \n    \n    dev.mode  = 0x1;\t\n    dev.state = 0x6;\t\n    dev.error = 0x5;\t\n    \n    \n    \n\t(void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\\n\", dev.mode, dev.state, dev.error);\t\n    return 0;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:CPP/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.cpp",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "static int32_t StructBitfieldBad(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  // 获取结构体指针\n\n    // 尝试直接通过指针赋值 (二进制: 10111001)，0xB9 = 10111001\n\n    // 输出结果依赖系统字节序:\n    // 小端系统: mode=0b01, state=0b110, error=0b101\n    // 大端系统: mode=0b10, state=0b011, error=0b110\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c",
+              "source_node": "CWD-1006",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "static int32_t StructBitfieldGood(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n\n    // 直接对位域成员赋值\n\n    // 输出结果始终一致:\n    // mode: 1, state: 6, error: 5\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\\n\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1006/CWD-1006-001/assigning_values_to_bitfields_with_subscript/assigning_values_to_bitfields_with_subscript.c",
+              "source_node": "CWD-1006",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "static int32_t StructBitfieldBad(char *outBuf, size_t bufLen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  // 获取结构体指针\n\n    // 尝试直接通过指针赋值 (二进制: 10111001)，0xB9 = 10111001\n\n    // 输出结果依赖系统字节序:\n    // 小端系统: mode=0b01, state=0b110, error=0b101\n    // 大端系统: mode=0b10, state=0b011, error=0b110\n    (void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 0,
+            "sibling_pos": 0,
+            "target_hard_benign": 0,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 3,
+            "holdout_total": 3,
+            "dev_pos": 2,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        }
+      ],
+      "best_prompt": "You are a strict binary classifier for CWD node CWD-1006: 依赖带位域的结构体的内存布局.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nCode writes, reads, copies, or subscript-indexes bitfield-backed structs in a way that assumes a stable in-memory layout across compilers or platforms.\n\nClosest sibling boundaries to reject:\nCWD-1005, CWD-1007, CWD-1008\n\nNegative class:\nNot this node when the code is about endianness conversion, object byte-copying of classes, vector<bool>, or a different memory bug.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code only assigns named bitfield members directly, answer BENIGN.\n- If the code does not depend on the raw in-memory layout of the bitfield struct, answer BENIGN.\n- If the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: uint8_t *ptr = (uint8_t *)&dev; ptr[0] = 0xB9;\n- BENIGN: dev.mode = 0x1; dev.state = 0x6; dev.error = 0x5;\n- BENIGN: output->ip.ipv4Addr = htonl(input->ip.ipv4Addr);\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+      "best_variant": "contrastive",
+      "dev_metric": 0.6666666666666666,
+      "holdout_metric": 1.0,
+      "main_error_buckets": {
+        "target_fn": 0,
+        "sibling_pos": 0,
+        "target_hard_benign": 0,
+        "other": 0
+      },
+      "final_status": "keep",
+      "sample_split": {
+        "dev_total": 3,
+        "holdout_total": 3,
+        "dev_pos": 2,
+        "dev_neg": 1,
+        "holdout_pos": 2,
+        "holdout_neg": 1
+      }
+    },
+    "CWD-1007": {
+      "node": "CWD-1007",
+      "name": "不正确的逐位操作",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "target_pos_available": 2,
+        "target_neg_available": 2,
+        "sibling_pos_available": {
+          "CWD-1005": 6,
+          "CWD-1006": 6,
+          "CWD-1008": 4
+        },
+        "selected_pos": 2,
+        "selected_neg": 2,
+        "selected_total": 4,
+        "neg_source_mix": {
+          "sibling_pos": 0,
+          "target_neg": 0
+        }
+      },
+      "extra_sample_recovery": "yes",
+      "best_prompt": null,
+      "dev_metric": null,
+      "holdout_metric": null,
+      "main_error_buckets": {
+        "target_fn": 0,
+        "sibling_pos": 0,
+        "target_hard_benign": 0,
+        "other": 0
+      },
+      "final_status": "blocked_by_samples",
+      "notes": "Too few recovered samples to justify prompt iteration."
+    },
+    "CWD-1008": {
+      "node": "CWD-1008",
+      "name": "使用可能导致内存布局不兼容的std::vector<bool>",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "target_pos_available": 2,
+        "target_neg_available": 2,
+        "sibling_pos_available": {
+          "CWD-1005": 6,
+          "CWD-1006": 6,
+          "CWD-1007": 4
+        },
+        "selected_pos": 2,
+        "selected_neg": 2,
+        "selected_total": 4,
+        "neg_source_mix": {
+          "sibling_pos": 0,
+          "target_neg": 0
+        }
+      },
+      "extra_sample_recovery": "yes",
+      "best_prompt": null,
+      "dev_metric": null,
+      "holdout_metric": null,
+      "main_error_buckets": {
+        "target_fn": 0,
+        "sibling_pos": 0,
+        "target_hard_benign": 0,
+        "other": 0
+      },
+      "final_status": "blocked_by_samples",
+      "notes": "Too few recovered samples to justify prompt iteration."
+    },
+    "CWD-1034": {
+      "node": "CWD-1034",
+      "name": "不受信任的指针解引用",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "target_pos_available": 4,
+        "target_neg_available": 4,
+        "sibling_pos_available": {
+          "CWD-1029": 197,
+          "CWD-1030": 44,
+          "CWD-1031": 543,
+          "CWD-1038": 63,
+          "CWD-1039": 6
+        },
+        "selected_pos": 4,
+        "selected_neg": 4,
+        "selected_total": 8,
+        "neg_source_mix": {
+          "sibling_pos": 2,
+          "target_neg": 2
+        }
+      },
+      "extra_sample_recovery": "yes",
+      "prompt_results": [
+        {
+          "variant": "contrastive",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1034: 不受信任的指针解引用.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nA pointer obtained from an untrusted or external source is directly dereferenced or passed onward without a trustworthy validity check.\n\nClosest sibling boundaries to reject:\nCWD-1029, CWD-1030, CWD-1031, CWD-1038, CWD-1039\n\nNegative class:\nNot this node when the issue is pointer truncation, pointer-to-int conversion, null dereference, uninitialized pointer use, or incompatible cast unless the dereference is the actual untrusted-pointer problem.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code only uses a validated data copy or a checked index into a safe container, answer BENIGN.\n- If the pointer provenance is not untrusted or external, or the snippet does not show a direct dereference/use, answer BENIGN.\n- Nearby caller/context may only be used to recover pointer provenance or truncation provenance; it cannot replace the missing target evidence.\n\nIf the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: int64_t* ptr = (int64_t*)(void*)addr; ProcessDataBad(ptr);\n- BENIGN: if (index >= safeBuffer.size()) { return 1; } ProcessDataGood(safeBuffer[index]);\n- BENIGN: uintptr_t number = (uintptr_t)(void *)p;\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.6,
+          "holdout_metric": 0.3333333333333333,
+          "dev_records": [
+            {
+              "id": "weak:C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcessMessageUnSafeMode(const Message *msg)\n{\n    // 不检查指针有效性直接访问\n\n    // 业务逻辑：计算校验和\n    int sum = 0;\n    }\n    printf(\"Checksum(UNSAFE): %d\\n\", sum);\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:CPP/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.cpp",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcessDataBad(int64_t* externalPtr)\n{\n    // 危险操作：直接解引用未经校验的外部指针，可能访问非法内存\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1034:0:vuln",
+              "path": "cpp/CWD-1034/0/vuln",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nvoid processdataTGT(int64_t* external_ptr)\n{\n    \n    std::cout << \"External data: \" << *external_ptr << std::endl;  \n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c",
+              "source_node": "CWD-1034",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "void ProcessMessageSafeMode(const Message *msg)\n{\n\n        // 业务逻辑：计算校验和\n        int sum = 0;\n        }\n        printf(\"Checksum(SAFE): %d\\n\", sum);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1031:192:vuln",
+              "path": "cpp/CWD-1031/192/vuln",
+              "source_node": "CWD-1031",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include \"common/public.h\"\n\nusing namespace std;\n\ntypedef uint16_t CCDB_UINT16;\ntypedef uint32_t CCDB_UINT32;\n\ntypedef enum {\n    CCDB_TYPE_UINT16 = 0,  \n    CCDB_TYPE_UINT32 = 1,  \n    CCDB_TYPE_BUTT\n} CCDB_TYPE;\n\ntypedef struct {\n    union UnV {\n        CCDB_UINT16 uiv16;\n        CCDB_UINT32 uiv32;\n    } val;           \n    CCDB_TYPE type;  \n} CCDB_VALUE;\n\nclass CCDB_CELL {\npublic:\n    bool UpdateValueBad(CCDB_TYPE type, void *value);\n    bool UpdateValueGood(CCDB_TYPE type, void *value);\n\nprivate:\n    CCDB_VALUE value;\n};\n\n\n\n\n\nvoid TestUpdateValue()\n{\n    CCDB_CELL cell;\n\n    bool resultBad1 = cell.UpdateValueBad(CCDB_TYPE_UINT16, nullptr);\n    std::cout << \"Result: \" << (resultBad1 ? \"Success\" : \"Failure\") << std::endl;\n\n    CCDB_UINT16 value16 = 0x1234;\n    bool resultBad2 = cell.UpdateValueBad(CCDB_TYPE_UINT16, &value16);\n    std::cout << \"Result: \" << (resultBad2 ? \"Success\" : \"Failure\") << std::endl;\n\n    std::cout << \"\\nTesting UpdateValueGood:\" << std::endl;\n\n    bool resultGood1 = cell.UpdateValueGood(CCDB_TYPE_UINT16, nullptr);\n    std::cout << \"Result: \" << (resultGood1 ? \"Success\" : \"Failure\") << std::endl;\n\n    bool resultGood2 = cell.UpdateValueGood(CCDB_TYPE_UINT16, &value16);\n    std::cout << \"Result: \" << (resultGood2 ? \"Success\" : \"Failure\") << std::endl;\n}\n\nbool ccdb_cell::updatevalueTGT(ccdb_type type, void *value)\n{\n    if (type == CCDB_TYPE_UINT16) {\n        this->value.type = CCDB_TYPE_UINT16;\n        this->value.val.uiv16 = *(CCDB_UINT16 *)value;  \n    } else if (type == CCDB_TYPE_UINT32) {\n        this->value.type = CCDB_TYPE_UINT32;\n        this->value.val.uiv32 = *(CCDB_UINT32 *)value;  \n    } else {\n        std::cerr << \"Parameter verification failed, type : \" << type << std::endl;\n        return false;\n    }\n\n    return true;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "benchmark:cpp:CWD-1034:1:benign",
+              "path": "cpp/CWD-1034/1/benign",
+              "source_node": "CWD-1034",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nstatic void processdataTGT(int safe_data)\n{\n    \n    std::cout << \"Safe data: \" << safe_data << std::endl;  \n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:C/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.c",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcessDataBad(int64_t* externalPtr)\n{\n    // 危险操作：直接解引用未经校验的外部指针，可能访问非法内存\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1029:69:vuln",
+              "path": "cpp/CWD-1029/69/vuln",
+              "source_node": "CWD-1029",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "/*\n * 版权所有 (c) 华为技术有限公司 2025\n */\n\n#ifndef LOGCI_ERROR_COMMON_OFFSET_H\n#define LOGCI_ERROR_COMMON_OFFSET_H\n\n#include <cstdint>\n#include <map>\n\nenum EnumABC {\n    TEST_ENUM_1,\n    TEST_ENUM_2,\n    TEST_ENUM_3,\n    TEST_ENUM_4\n};\n\ntypedef struct {\n    uint32_t sendType;\n    uint32_t sendNum;\n    uint32_t sendLen;\n} DhcpBatchSendHead;\n\n\n// 函数指针类型\ntypedef void (*TestFunc)(const char* msg, uint32_t len);\n\n// 函数实现\nvoid TestFunc1(const char* msg, uint32_t len)\n{\n    std::cout << \"Test Function 1: \" << msg << \", \" << len << std::endl;\n}\n\nvoid TestFunc2(const char* msg, uint32_t len)\n{\n    std::cout << \"Test Function 2: \" << msg << \", \" << len << std::endl;\n}\n\nvoid TestFunc4(const char* msg, uint32_t len)\n{\n    uint8_t *tmpMsg = NULL_PTR;\n    uint8_t *recvMsg = (uint8_t *)IAS_MSG_PAYLOAD(msg);\n    DhcpBatchSendHead *headInfo = (DhcpBatchSendHead *)recvMsg;\n    tmpMsg = recvMsg + sizeof(DhcpBatchSendHead);\n    uint32_t msgLen = ((MsgBlock *)tmpMsg)->ulLength;\n    if (msgLen > 10086) {\n        return;\n    }\n    std::cout << \"Test Function 4: \" << msg << \", \" << len << std::endl;\n    return;\n}\n\n#endif\n\n\n\n#include \"external_data_common.h\"\n#include \"logic_error_common_offset.h\"\n\n\n\n\nint32_t Case7(EnumABC key, const char *msg, uint32_t len)   \n{\n    \n    std::map<EnumABC, TestFunc> testDict = {\n        {TEST_ENUM_1, &TestFunc1},\n        {TEST_ENUM_2, &TestFunc2},\n        {TEST_ENUM_3, &TestFunc3},\n        {TEST_ENUM_4, &TestFunc4}\n    };\n    if (testDict.find(key) != testDict.end()) {\n        TestFunc func = testDict[key];\n        func(msg, len); \n    }\n    return 0;\n}\n\nvoid TestFunc3(const char* msg, uint32_t len)\n{\n    uint8_t *tmpMsg = NULL_PTR;\n    uint8_t *recvMsg = (uint8_t *)IAS_MSG_PAYLOAD(msg);\n    DhcpBatchSendHead *headInfo = (DhcpBatchSendHead *)recvMsg;\n    tmpMsg = recvMsg + sizeof(DhcpBatchSendHead);\n    uint32_t msgLen = ((MsgBlock *)tmpMsg)->ulLength;\n    tmpMsg += VOS_MSG_HEAD_LENGTH + msgLen; \n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 1,
+            "sibling_pos": 0,
+            "target_hard_benign": 1,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 5,
+            "holdout_total": 3,
+            "dev_pos": 4,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        },
+        {
+          "variant": "baseline",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1034: 不受信任的指针解引用.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nA pointer obtained from an untrusted or external source is directly dereferenced or passed onward without a trustworthy validity check.\n\nClosest sibling boundaries to reject:\nCWD-1029, CWD-1030, CWD-1031, CWD-1038, CWD-1039\n\nNegative class:\nNot this node when the issue is pointer truncation, pointer-to-int conversion, null dereference, uninitialized pointer use, or incompatible cast unless the dereference is the actual untrusted-pointer problem.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code only uses a validated data copy or a checked index into a safe container, answer BENIGN.\n- If the pointer provenance is not untrusted or external, or the snippet does not show a direct dereference/use, answer BENIGN.\n- Nearby caller/context may only be used to recover pointer provenance or truncation provenance; it cannot replace the missing target evidence.\n\nIf the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.4,
+          "holdout_metric": 0.6666666666666666,
+          "dev_records": [
+            {
+              "id": "weak:CPP/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.cpp",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcessDataBad(int64_t* externalPtr)\n{\n    // 危险操作：直接解引用未经校验的外部指针，可能访问非法内存\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcessMessageUnSafeMode(const Message *msg)\n{\n    // 不检查指针有效性直接访问\n\n    // 业务逻辑：计算校验和\n    int sum = 0;\n    }\n    printf(\"Checksum(UNSAFE): %d\\n\", sum);\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1034:1:benign",
+              "path": "cpp/CWD-1034/1/benign",
+              "source_node": "CWD-1034",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nstatic void processdataTGT(int safe_data)\n{\n    \n    std::cout << \"Safe data: \" << safe_data << std::endl;  \n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1029:69:vuln",
+              "path": "cpp/CWD-1029/69/vuln",
+              "source_node": "CWD-1029",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "/*\n * 版权所有 (c) 华为技术有限公司 2025\n */\n\n#ifndef LOGCI_ERROR_COMMON_OFFSET_H\n#define LOGCI_ERROR_COMMON_OFFSET_H\n\n#include <cstdint>\n#include <map>\n\nenum EnumABC {\n    TEST_ENUM_1,\n    TEST_ENUM_2,\n    TEST_ENUM_3,\n    TEST_ENUM_4\n};\n\ntypedef struct {\n    uint32_t sendType;\n    uint32_t sendNum;\n    uint32_t sendLen;\n} DhcpBatchSendHead;\n\n\n// 函数指针类型\ntypedef void (*TestFunc)(const char* msg, uint32_t len);\n\n// 函数实现\nvoid TestFunc1(const char* msg, uint32_t len)\n{\n    std::cout << \"Test Function 1: \" << msg << \", \" << len << std::endl;\n}\n\nvoid TestFunc2(const char* msg, uint32_t len)\n{\n    std::cout << \"Test Function 2: \" << msg << \", \" << len << std::endl;\n}\n\nvoid TestFunc4(const char* msg, uint32_t len)\n{\n    uint8_t *tmpMsg = NULL_PTR;\n    uint8_t *recvMsg = (uint8_t *)IAS_MSG_PAYLOAD(msg);\n    DhcpBatchSendHead *headInfo = (DhcpBatchSendHead *)recvMsg;\n    tmpMsg = recvMsg + sizeof(DhcpBatchSendHead);\n    uint32_t msgLen = ((MsgBlock *)tmpMsg)->ulLength;\n    if (msgLen > 10086) {\n        return;\n    }\n    std::cout << \"Test Function 4: \" << msg << \", \" << len << std::endl;\n    return;\n}\n\n#endif\n\n\n\n#include \"external_data_common.h\"\n#include \"logic_error_common_offset.h\"\n\n\n\n\nint32_t Case7(EnumABC key, const char *msg, uint32_t len)   \n{\n    \n    std::map<EnumABC, TestFunc> testDict = {\n        {TEST_ENUM_1, &TestFunc1},\n        {TEST_ENUM_2, &TestFunc2},\n        {TEST_ENUM_3, &TestFunc3},\n        {TEST_ENUM_4, &TestFunc4}\n    };\n    if (testDict.find(key) != testDict.end()) {\n        TestFunc func = testDict[key];\n        func(msg, len); \n    }\n    return 0;\n}\n\nvoid TestFunc3(const char* msg, uint32_t len)\n{\n    uint8_t *tmpMsg = NULL_PTR;\n    uint8_t *recvMsg = (uint8_t *)IAS_MSG_PAYLOAD(msg);\n    DhcpBatchSendHead *headInfo = (DhcpBatchSendHead *)recvMsg;\n    tmpMsg = recvMsg + sizeof(DhcpBatchSendHead);\n    uint32_t msgLen = ((MsgBlock *)tmpMsg)->ulLength;\n    tmpMsg += VOS_MSG_HEAD_LENGTH + msgLen; \n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1034:0:vuln",
+              "path": "cpp/CWD-1034/0/vuln",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nvoid processdataTGT(int64_t* external_ptr)\n{\n    \n    std::cout << \"External data: \" << *external_ptr << std::endl;  \n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:C/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1034/CWD-1034-001/untrusted_pointer_dereference_001/untrusted_pointer_dereference_001.c",
+              "source_node": "CWD-1034",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcessDataBad(int64_t* externalPtr)\n{\n    // 危险操作：直接解引用未经校验的外部指针，可能访问非法内存\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1034/CWD-1034-001/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario/using_data_without_check_when_pointer_maybe_null_in_multi_thread_scenario_01.c",
+              "source_node": "CWD-1034",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "void ProcessMessageSafeMode(const Message *msg)\n{\n\n        // 业务逻辑：计算校验和\n        int sum = 0;\n        }\n        printf(\"Checksum(SAFE): %d\\n\", sum);\n    }\n}\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1031:192:vuln",
+              "path": "cpp/CWD-1031/192/vuln",
+              "source_node": "CWD-1031",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include \"common/public.h\"\n\nusing namespace std;\n\ntypedef uint16_t CCDB_UINT16;\ntypedef uint32_t CCDB_UINT32;\n\ntypedef enum {\n    CCDB_TYPE_UINT16 = 0,  \n    CCDB_TYPE_UINT32 = 1,  \n    CCDB_TYPE_BUTT\n} CCDB_TYPE;\n\ntypedef struct {\n    union UnV {\n        CCDB_UINT16 uiv16;\n        CCDB_UINT32 uiv32;\n    } val;           \n    CCDB_TYPE type;  \n} CCDB_VALUE;\n\nclass CCDB_CELL {\npublic:\n    bool UpdateValueBad(CCDB_TYPE type, void *value);\n    bool UpdateValueGood(CCDB_TYPE type, void *value);\n\nprivate:\n    CCDB_VALUE value;\n};\n\n\n\n\n\nvoid TestUpdateValue()\n{\n    CCDB_CELL cell;\n\n    bool resultBad1 = cell.UpdateValueBad(CCDB_TYPE_UINT16, nullptr);\n    std::cout << \"Result: \" << (resultBad1 ? \"Success\" : \"Failure\") << std::endl;\n\n    CCDB_UINT16 value16 = 0x1234;\n    bool resultBad2 = cell.UpdateValueBad(CCDB_TYPE_UINT16, &value16);\n    std::cout << \"Result: \" << (resultBad2 ? \"Success\" : \"Failure\") << std::endl;\n\n    std::cout << \"\\nTesting UpdateValueGood:\" << std::endl;\n\n    bool resultGood1 = cell.UpdateValueGood(CCDB_TYPE_UINT16, nullptr);\n    std::cout << \"Result: \" << (resultGood1 ? \"Success\" : \"Failure\") << std::endl;\n\n    bool resultGood2 = cell.UpdateValueGood(CCDB_TYPE_UINT16, &value16);\n    std::cout << \"Result: \" << (resultGood2 ? \"Success\" : \"Failure\") << std::endl;\n}\n\nbool ccdb_cell::updatevalueTGT(ccdb_type type, void *value)\n{\n    if (type == CCDB_TYPE_UINT16) {\n        this->value.type = CCDB_TYPE_UINT16;\n        this->value.val.uiv16 = *(CCDB_UINT16 *)value;  \n    } else if (type == CCDB_TYPE_UINT32) {\n        this->value.type = CCDB_TYPE_UINT32;\n        this->value.val.uiv32 = *(CCDB_UINT32 *)value;  \n    } else {\n        std::cerr << \"Parameter verification failed, type : \" << type << std::endl;\n        return false;\n    }\n\n    return true;\n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "VULNERABLE",
+              "ok": true,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 1,
+            "sibling_pos": 0,
+            "target_hard_benign": 0,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 5,
+            "holdout_total": 3,
+            "dev_pos": 4,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        }
+      ],
+      "best_prompt": "You are a strict binary classifier for CWD node CWD-1034: 不受信任的指针解引用.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nA pointer obtained from an untrusted or external source is directly dereferenced or passed onward without a trustworthy validity check.\n\nClosest sibling boundaries to reject:\nCWD-1029, CWD-1030, CWD-1031, CWD-1038, CWD-1039\n\nNegative class:\nNot this node when the issue is pointer truncation, pointer-to-int conversion, null dereference, uninitialized pointer use, or incompatible cast unless the dereference is the actual untrusted-pointer problem.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code only uses a validated data copy or a checked index into a safe container, answer BENIGN.\n- If the pointer provenance is not untrusted or external, or the snippet does not show a direct dereference/use, answer BENIGN.\n- Nearby caller/context may only be used to recover pointer provenance or truncation provenance; it cannot replace the missing target evidence.\n\nIf the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+      "best_variant": "baseline",
+      "dev_metric": 0.4,
+      "holdout_metric": 0.6666666666666666,
+      "main_error_buckets": {
+        "target_fn": 1,
+        "sibling_pos": 0,
+        "target_hard_benign": 0,
+        "other": 0
+      },
+      "final_status": "needs_more_iteration",
+      "sample_split": {
+        "dev_total": 5,
+        "holdout_total": 3,
+        "dev_pos": 4,
+        "dev_neg": 1,
+        "holdout_pos": 2,
+        "holdout_neg": 1
+      }
+    },
+    "CWD-1039": {
+      "node": "CWD-1039",
+      "name": "整数与指针间的互相转化",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "target_pos_available": 3,
+        "target_neg_available": 3,
+        "sibling_pos_available": {
+          "CWD-1029": 197,
+          "CWD-1030": 44,
+          "CWD-1031": 543,
+          "CWD-1034": 8,
+          "CWD-1038": 63
+        },
+        "selected_pos": 3,
+        "selected_neg": 3,
+        "selected_total": 6,
+        "neg_source_mix": {
+          "sibling_pos": 1,
+          "target_neg": 2
+        }
+      },
+      "extra_sample_recovery": "yes",
+      "prompt_results": [
+        {
+          "variant": "baseline",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1039: 整数与指针间的互相转化.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nA pointer is converted to an integer type in a way that can truncate or otherwise lose address information.\n\nClosest sibling boundaries to reject:\nCWD-1029, CWD-1030, CWD-1031, CWD-1034, CWD-1038\n\nNegative class:\nNot this node when the issue is a direct pointer dereference, null pointer bug, untrusted pointer dereference, or a safe uintptr_t/intptr_t roundtrip.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code uses uintptr_t or intptr_t for the conversion and preserves the pointer value, answer BENIGN.\n- If the integer conversion is not narrowing and the code does not rely on the integer as a truncated pointer value, answer BENIGN.\n- Nearby caller/context may only be used to recover pointer provenance or truncation provenance; it cannot replace the missing target evidence.\n\nIf the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.3333333333333333,
+          "holdout_metric": 0.3333333333333333,
+          "dev_records": [
+            {
+              "id": "weak:CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp",
+              "source_node": "CWD-1039",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    // 检查msg[1]是否为0，避免空指针操作\n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    // 由于msg[1]是外部数据，直接转换指针可能导致未定义行为，需先校验长度\n\n    // 获取msg[1]对应的缓冲区长度，并进行校验\n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    // 已校验msg[1]对应的缓冲区长度，安全地转换指针\n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  // msg[3]应该解引用后参与整数运算\n\n    return;\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1039:0:vuln",
+              "path": "cpp/CWD-1039/0/vuln",
+              "source_node": "CWD-1039",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdint.h>\n#include \"external_data_common.h\"\n\n\nconst DWORD DMM_MSG_LEN = 4;\nconstexpr uint32_t SERVICE_TYPE_YANGDS_DB_CHANGE_LEN = (sizeof(uint32_t)) + 100;\n\nDWORD DMM_GetMsgDataLength(void *, uint32_t &)\n{\n    return 0;\n}\n\nvoid ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    \n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    \n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo1 = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  \n\n    return;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "weak:CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp",
+              "source_node": "CWD-1039",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "(void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:C/CWD-1039/CWD-1039-001/cast_ptr_to_int_data_truncation_01/cast_ptr_to_int_data_truncation_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1039/CWD-1039-001/cast_ptr_to_int_data_truncation_01/cast_ptr_to_int_data_truncation_01.c",
+              "source_node": "CWD-1039",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "}\n\nvoid GoodCase()\n{\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1039:0:benign",
+              "path": "cpp/CWD-1039/0/benign",
+              "source_node": "CWD-1039",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <stdint.h>\n#include \"external_data_common.h\"\n\n\nconst DWORD DMM_MSG_LEN = 4;\nconstexpr uint32_t SERVICE_TYPE_YANGDS_DB_CHANGE_LEN = (sizeof(uint32_t)) + 100;\n\nDWORD DMM_GetMsgDataLength(void *, uint32_t &)\n{\n    return 0;\n}\n\nvoid ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    \n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    \n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo1 = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  \n\n    return;\n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "baseline"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1038:0:vuln",
+              "path": "cpp/CWD-1038/0/vuln",
+              "source_node": "CWD-1038",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n\n\ntypedef uint16_t VOS_UINT16;\ntypedef uint32_t VOS_UINT32;\n#define VOS_NULL_PTR NULL\n#define IPV4_PROTOCOL_TCP 6\n#define IPV4_PROTOCOL_UDP 17\n#define PS_TRUE 1\n#define PS_FALSE 0\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint8_t  verIhl;        \n    uint8_t  tos;            \n    uint16_t totalLength;   \n    uint16_t id;             \n    uint16_t fragOffs;      \n    uint8_t  ttl;            \n    uint8_t  protocol;       \n    uint16_t checksum;       \n    uint32_t srcAddr;       \n    uint32_t dstAddr;       \n} IPV4_Hdr;\n#pragma pack(pop)\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint16_t srcPort;       \n    uint16_t dstPort;       \n    uint32_t seqNum;        \n    uint32_t ackNum;        \n    uint8_t  dataOffset;    \n    uint8_t  flags;          \n    uint16_t window;         \n    uint16_t checksum;       \n    uint16_t urgentPtr;     \n} TCP_Hdr;\n#pragma pack(pop)\n\nstruct XXX_IpInfo {\n    VOS_UINT16 protocol;\n    VOS_UINT16 dstPort;\n};\n\n\n#define IP_NTOHS(val) ((((val) >> 8) & 0x00FF) | (((val) << 8) & 0xFF00))\n\n#define IPV4_HDR_LEN 20\n\nVOS_UINT32 xxxdecodebstdlpacketTGT(vos_uint32 *ippktaddr, struct xxx_ipinfo *ipinfo)\n{\n    IPV4_Hdr *ipv4Hdr = VOS_NULL_PTR;\n    TCP_Hdr *tcpHdr = VOS_NULL_PTR;\n\n    ipv4Hdr = (IPV4_Hdr *)(ipPktAddr);\n    \n    if ((ipv4Hdr->protocol != IPV4_PROTOCOL_TCP) && (ipv4Hdr->protocol != IPV4_PROTOCOL_UDP)) {\n        return PS_FALSE;\n    }\n    \n    ipInfo->protocol = ipv4Hdr->protocol;\n\n    tcpHdr = (TCP_Hdr *)(ipPktAddr + IPV4_HDR_LEN);\n    \n    \n    ipInfo->dstPort = IP_NTOHS(tcpHdr->dstPort); \n\n    return PS_TRUE;\n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "baseline"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 2,
+            "sibling_pos": 0,
+            "target_hard_benign": 0,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 3,
+            "holdout_total": 3,
+            "dev_pos": 2,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        },
+        {
+          "variant": "contrastive",
+          "prompt": "You are a strict binary classifier for CWD node CWD-1039: 整数与指针间的互相转化.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nA pointer is converted to an integer type in a way that can truncate or otherwise lose address information.\n\nClosest sibling boundaries to reject:\nCWD-1029, CWD-1030, CWD-1031, CWD-1034, CWD-1038\n\nNegative class:\nNot this node when the issue is a direct pointer dereference, null pointer bug, untrusted pointer dereference, or a safe uintptr_t/intptr_t roundtrip.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code uses uintptr_t or intptr_t for the conversion and preserves the pointer value, answer BENIGN.\n- If the integer conversion is not narrowing and the code does not rely on the integer as a truncated pointer value, answer BENIGN.\n- Nearby caller/context may only be used to recover pointer provenance or truncation provenance; it cannot replace the missing target evidence.\n\nIf the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: int number = (int)p;\n- BENIGN: uintptr_t number = (uintptr_t)(void *)p;\n- BENIGN: int64_t* ptr = (int64_t*)(void*)addr; ProcessDataBad(ptr);\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+          "dev_metric": 0.3333333333333333,
+          "holdout_metric": 0.3333333333333333,
+          "dev_records": [
+            {
+              "id": "weak:CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp",
+              "source_node": "CWD-1039",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "void ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    // 检查msg[1]是否为0，避免空指针操作\n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    // 由于msg[1]是外部数据，直接转换指针可能导致未定义行为，需先校验长度\n\n    // 获取msg[1]对应的缓冲区长度，并进行校验\n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    // 已校验msg[1]对应的缓冲区长度，安全地转换指针\n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  // msg[3]应该解引用后参与整数运算\n\n    return;\n}\n",
+              "origin": "weaknesscase",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1039:0:benign",
+              "path": "cpp/CWD-1039/0/benign",
+              "source_node": "CWD-1039",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "#include <stdint.h>\n#include \"external_data_common.h\"\n\n\nconst DWORD DMM_MSG_LEN = 4;\nconstexpr uint32_t SERVICE_TYPE_YANGDS_DB_CHANGE_LEN = (sizeof(uint32_t)) + 100;\n\nDWORD DMM_GetMsgDataLength(void *, uint32_t &)\n{\n    return 0;\n}\n\nvoid ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    \n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    \n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo1 = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  \n\n    return;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1039:0:vuln",
+              "path": "cpp/CWD-1039/0/vuln",
+              "source_node": "CWD-1039",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdint.h>\n#include \"external_data_common.h\"\n\n\nconst DWORD DMM_MSG_LEN = 4;\nconstexpr uint32_t SERVICE_TYPE_YANGDS_DB_CHANGE_LEN = (sizeof(uint32_t)) + 100;\n\nDWORD DMM_GetMsgDataLength(void *, uint32_t &)\n{\n    return 0;\n}\n\nvoid ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    \n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    \n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo1 = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  \n\n    return;\n}\n",
+              "origin": "benchmark",
+              "split": "dev",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "holdout_records": [
+            {
+              "id": "weak:C/CWD-1039/CWD-1039-001/cast_ptr_to_int_data_truncation_01/cast_ptr_to_int_data_truncation_01.c:应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1039/CWD-1039-001/cast_ptr_to_int_data_truncation_01/cast_ptr_to_int_data_truncation_01.c",
+              "source_node": "CWD-1039",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "}\n\nvoid GoodCase()\n{\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "benchmark:cpp:CWD-1038:0:vuln",
+              "path": "cpp/CWD-1038/0/vuln",
+              "source_node": "CWD-1038",
+              "source_kind": "target_pos",
+              "truth": "VULNERABLE",
+              "code": "#include <stdio.h>\n#include <stdint.h>\n\n\ntypedef uint16_t VOS_UINT16;\ntypedef uint32_t VOS_UINT32;\n#define VOS_NULL_PTR NULL\n#define IPV4_PROTOCOL_TCP 6\n#define IPV4_PROTOCOL_UDP 17\n#define PS_TRUE 1\n#define PS_FALSE 0\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint8_t  verIhl;        \n    uint8_t  tos;            \n    uint16_t totalLength;   \n    uint16_t id;             \n    uint16_t fragOffs;      \n    uint8_t  ttl;            \n    uint8_t  protocol;       \n    uint16_t checksum;       \n    uint32_t srcAddr;       \n    uint32_t dstAddr;       \n} IPV4_Hdr;\n#pragma pack(pop)\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint16_t srcPort;       \n    uint16_t dstPort;       \n    uint32_t seqNum;        \n    uint32_t ackNum;        \n    uint8_t  dataOffset;    \n    uint8_t  flags;          \n    uint16_t window;         \n    uint16_t checksum;       \n    uint16_t urgentPtr;     \n} TCP_Hdr;\n#pragma pack(pop)\n\nstruct XXX_IpInfo {\n    VOS_UINT16 protocol;\n    VOS_UINT16 dstPort;\n};\n\n\n#define IP_NTOHS(val) ((((val) >> 8) & 0x00FF) | (((val) << 8) & 0xFF00))\n\n#define IPV4_HDR_LEN 20\n\nVOS_UINT32 xxxdecodebstdlpacketTGT(vos_uint32 *ippktaddr, struct xxx_ipinfo *ipinfo)\n{\n    IPV4_Hdr *ipv4Hdr = VOS_NULL_PTR;\n    TCP_Hdr *tcpHdr = VOS_NULL_PTR;\n\n    ipv4Hdr = (IPV4_Hdr *)(ipPktAddr);\n    \n    if ((ipv4Hdr->protocol != IPV4_PROTOCOL_TCP) && (ipv4Hdr->protocol != IPV4_PROTOCOL_UDP)) {\n        return PS_FALSE;\n    }\n    \n    ipInfo->protocol = ipv4Hdr->protocol;\n\n    tcpHdr = (TCP_Hdr *)(ipPktAddr + IPV4_HDR_LEN);\n    \n    \n    ipInfo->dstPort = IP_NTOHS(tcpHdr->dstPort); \n\n    return PS_TRUE;\n}\n",
+              "origin": "benchmark",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": false,
+              "prompt_variant": "contrastive"
+            },
+            {
+              "id": "weak:CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp:不应告警",
+              "path": "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1039/CWD-1039-001/cast_uintptr_t_to_struct_ptr_without_length_check_01/cast_uintptr_t_to_struct_ptr.cpp",
+              "source_node": "CWD-1039",
+              "source_kind": "target_neg",
+              "truth": "BENIGN",
+              "code": "(void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n",
+              "origin": "weaknesscase",
+              "split": "holdout",
+              "prediction": "BENIGN",
+              "ok": true,
+              "prompt_variant": "contrastive"
+            }
+          ],
+          "main_error_buckets": {
+            "target_fn": 2,
+            "sibling_pos": 0,
+            "target_hard_benign": 0,
+            "other": 0
+          },
+          "sample_split": {
+            "dev_total": 3,
+            "holdout_total": 3,
+            "dev_pos": 2,
+            "dev_neg": 1,
+            "holdout_pos": 2,
+            "holdout_neg": 1
+          }
+        }
+      ],
+      "best_prompt": "You are a strict binary classifier for CWD node CWD-1039: 整数与指针间的互相转化.\nReturn exactly one label: VULNERABLE or BENIGN.\n\nExact target definition:\nA pointer is converted to an integer type in a way that can truncate or otherwise lose address information.\n\nClosest sibling boundaries to reject:\nCWD-1029, CWD-1030, CWD-1031, CWD-1034, CWD-1038\n\nNegative class:\nNot this node when the issue is a direct pointer dereference, null pointer bug, untrusted pointer dereference, or a safe uintptr_t/intptr_t roundtrip.\n\nBoundary rules:\n- Focus on the exact target behavior, not a neighboring sibling node.\n- If the snippet also contains a safe variant, classify by the broken path only when that broken path is visible in the snippet.\n- If the code uses uintptr_t or intptr_t for the conversion and preserves the pointer value, answer BENIGN.\n- If the integer conversion is not narrowing and the code does not rely on the integer as a truncated pointer value, answer BENIGN.\n- Nearby caller/context may only be used to recover pointer provenance or truncation provenance; it cannot replace the missing target evidence.\n\nIf the evidence is ambiguous or only suggests a sibling node, answer BENIGN.\n\nShort contrastive examples:\n- VULNERABLE: int number = (int)p;\n- BENIGN: uintptr_t number = (uintptr_t)(void *)p;\n- BENIGN: int64_t* ptr = (int64_t*)(void*)addr; ProcessDataBad(ptr);\n\nOutput exactly one token: VULNERABLE or BENIGN.",
+      "best_variant": "contrastive",
+      "dev_metric": 0.3333333333333333,
+      "holdout_metric": 0.3333333333333333,
+      "main_error_buckets": {
+        "target_fn": 1,
+        "sibling_pos": 1,
+        "target_hard_benign": 0,
+        "other": 0
+      },
+      "final_status": "blocked_by_samples",
+      "sample_split": {
+        "dev_total": 3,
+        "holdout_total": 3,
+        "dev_pos": 2,
+        "dev_neg": 1,
+        "holdout_pos": 2,
+        "holdout_neg": 1
+      }
+    }
+  }
+}

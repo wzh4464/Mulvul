@@ -46,7 +46,10 @@ def test_evolution_engine_forwards_runtime_overrides():
 def test_create_default_client_falls_back_when_openai_sdk_unavailable(monkeypatch):
     from mulvul.llm import client as client_module
 
-    sentinel = object()
+    class FakeSVENBackend:
+        model_name = "gpt-4o"
+
+    sentinel = FakeSVENBackend()
 
     def fake_sven_client(**kwargs):
         assert kwargs["model_name"] == "gpt-4o"
@@ -68,7 +71,21 @@ def test_create_default_client_falls_back_when_openai_sdk_unavailable(monkeypatc
         api_key="dummy-key",
     )
 
-    assert client is sentinel
+    assert isinstance(client, client_module.LLMRuntime)
+    assert client.backend is sentinel
+    assert client.config.enable_cache is True
+
+
+def test_llm_client_module_imports_cleanly():
+    from mulvul.llm import client as client_module
+
+    assert hasattr(client_module, "LLMClient")
+
+
+def test_async_llm_client_module_imports_cleanly():
+    from mulvul.llm import async_client as async_client_module
+
+    assert hasattr(async_client_module, "AsyncLLMClient")
 
 
 def test_parallel_hierarchical_runner_imports_cleanly():

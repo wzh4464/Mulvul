@@ -1,0 +1,566 @@
+{
+  "batch": "batch_a_buffer",
+  "model": {
+    "provider": "openrouter",
+    "model_name": "openai/gpt-5.4",
+    "api_base": "https://openrouter.ai/api/v1"
+  },
+  "hard_benign_pool": [
+    {
+      "sample_id": "cwd_000024::benign",
+      "source_cwd": "CWD-1005"
+    },
+    {
+      "sample_id": "cwd_000041::benign",
+      "source_cwd": "CWD-1015"
+    },
+    {
+      "sample_id": "cwd_000066::benign",
+      "source_cwd": "CWD-1016"
+    },
+    {
+      "sample_id": "cwd_000200::benign",
+      "source_cwd": "CWD-1023"
+    }
+  ],
+  "nodes": {
+    "CWD-1015": {
+      "positive_negative_recipe": {
+        "positive": "CWD-1015 vulnerable samples from WeaknessCase, plus the curated node sample when present",
+        "negative": [
+          "same-major sibling vulnerable samples from the other batch A nodes",
+          "hard benign from major-stage false positives when available"
+        ],
+        "hard_benign_source": "union of cascade major false positives recoverable through sample_selection/cascade_traces"
+      },
+      "best_prompt_version": "v1",
+      "best_prompt": "You are classifying a code snippet for one binary CWD node.\n\nTarget node: {node}\nTarget class meaning: {label}\nNegative class meaning: {negative_label}\n\nDecision boundaries:\n{boundary_text}\n\nRules:\n- Judge only the visible snippet.\n- Prefer BENIGN if the snippet is ambiguous.\n- Do not generalize from unrelated vulnerability classes.\n- Output exactly one token: VULNERABLE or BENIGN.\n\nCode:\n```{lang}\n{code}\n```\n",
+      "dev_metric": {
+        "accuracy": 0.375,
+        "correct": 3,
+        "total": 8,
+        "source_breakdown": {
+          "target": 2,
+          "sibling": 0,
+          "hard_benign": 1
+        },
+        "dataset": {
+          "pos": 4,
+          "neg": 4,
+          "hard_benign_in_negative": 2,
+          "sibling_in_negative": 2
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.5,
+        "correct": 5,
+        "total": 10,
+        "source_breakdown": {
+          "target": 4,
+          "sibling": 0,
+          "hard_benign": 1
+        },
+        "dataset": {
+          "pos": 5,
+          "neg": 5,
+          "hard_benign_in_negative": 1,
+          "sibling_in_negative": 4
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "CPP/CWD-1028/CWD-1028-002/using_function_return_as_index_without_checking_out_of_bounds_04/function_return_as_index_without_check_04.cpp",
+              "C/CWD-1028/CWD-1028-056/incomplete_bounds_check_in_array_access_causes_overflow/incomplete_bounds_check_in_array_access_causes_overflow.c"
+            ]
+          },
+          {
+            "source": "target",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "cwd_000043::vuln",
+              "C/CWD-1015/CWD-1015-001/array_copy_overflow_01/array_copy_overflow.c"
+            ]
+          },
+          {
+            "source": "hard_benign",
+            "source_node": "CWD-1015",
+            "expected": "BENIGN",
+            "predicted": "VULNERABLE",
+            "count": 1,
+            "sample_ids": [
+              "cwd_000041::benign"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 4,
+            "sample_ids": [
+              "C/CWD-1028/CWD-1028-043/Overrun_BadCase_WhiteBox05/Overrun_BadCase_WhiteBox05.c",
+              "CPP/CWD-1028/CWD-1028-043/global_array_index_off_by_one_err_1/global_array_index_off_by_one_err_1.cpp",
+              "CPP/CWD-1028/CWD-1028-038/using_external_data_as_index_without_checking_out_of_bounds_03/external_data_without_check_error_03.cpp",
+              "CPP/CWD-1028/CWD-1028-041/external_data_as_loop_boundary_err_01/external_data_as_loop_boundary_err_01.cpp"
+            ]
+          },
+          {
+            "source": "target",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "C/CWD-1015/CWD-1015-001/loop_copy_causes_buffer_overflow_01/loop_copy_causes_buffer_overflow.c"
+            ]
+          }
+        ]
+      },
+      "status": "needs_more_iteration",
+      "notes": [
+        "Dev accuracy is below the keep threshold for this node."
+      ],
+      "sample_counts": {
+        "dev_pos": 4,
+        "dev_neg": 4,
+        "holdout_pos": 5,
+        "holdout_neg": 5
+      }
+    },
+    "CWD-1016": {
+      "positive_negative_recipe": {
+        "positive": "CWD-1016 vulnerable samples from WeaknessCase, plus the curated node sample when present",
+        "negative": [
+          "same-major sibling vulnerable samples from the other batch A nodes",
+          "hard benign from major-stage false positives when available"
+        ],
+        "hard_benign_source": "union of cascade major false positives recoverable through sample_selection/cascade_traces"
+      },
+      "best_prompt_version": "v1",
+      "best_prompt": "You are classifying a code snippet for one binary CWD node.\n\nTarget node: {node}\nTarget class meaning: {label}\nNegative class meaning: {negative_label}\n\nDecision boundaries:\n{boundary_text}\n\nRules:\n- Judge only the visible snippet.\n- Prefer BENIGN if the snippet is ambiguous.\n- Do not generalize from unrelated vulnerability classes.\n- Output exactly one token: VULNERABLE or BENIGN.\n\nCode:\n```{lang}\n{code}\n```\n",
+      "dev_metric": {
+        "accuracy": 0.375,
+        "correct": 6,
+        "total": 16,
+        "source_breakdown": {
+          "target": 5,
+          "sibling": 1,
+          "hard_benign": 0
+        },
+        "dataset": {
+          "pos": 8,
+          "neg": 8,
+          "hard_benign_in_negative": 2,
+          "sibling_in_negative": 6
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.4375,
+        "correct": 7,
+        "total": 16,
+        "source_breakdown": {
+          "target": 6,
+          "sibling": 0,
+          "hard_benign": 1
+        },
+        "dataset": {
+          "pos": 8,
+          "neg": 8,
+          "hard_benign_in_negative": 1,
+          "sibling_in_negative": 7
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "C/CWD-1028/CWD-1028-050/array_access_with_shift_calculated_index_without_bound_check_leads_to_out_of_bounds/array_access_with_shift_calculated_index_without_bound_check_leads_to_out_of_bounds.c",
+              "C/CWD-1028/CWD-1028-069/incorrect_index_check_threshold_results_in_array_out_of_bounds_access/incorrect_index_check_threshold_results_in_array_out_of_bounds_access.c",
+              "C/CWD-1028/CWD-1028-005/loop_bound_off_by_one_err_1/loop_bound_off_by_one_err_1.c"
+            ]
+          },
+          {
+            "source": "target",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "C/CWD-1016/CWD-1016-007/buffer_overflow_due_to_static_array_memcpys_destmax_too_large_01/msc_amp_eth_a9_out.c",
+              "C/CWD-1016/CWD-1016-007/buffer_overflow_due_to_static_array_memcpys_destmax_too_large_01/ias_adpt_out.c",
+              "C/CWD-1016/CWD-1016-007/buffer_overflow_due_to_static_array_memcpys_destmax_too_large_01/hap_pub_adapt_out.c"
+            ]
+          },
+          {
+            "source": "hard_benign",
+            "source_node": "CWD-1015",
+            "expected": "BENIGN",
+            "predicted": "VULNERABLE",
+            "count": 1,
+            "sample_ids": [
+              "cwd_000041::benign"
+            ]
+          },
+          {
+            "source": "hard_benign",
+            "source_node": "CWD-1016",
+            "expected": "BENIGN",
+            "predicted": "VULNERABLE",
+            "count": 1,
+            "sample_ids": [
+              "cwd_000066::benign"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "C/CWD-1015/CWD-1015-001/mismatched_buffer_length_with_structure_member_in_memory_copy_causes_overflow/mismatched_buffer_length_with_structure_member_in_memory_copy_causes_overflow.c"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "CPP/CWD-1043/CWD-1043-049/input_containter_not_check_empty_out_of_bounds_01/input_containter_not_check_empty_out_of_bounds_01.cpp"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 5,
+            "sample_ids": [
+              "C/CWD-1028/CWD-1028-069/incorrect_index_check_threshold_results_in_array_out_of_bounds_access/incorrect_index_check_threshold_results_in_array_out_of_bounds_access.c",
+              "CPP/CWD-1028/CWD-1028-011/array_index_off_by_one_err_7/array_index_off_by_one_err_7.cpp",
+              "CPP/CWD-1028/CWD-1028-005/direct_use_loop_variable_as_index/direct_use_loop_variable_as_index.cpp",
+              "C/CWD-1028/CWD-1028-043/Overrun_BadCase_WhiteBox05/Overrun_BadCase_WhiteBox05.c",
+              "C/CWD-1028/CWD-1028-014/using_function_output_parameter_as_index_without_checking_out_of_bounds_01/bssp_lib_dyn_array_out.c"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "CPP/CWD-1043/CWD-1043-001/array_pointer_returned_from_function_causes_out_of_bounds/array_pointer_returned_from_function_causes_out_of_bounds.cpp",
+              "CPP/CWD-1043/CWD-1043-001/dynamic_resizing_container_causes_out_of_bounds/dynamic_resizing_container_causes_out_of_bounds.cpp"
+            ]
+          },
+          {
+            "source": "target",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "C/CWD-1016/CWD-1016-007/buffer_overflow_due_to_static_array_memcpys_destmax_too_large_01/bmsg_init_out.c",
+              "cwd_000064::vuln"
+            ]
+          }
+        ]
+      },
+      "status": "needs_more_iteration",
+      "notes": [],
+      "sample_counts": {
+        "dev_pos": 8,
+        "dev_neg": 8,
+        "holdout_pos": 8,
+        "holdout_neg": 8
+      }
+    },
+    "CWD-1028": {
+      "positive_negative_recipe": {
+        "positive": "CWD-1028 vulnerable samples from WeaknessCase, plus the curated node sample when present",
+        "negative": [
+          "same-major sibling vulnerable samples from the other batch A nodes",
+          "hard benign from major-stage false positives when available"
+        ],
+        "hard_benign_source": "union of cascade major false positives recoverable through sample_selection/cascade_traces"
+      },
+      "best_prompt_version": "v1",
+      "best_prompt": "You are classifying a code snippet for one binary CWD node.\n\nTarget node: {node}\nTarget class meaning: {label}\nNegative class meaning: {negative_label}\n\nDecision boundaries:\n{boundary_text}\n\nRules:\n- Judge only the visible snippet.\n- Prefer BENIGN if the snippet is ambiguous.\n- Do not generalize from unrelated vulnerability classes.\n- Output exactly one token: VULNERABLE or BENIGN.\n\nCode:\n```{lang}\n{code}\n```\n",
+      "dev_metric": {
+        "accuracy": 0.4375,
+        "correct": 14,
+        "total": 32,
+        "source_breakdown": {
+          "target": 13,
+          "sibling": 0,
+          "hard_benign": 1
+        },
+        "dataset": {
+          "pos": 16,
+          "neg": 16,
+          "hard_benign_in_negative": 2,
+          "sibling_in_negative": 14
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.5625,
+        "correct": 18,
+        "total": 32,
+        "source_breakdown": {
+          "target": 16,
+          "sibling": 1,
+          "hard_benign": 1
+        },
+        "dataset": {
+          "pos": 16,
+          "neg": 16,
+          "hard_benign_in_negative": 1,
+          "sibling_in_negative": 15
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 7,
+            "sample_ids": [
+              "C/CWD-1016/CWD-1016-011/incorrect_dest_max_setting_in_memset_s_causes_buffer_overflow/incorrect_dest_max_setting_in_memset_s_causes_buffer_overflow.c",
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_01/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "C/CWD-1016/CWD-1016-005/incorrect_dest_max_setting_in_memset_s_causes_buffer_overflow/incorrect_dest_max_setting_in_memset_s_causes_buffer_overflow.c",
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_06/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_03/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_02/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "CPP/CWD-1016/CWD-1016-007/incorrect_size_or_boundary_cause_buffer_out_bounds/incorrect_size_or_boundary_cause_buffer_out_bounds.cpp"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 6,
+            "sample_ids": [
+              "CPP/CWD-1043/CWD-1043-001/array_pointer_returned_from_function_causes_out_of_bounds/array_pointer_returned_from_function_causes_out_of_bounds.cpp",
+              "CPP/CWD-1043/CWD-1043-049/local_containter_not_check_empty_out_of_bounds_02/local_containter_not_check_empty_out_of_bounds_02.cpp",
+              "CPP/CWD-1043/CWD-1043-001/container_object_passed_as_function_parameter_causes_out_of_bounds/container_object_passed_as_function_parameter_causes_out_of_bounds.cpp",
+              "JAVA/CWD-1043/CWD-1043-000/ListIndexAccessTest/src/main/java/com/huawei/cwd/listindexaccess/ListIndexAccessTest.java",
+              "CPP/CWD-1043/CWD-1043-034/loop_controlled_index_infinite_loop_container_access_out_of_bounds_01/loop_controlled_index_infinite_loop_container_access_out_of_bounds_01.cpp",
+              "CPP/CWD-1043/CWD-1043-051/access_after_iterator_erase_in_the_function_01/access_after_iterator_erase_in_the_function_01.cpp"
+            ]
+          },
+          {
+            "source": "target",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "C/CWD-1028/CWD-1028-014/using_function_output_parameter_as_index_without_checking_out_of_bounds_01/l2m_flow_lib_api_out.c",
+              "C/CWD-1028/CWD-1028-014/using_function_output_parameter_as_index_without_checking_out_of_bounds_01/l2m_lib_data_out.c",
+              "C/CWD-1028/CWD-1028-014/using_function_output_parameter_as_index_without_checking_out_of_bounds_01/bpub_lib_api_out.c"
+            ]
+          },
+          {
+            "source": "hard_benign",
+            "source_node": "CWD-1015",
+            "expected": "BENIGN",
+            "predicted": "VULNERABLE",
+            "count": 1,
+            "sample_ids": [
+              "cwd_000041::benign"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "C/CWD-1015/CWD-1015-001/mismatched_buffer_length_with_structure_member_in_memory_copy_causes_overflow/mismatched_buffer_length_with_structure_member_in_memory_copy_causes_overflow.c"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 9,
+            "sample_ids": [
+              "CPP/CWD-1016/CWD-1016-007/incorrect_size_or_boundary_cause_buffer_out_bounds/incorrect_size_or_boundary_cause_buffer_out_bounds.cpp",
+              "C/CWD-1016/CWD-1016-007/memory_write_out_of_bounds/memory_write_out_of_bounds_01.c",
+              "C/CWD-1016/CWD-1016-009/dest_max_use_err_02/dest_max_use_err_02.c",
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_03/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "C/CWD-1016/CWD-1016-011/incorrect_dest_max_setting_in_memset_s_causes_buffer_overflow/incorrect_dest_max_setting_in_memset_s_causes_buffer_overflow.c",
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_01/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "C/CWD-1016/CWD-1016-007/buffer_overflow_due_to_static_array_memcpys_destmax_too_large_01/msc_pub_msg_share_out.c",
+              "C/CWD-1016/CWD-1016-011/malloc_size_smaler_than_use_len_01/malloc_size_smaler_than_use_len_01.c"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "CPP/CWD-1043/CWD-1043-005/incorrect_index_check_branch_container_access_out_of_bounds_01/incorrect_index_check_branch_container_access_out_of_bounds_01.cpp",
+              "CPP/CWD-1043/CWD-1043-001/dynamic_resizing_container_causes_out_of_bounds/dynamic_resizing_container_causes_out_of_bounds.cpp",
+              "CPP/CWD-1043/CWD-1043-025/external_data_by_function_pass_as_container_index_without_check_01/external_data_by_function_pass_as_container_index_without_check_01.cpp"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "CPP/CWD-1015/CWD-1015-002/using_the_larger_of_two_buffer_lengths_as_memory_access_length_led_to_an_overflow_of_the_smaller_buffer_01/overflow_of_the_smaller_buffer_01.cpp",
+              "CPP/CWD-1015/CWD-1015-004/loop_bound_off_by_one_err_4/loop_bound_off_by_one_err_4.cpp"
+            ]
+          }
+        ]
+      },
+      "status": "needs_more_iteration",
+      "notes": [
+        "Large node still misses the 90% holdout target."
+      ],
+      "sample_counts": {
+        "dev_pos": 16,
+        "dev_neg": 16,
+        "holdout_pos": 16,
+        "holdout_neg": 16
+      }
+    },
+    "CWD-1043": {
+      "positive_negative_recipe": {
+        "positive": "CWD-1043 vulnerable samples from WeaknessCase, plus the curated node sample when present",
+        "negative": [
+          "same-major sibling vulnerable samples from the other batch A nodes",
+          "hard benign from major-stage false positives when available"
+        ],
+        "hard_benign_source": "union of cascade major false positives recoverable through sample_selection/cascade_traces"
+      },
+      "best_prompt_version": "v1",
+      "best_prompt": "You are classifying a code snippet for one binary CWD node.\n\nTarget node: {node}\nTarget class meaning: {label}\nNegative class meaning: {negative_label}\n\nDecision boundaries:\n{boundary_text}\n\nRules:\n- Judge only the visible snippet.\n- Prefer BENIGN if the snippet is ambiguous.\n- Do not generalize from unrelated vulnerability classes.\n- Output exactly one token: VULNERABLE or BENIGN.\n\nCode:\n```{lang}\n{code}\n```\n",
+      "dev_metric": {
+        "accuracy": 0.625,
+        "correct": 5,
+        "total": 8,
+        "source_breakdown": {
+          "target": 3,
+          "sibling": 0,
+          "hard_benign": 2
+        },
+        "dataset": {
+          "pos": 4,
+          "neg": 4,
+          "hard_benign_in_negative": 2,
+          "sibling_in_negative": 2
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.7,
+        "correct": 7,
+        "total": 10,
+        "source_breakdown": {
+          "target": 5,
+          "sibling": 1,
+          "hard_benign": 1
+        },
+        "dataset": {
+          "pos": 5,
+          "neg": 5,
+          "hard_benign_in_negative": 1,
+          "sibling_in_negative": 4
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_06/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c",
+              "C/CWD-1016/CWD-1016-001/mismatched_buffer_length_in_memory_copy_causes_overflow/mismatched_buffer_length_in_memory_copy_causes_overflow.c"
+            ]
+          },
+          {
+            "source": "target",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "JAVA/CWD-1043/CWD-1043-000/ArrayIndexCheck001/src/main/java/com/huawei/cwd/immutabledatamodification/ArrayIndexCheckApplication.java"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "sibling",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "CPP/CWD-1028/CWD-1028-050/external_data_by_stox_function_pass_as_index_without_check_02/external_data_by_stox_pass_as_index_err_02.cpp",
+              "CPP/CWD-1028/CWD-1028-050/external_data_by_atox_function_pass_as_index_without_check_01/external_data_by_atox_pass_as_index_err_01.cpp"
+            ]
+          },
+          {
+            "source": "sibling",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "C/CWD-1016/CWD-1016-007/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow_05/incorrect_destination_buffer_length_in_buffer_copy_causes_overflow.c"
+            ]
+          }
+        ]
+      },
+      "status": "needs_more_iteration",
+      "notes": [
+        "Dev accuracy is below the keep threshold for this node."
+      ],
+      "sample_counts": {
+        "dev_pos": 4,
+        "dev_neg": 4,
+        "holdout_pos": 5,
+        "holdout_neg": 5
+      }
+    }
+  }
+}

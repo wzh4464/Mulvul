@@ -1,12 +1,18 @@
+import json
+from pathlib import Path
+
 from mulvul.data.cwe_hierarchy import (
     BENIGN_LABEL,
     CWE_TO_MIDDLE,
     MAJOR_TO_MIDDLE,
     MIDDLE_TO_CWE,
     MIDDLE_TO_MAJOR,
+    cwe_to_major,
+    cwe_to_middle,
     cwe_node_id,
     major_node_id,
     middle_node_id,
+    normalize_cwe_label,
     validate_taxonomy,
 )
 
@@ -56,3 +62,47 @@ def test_stable_v2_node_ids_are_machine_friendly_and_unique():
     assert len(major_ids) == len(set(major_ids))
     assert len(middle_ids) == len(set(middle_ids))
     assert len(cwe_ids) == len(set(cwe_ids))
+
+
+def _primevul_primary_cwes() -> set[str]:
+    path = Path(__file__).resolve().parents[1] / "data" / "primevul" / "primevul" / "primevul_train.jsonl"
+    primary_cwes: set[str] = set()
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            if int(record.get("target", 0)) != 1:
+                continue
+            cwes = record.get("cwe") or []
+            if not cwes:
+                continue
+            normalized = normalize_cwe_label(cwes[0])
+            if normalized is not None:
+                primary_cwes.add(normalized)
+    return primary_cwes
+
+
+def test_primevul_primary_cwes_are_explicitly_covered_by_taxonomy():
+    uncovered = sorted(_primevul_primary_cwes() - set(CWE_TO_MIDDLE))
+    assert uncovered == []
+
+
+def test_expanded_taxonomy_maps_representative_new_cwes_to_expected_buckets():
+    assert cwe_to_major(["CWE-287"]) == "Authentication"
+    assert cwe_to_middle(["CWE-522"]) == "Credential Handling"
+
+    assert cwe_to_major(["CWE-862"]) == "Authorization & Exposure"
+    assert cwe_to_middle(["CWE-552"]) == "Permissions & Exposure"
+
+    assert cwe_to_major(["CWE-295"]) == "Cryptographic Trust"
+    assert cwe_to_middle(["CWE-352"]) == "Request Authenticity"
+
+    assert cwe_to_major(["CWE-665"]) == "Memory"
+    assert cwe_to_middle(["CWE-704"]) == "Type & Conversion Errors"
+
+    assert cwe_to_major(["CWE-61"]) == "Input"
+    assert cwe_to_middle(["CWE-918"]) == "External References"
+
+    assert cwe_to_major(["CWE-754"]) == "Logic"
+    assert cwe_to_middle(["CWE-693"]) == "Protection Mechanisms"

@@ -1,0 +1,608 @@
+{
+  "model": "openai/gpt-5.4",
+  "api_base": "https://openrouter.ai/api/v1",
+  "output_dir": "/Users/zihanwu/Public/codes/Mulvul/node_evolution_runs/redo_b_memory_alloc",
+  "nodes": {
+    "CWD-1022": {
+      "node": "CWD-1022",
+      "previous_status": "needs_more_iteration",
+      "revised_recipe": {
+        "base_dev": 60,
+        "base_holdout": 26,
+        "extra_recovered": 86,
+        "total_dev": 146,
+        "total_holdout": 26,
+        "recovered_sources": {
+          "sample_selection": 0,
+          "weakness_case": 86,
+          "codehub": 0
+        }
+      },
+      "extra_sample_recovery": true,
+      "best_prompt_version": "v1",
+      "best_prompt": "You are a strict binary classifier for CWD-1022: 内存的申请和释放函数未配对.\n\nExact target definition:\nThe bug is that the allocation API / operator and the deallocation API / operator do not match.\n\nClosest sibling boundaries:\nClosest siblings to reject: CWD-1021 (free on non-heap), CWD-1023 (offset pointer release), CWD-1025 (double free), CWD-1026 (UAF).\nNot this node when the bug is freeing an interior pointer, freeing non-heap memory, double-freeing, leaking, or use-after-free. The mismatch must be the actual defect.\n\nPositive trigger rules:\n- Require the actual target behavior to be visible in the snippet itself.\n- Nearby caller/context may only be used to recover a real destination size, allocation size, or missing guard provenance.\n- Do not generalize from file names, comments, or labels alone.\n\nExplicit BENIGN guard patterns:\n- Matched pairs such as `malloc/free`, `new/delete`, `new[]/delete[]`, or `VOS_MemAlloc/VOS_MemFree` are BENIGN.\n- Smart pointers or clearly paired custom alloc/free APIs are BENIGN.\n- If the visible code only proves an offset release or a non-heap release, do not call it 1022.\n\nDecision rule:\n- If the evidence is ambiguous or only suggests a nearby sibling, output BENIGN.\n- Output exactly one token: VULNERABLE or BENIGN.\n\n    Code:\n    ```c\n    {code}\n    ```",
+      "dev_metric": {
+        "accuracy": 0.3,
+        "correct": 18,
+        "total": 60,
+        "error_breakdown": {
+          "recovered": 42
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.3076923076923077,
+        "correct": 8,
+        "total": 26,
+        "error_breakdown": {
+          "recovered": 18
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1027",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 42,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-011/NotCheck_MemAlloc_Leak_Case_NegativeCase02/NotCheck_MemAlloc_Leak_Case_NegativeCase02.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-014/MemoryLeak_NegativeCase12/MemoryLeak_NegativeCase12.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-014/cross_function_memory_allocation_without_release_on_other_logic_failure_01/cross_function_memory_allocation_without_release_on_other_logic_failure_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-014/fd_leak_06/fd_leak_bad_case06.cpp"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1026",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 12,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-001/free_global_ptr_without_set_null_01/free_global_ptr_without_set_null_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/local_memory_used_after_being_freed/local_memory_used_after_being_freed.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/local_memory_used_after_being_handled_in_lambda/local_memory_used_after_being_handled_in_lambda.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/map_element_used_after_being_freed/map_element_used_after_being_freed.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1023",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/AddOrSubtractInPointerExpression_negativeCase02/AddOrSubtractInPointerExpression_negativeCase02.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/BadAllocArithmetic_NegtiveCase01/BadAllocArithmetic_NegtiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/MemoryLeak_NegativeCase02/MemoryLeak_NegativeCase02.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1025",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1025/CWD-1025-003/DoubleFree_NegativeCase02/DoubleFree_NegativeCase02_bad.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1025/CWD-1025-003/nullptr_after_delete_01/nullptr_after_delete_bad_case01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1027",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-002/memory_unreleased_in_function_in_exception_branch_01/memory_unreleased_in_function_in_exception_branch_01.cpp"
+            ]
+          }
+        ]
+      },
+      "final_status": "needs_more_iteration",
+      "sample_counts": {
+        "dev_total": 60,
+        "holdout_total": 26
+      }
+    },
+    "CWD-1023": {
+      "node": "CWD-1023",
+      "previous_status": "needs_more_iteration",
+      "revised_recipe": {
+        "base_dev": 63,
+        "base_holdout": 27,
+        "extra_recovered": 90,
+        "total_dev": 153,
+        "total_holdout": 27,
+        "recovered_sources": {
+          "sample_selection": 4,
+          "weakness_case": 86,
+          "codehub": 0
+        }
+      },
+      "extra_sample_recovery": true,
+      "best_prompt_version": "v2",
+      "best_prompt": "You are a strict binary classifier for CWD-1023: 释放未在缓冲区起始处的指针.\n\nExact target definition:\nThe bug is that the pointer is modified before release, so `free`/`delete` sees an interior or offset pointer rather than the original base address.\n\nClosest sibling boundaries:\nClosest siblings to reject: CWD-1021 (free on non-heap), CWD-1022 (allocator/deallocator mismatch), CWD-1025 (double free), CWD-1026 (UAF).\nNot this node when the issue is alloc/free mismatch, freeing non-heap memory, double free, leak, or UAF. The release pointer itself must be offset.\n\nPositive trigger rules:\n- Require the actual target behavior to be visible in the snippet itself.\n- Nearby caller/context may only be used to recover a real destination size, allocation size, or missing guard provenance.\n- Do not generalize from file names, comments, or labels alone.\n\nExplicit BENIGN guard patterns:\n- Keep the original base pointer in a separate variable and release only that base. If the base is preserved, choose BENIGN.\n- Incrementing or decrementing the same variable that later reaches `free`/`delete` is VULNERABLE.\n- If the snippet only shows a temporary alias or a safe traversal pointer that is not the released pointer, choose BENIGN.\n\nShort contrastive examples:\n- Positive: `msg = msg - 1; free(msg);` or `++buffer; SAFE_FREE(buffer);`.\n- Negative: `tmp = msg; tmp++; ... free(msg);`.\n- Guarded benign: `base = p; cursor = base; cursor++; ... free(base);`.\n\nDecision rule:\n- If the evidence is ambiguous or only suggests a nearby sibling, output BENIGN.\n- Output exactly one token: VULNERABLE or BENIGN.\n\n    Code:\n    ```c\n    {code}\n    ```",
+      "dev_metric": {
+        "accuracy": 0.30158730158730157,
+        "correct": 19,
+        "total": 63,
+        "error_breakdown": {
+          "recovered": 44
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.48148148148148145,
+        "correct": 13,
+        "total": 27,
+        "error_breakdown": {
+          "recovered": 14
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1027",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 43,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-002/memory_unreleased_in_function_in_exception_branch_01/memory_unreleased_in_function_in_exception_branch_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-011/NotCheck_MemAlloc_Leak_Case_NegativeCase02/NotCheck_MemAlloc_Leak_Case_NegativeCase02.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-014/MemoryLeak_NegativeCase12/MemoryLeak_NegativeCase12.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1027/CWD-1027-014/cross_function_memory_allocation_without_release_on_other_logic_failure_01/cross_function_memory_allocation_without_release_on_other_logic_failure_01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1026",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-007/local_var_captured_by_lambda_as_thread_func/local_var_captured_by_lambda_as_thread_func.cpp"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1026",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 11,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-001/free_global_ptr_without_set_null_01/free_global_ptr_without_set_null_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/local_memory_used_after_being_freed/local_memory_used_after_being_freed.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/local_memory_used_after_being_handled_in_lambda/local_memory_used_after_being_handled_in_lambda.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/map_element_used_after_being_freed/map_element_used_after_being_freed.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1025",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1025/CWD-1025-003/DoubleFree_NegativeCase02/DoubleFree_NegativeCase02_bad.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1025/CWD-1025-003/nullptr_after_delete_01/nullptr_after_delete_bad_case01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1022",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1022/CWD-1022-002/AllocFreeMismatch_NegativeCase03/AllocFreeMismatch_NegativeCase03.c"
+            ]
+          }
+        ]
+      },
+      "final_status": "needs_more_iteration",
+      "sample_counts": {
+        "dev_total": 63,
+        "holdout_total": 27
+      }
+    },
+    "CWD-1009": {
+      "node": "CWD-1009",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "base_dev": 20,
+        "base_holdout": 8,
+        "extra_recovered": 28,
+        "total_dev": 48,
+        "total_holdout": 8,
+        "recovered_sources": {
+          "sample_selection": 0,
+          "weakness_case": 28,
+          "codehub": 0
+        }
+      },
+      "extra_sample_recovery": true,
+      "best_prompt_version": "v1",
+      "best_prompt": "You are a strict binary classifier for CWD-1009: 未受认可的内存安全函数.\n\nExact target definition:\nThe bug is the use of an unapproved or unsafe memory-operation function, or a wrapper/macro/name that hides a safe function and changes the contract.\n\nClosest sibling boundaries:\nClosest siblings to reject: CWD-1003, CWD-1016, CWD-1022, CWD-1023, CWD-1017.\nNot this node when the real issue is buffer size, null termination, allocation arithmetic, or pointer lifetime. Direct approved secure calls with proper size and return checks are BENIGN.\n\nPositive trigger rules:\n- Require the actual target behavior to be visible in the snippet itself.\n- Nearby caller/context may only be used to recover a real destination size, allocation size, or missing guard provenance.\n- Do not generalize from file names, comments, or labels alone.\n\nExplicit BENIGN guard patterns:\n- Direct approved secure calls such as `strcpy_s`, `memcpy_s`, or `memmove_s` with a checked return value are BENIGN.\n- A custom wrapper around an approved secure function should be treated as VULNERABLE if it hides the safety contract.\n- If the snippet only shows a normal safe call and no wrapper/macro ambiguity, choose BENIGN.\n\nDecision rule:\n- If the evidence is ambiguous or only suggests a nearby sibling, output BENIGN.\n- Output exactly one token: VULNERABLE or BENIGN.\n\n    Code:\n    ```c\n    {code}\n    ```",
+      "dev_metric": {
+        "accuracy": 0.55,
+        "correct": 11,
+        "total": 20,
+        "error_breakdown": {
+          "recovered": 9
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.0,
+        "correct": 0,
+        "total": 8,
+        "error_breakdown": {
+          "recovered": 8
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1023",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/AddOrSubtractInPointerExpression_negativeCase02/AddOrSubtractInPointerExpression_negativeCase02.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/BadAllocArithmetic_NegtiveCase01/BadAllocArithmetic_NegtiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/MemoryLeak_NegativeCase02/MemoryLeak_NegativeCase02.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1016/CWD-1016-001/memset_s_length_parameter_calculate_error/memset_s_length_parameter_calculate_error.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1016/CWD-1016-001/realpath_param_use_error/realpath_param_use_error.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1017",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1017/CWD-1017-001/MemCopyOverlap_NegativeCase01/MemCopyOverlap_NegativeCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1017/CWD-1017-001/MemCopyOverlap_NegativeCase02/MemCopyOverlap_NegativeCase02.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1003",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-001/BadAllocByStrlen_NegtiveCase07/BadAllocByStrlen_NegtiveCase07.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1022",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1022/CWD-1022-002/AllocFreeMismatch_NegativeCase03/AllocFreeMismatch_NegativeCase03.c"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1003",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 8,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase03/BadAllocByStrlen_NegtiveCase03.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase04/BadAllocByStrlen_NegtiveCase04.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase08/BadAllocByStrlen_NegtiveCase08.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase09/BadAllocByStrlen_NegtiveCase09.c"
+            ]
+          }
+        ]
+      },
+      "final_status": "needs_more_iteration",
+      "sample_counts": {
+        "dev_total": 20,
+        "holdout_total": 8
+      }
+    },
+    "CWD-1003": {
+      "node": "CWD-1003",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "base_dev": 51,
+        "base_holdout": 23,
+        "extra_recovered": 74,
+        "total_dev": 125,
+        "total_holdout": 23,
+        "recovered_sources": {
+          "sample_selection": 1,
+          "weakness_case": 73,
+          "codehub": 0
+        }
+      },
+      "extra_sample_recovery": true,
+      "best_prompt_version": "v1",
+      "best_prompt": "You are a strict binary classifier for CWD-1003: 用于内存分配的缓冲区大小计算错误.\n\nExact target definition:\nThe bug is in the destination allocation size calculation. Allocation ends up too small, too large, truncated, or overflowed because arithmetic, casting, or strlen/sizeof logic is wrong.\n\nClosest sibling boundaries:\nClosest siblings to reject: CWD-1016 (destination-side write overflow after correct allocation), CWD-1022, CWD-1023, CWD-1017, CWD-1009.\nNot this node when the allocation size is already correct but later writes/read-backs overflow a buffer, or when the issue is a source-side length mistake, pointer release problem, or unrelated memory bug.\n\nPositive trigger rules:\n- Require the actual target behavior to be visible in the snippet itself.\n- Nearby caller/context may only be used to recover a real destination size, allocation size, or missing guard provenance.\n- Do not generalize from file names, comments, or labels alone.\n\nExplicit BENIGN guard patterns:\n- Use a checked size_t calculation with an overflow guard such as `if (n > SIZE_MAX / sizeof(T)) return;`.\n- If the code proves the capacity or clamps the size before allocation, choose BENIGN.\n- If the visible snippet only hints at an allocation problem but does not show the wrong size expression, choose BENIGN.\n\nDecision rule:\n- If the evidence is ambiguous or only suggests a nearby sibling, output BENIGN.\n- Output exactly one token: VULNERABLE or BENIGN.\n\n    Code:\n    ```c\n    {code}\n    ```",
+      "dev_metric": {
+        "accuracy": 0.0196078431372549,
+        "correct": 1,
+        "total": 51,
+        "error_breakdown": {
+          "recovered": 50
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.4782608695652174,
+        "correct": 11,
+        "total": 23,
+        "error_breakdown": {
+          "recovered": 12
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 37,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-001/array_length_not_transfer_result_in_out_of_bounds_01/array_length_not_transfer_err.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-002/array_index_off_by_one_err_2/array_index_off_by_one_err_2.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-002/direct_use_length_declaring_buffer_as_idx/direct_use_length_declaring_buffer_as_idx.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-002/using_function_return_as_index_without_checking_out_of_bounds_01/function_return_as_index_without_check_01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 10,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-001/internal_const_data_as_index_overrun_01/internal_const_as_index_overrun_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-004/two_containers_in_the_same_loop_01/two_containers_in_the_same_loop_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-025/external_data_by_function_pass_as_container_index_without_check_01/external_data_by_function_pass_as_container_index_without_check_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-035/external_data_by_function_pass_as_container_iterator_offset_without_check_01/external_data_by_function_pass_as_container_iterator_offset_without_check_01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1016/CWD-1016-001/memset_s_length_parameter_calculate_error/memset_s_length_parameter_calculate_error.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1016/CWD-1016-001/realpath_param_use_error/realpath_param_use_error.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1015/CWD-1015-004/loop_bound_off_by_one_err_4/loop_bound_off_by_one_err_4.cpp"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1009",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 11,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_NegativeCase01/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_NegtiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_NegativeCase02/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_PositiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Encapsulate_SafeFunction_NegtiveCase04/Encapsulate_SafeFunction_NegtiveCase04.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Macro_Encapsulate_SafeFunction_NegtiveCase04/Macro_Encapsulate_SafeFunction_NegtiveCase04.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1015",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1015/CWD-1015-002/using_the_larger_of_two_buffer_lengths_as_memory_access_length_led_to_an_overflow_of_the_smaller_buffer_01/overflow_of_the_smaller_buffer_01.cpp"
+            ]
+          }
+        ]
+      },
+      "final_status": "needs_more_iteration",
+      "sample_counts": {
+        "dev_total": 51,
+        "holdout_total": 23
+      }
+    },
+    "CWD-1017": {
+      "node": "CWD-1017",
+      "previous_status": "blocked_by_samples",
+      "revised_recipe": {
+        "base_dev": 67,
+        "base_holdout": 29,
+        "extra_recovered": 96,
+        "total_dev": 163,
+        "total_holdout": 29,
+        "recovered_sources": {
+          "sample_selection": 0,
+          "weakness_case": 96,
+          "codehub": 0
+        }
+      },
+      "extra_sample_recovery": true,
+      "best_prompt_version": "v1",
+      "best_prompt": "You are a strict binary classifier for CWD-1017: 内存拷贝重叠.\n\nExact target definition:\nA memcpy/memcpy_s style copy is performed on overlapping source and destination regions, usually through offsets into the same buffer or the same object range.\n\nClosest sibling boundaries:\nClosest siblings to reject: CWD-1003, CWD-1009, CWD-1016, CWD-1022, CWD-1023.\nNot this node when the copy is disjoint, when `memmove_s` is used correctly, or when the real bug is allocation size, free mismatch, or another memory defect.\n\nPositive trigger rules:\n- Require the actual target behavior to be visible in the snippet itself.\n- Nearby caller/context may only be used to recover a real destination size, allocation size, or missing guard provenance.\n- Do not generalize from file names, comments, or labels alone.\n\nExplicit BENIGN guard patterns:\n- If the code uses `memmove_s` for the move, choose BENIGN.\n- If the snippet proves the source and destination ranges are disjoint, choose BENIGN.\n- Do not reclassify a size bug or a wrong parameter order bug as overlap unless the same ranges are actually overlapping.\n\nDecision rule:\n- If the evidence is ambiguous or only suggests a nearby sibling, output BENIGN.\n- Output exactly one token: VULNERABLE or BENIGN.\n\n    Code:\n    ```c\n    {code}\n    ```",
+      "dev_metric": {
+        "accuracy": 0.07462686567164178,
+        "correct": 5,
+        "total": 67,
+        "error_breakdown": {
+          "recovered": 62
+        }
+      },
+      "holdout_metric": {
+        "accuracy": 0.13793103448275862,
+        "correct": 4,
+        "total": 29,
+        "error_breakdown": {
+          "recovered": 25
+        }
+      },
+      "main_error_buckets": {
+        "dev": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1028",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 37,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-001/array_length_not_transfer_result_in_out_of_bounds_01/array_length_not_transfer_err.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-002/array_index_off_by_one_err_2/array_index_off_by_one_err_2.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-002/direct_use_length_declaring_buffer_as_idx/direct_use_length_declaring_buffer_as_idx.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1028/CWD-1028-002/using_function_return_as_index_without_checking_out_of_bounds_01/function_return_as_index_without_check_01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1026",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 12,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-001/free_global_ptr_without_set_null_01/free_global_ptr_without_set_null_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/local_memory_used_after_being_freed/local_memory_used_after_being_freed.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/local_memory_used_after_being_handled_in_lambda/local_memory_used_after_being_handled_in_lambda.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1026/CWD-1026-003/map_element_used_after_being_freed/map_element_used_after_being_freed.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1043",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 10,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-001/internal_const_data_as_index_overrun_01/internal_const_as_index_overrun_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-004/two_containers_in_the_same_loop_01/two_containers_in_the_same_loop_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-025/external_data_by_function_pass_as_container_index_without_check_01/external_data_by_function_pass_as_container_index_without_check_01.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1043/CWD-1043-035/external_data_by_function_pass_as_container_iterator_offset_without_check_01/external_data_by_function_pass_as_container_iterator_offset_without_check_01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1025",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 2,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1025/CWD-1025-003/DoubleFree_NegativeCase02/DoubleFree_NegativeCase02_bad.cpp",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1025/CWD-1025-003/nullptr_after_delete_01/nullptr_after_delete_bad_case01.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1016/CWD-1016-001/realpath_param_use_error/realpath_param_use_error.cpp"
+            ]
+          }
+        ],
+        "holdout": [
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1009",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 11,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_NegativeCase01/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_NegtiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_NegativeCase02/Copy_Character_Strings_Ensure_Space_Sufficient_ToPrevent_PositiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Encapsulate_SafeFunction_NegtiveCase04/Encapsulate_SafeFunction_NegtiveCase04.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1009/CWD-1009-001/Macro_Encapsulate_SafeFunction_NegtiveCase04/Macro_Encapsulate_SafeFunction_NegtiveCase04.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1003",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 9,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase03/BadAllocByStrlen_NegtiveCase03.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase04/BadAllocByStrlen_NegtiveCase04.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase08/BadAllocByStrlen_NegtiveCase08.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1003/CWD-1003-000/BadAllocByStrlen_NegtiveCase09/BadAllocByStrlen_NegtiveCase09.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1023",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 3,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/AddOrSubtractInPointerExpression_negativeCase02/AddOrSubtractInPointerExpression_negativeCase02.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/BadAllocArithmetic_NegtiveCase01/BadAllocArithmetic_NegtiveCase01.c",
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1023/CWD-1023-001/MemoryLeak_NegativeCase02/MemoryLeak_NegativeCase02.c"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1016",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/CPP/CWD-1016/CWD-1016-001/memset_s_length_parameter_calculate_error/memset_s_length_parameter_calculate_error.cpp"
+            ]
+          },
+          {
+            "source": "weakness_case",
+            "source_node": "CWD-1022",
+            "expected": "VULNERABLE",
+            "predicted": "BENIGN",
+            "count": 1,
+            "sample_ids": [
+              "/Users/zihanwu/Public/codes/Mulvul/data/enter/CWD-WeaknessCase-master/C/CWD-1022/CWD-1022-002/AllocFreeMismatch_NegativeCase03/AllocFreeMismatch_NegativeCase03.c"
+            ]
+          }
+        ]
+      },
+      "final_status": "needs_more_iteration",
+      "sample_counts": {
+        "dev_total": 67,
+        "holdout_total": 29
+      }
+    }
+  }
+}

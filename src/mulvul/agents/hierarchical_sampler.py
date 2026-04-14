@@ -83,13 +83,14 @@ class HierarchicalSampler:
                     cwe = cwe_codes[0]
                     middle = cwe_to_middle(cwe_codes)
                     major = cwe_to_major(cwe_codes)
+                    description = item.get("cve_desc") or ""
 
                     sample = {
                         "code": code,
                         "cwe": cwe,
                         "middle": middle,
                         "major": major,
-                        "description": item.get("cve_desc", "")[:300],
+                        "description": description[:300],
                     }
 
                     self.by_major[major].append(sample)
