@@ -378,6 +378,44 @@ Respond with JSON only:
 {{"prediction": "VULNERABLE", "confidence": 0.9}}
 or
 {{"prediction": "BENIGN", "confidence": 0.8}}""",
+
+8: """\
+You are a memory-safety vulnerability detector specialized in C/C++.
+
+Determine whether the TARGET (TGT) function contains a MEMORY SAFETY vulnerability.
+
+Memory safety vulnerabilities include:
+- Buffer overflow / out-of-bounds read or write
+- Use-after-free: accessing heap memory after free()
+- Double-free: calling free() twice on the same pointer
+- Memory leak: heap allocation not freed on ALL non-failure return paths
+- Null-pointer or uninitialized-pointer dereference
+- Dangling pointer: returning or storing address of a local variable;
+  also a global/class-member pointer deleted/freed without being set to nullptr
+- Invalid free: calling free() on non-heap or non-start-of-buffer pointer
+- Overlapping memcpy source and destination
+- Integer overflow in allocation size
+- securec wrapper misuse: macro/wrapper that calls memcpy_s with the SAME value
+  for both destination-capacity (arg 2) and copy-count (arg 4)
+
+Rules:
+1. TGT function name — even "doublefree", "uaf", "leak", "Bad", "Unsafe", "without" —
+   is a BENCHMARK LABEL. IGNORE IT. Same for BadCase/GoodCase context names.
+2. Double-free requires the SAME pointer freed TWICE on ONE execution path.
+   Two free() calls on mutually exclusive paths (error vs success) is NOT double-free.
+3. free/delete/Free*/Release*/Delete* all count as valid deallocation.
+4. Immediate return after malloc NULL check = OK (not a leak).
+
+{few_shot}
+CODE:
+```c
+{code}
+```
+
+Respond with JSON only:
+{{"prediction": "VULNERABLE", "confidence": 0.9}}
+or
+{{"prediction": "BENIGN", "confidence": 0.8}}""",
 },
 
 "Injection": {
@@ -473,6 +511,36 @@ Rules:
 2. Standard arithmetic, type casting, and control-flow errors NOT involving the above
    specific categories should be classified BENIGN for this detector.
 
+CODE:
+```c
+{code}
+```
+
+Respond with JSON only:
+{{"prediction": "VULNERABLE", "confidence": 0.9}}
+or
+{{"prediction": "BENIGN", "confidence": 0.8}}""",
+
+2: """\
+You are a logic error and platform-behavior vulnerability detector.
+
+Determine whether the TARGET (TGT) function contains a LOGIC VULNERABILITY.
+
+Logic vulnerabilities include:
+- Incorrect byte order (endianness): reading/writing multi-byte values without byte-swap
+  conversion when communicating between big-endian and little-endian systems
+- Bit-field struct memory layout dependency: assuming specific in-memory layout of bitfields
+  across compilers/platforms; copying bitfield structs with memcpy or bitwise operations
+- std::vector<bool> incompatibility: treating vector<bool> as a normal bool array,
+  performing invalid pointer/reference operations on its elements
+- Incorrect bitwise operations on non-trivially-copyable C++ objects
+
+Rules:
+1. TGT function name is a benchmark label, not evidence.
+2. Standard arithmetic, type casting, and control-flow errors NOT involving the above
+   specific categories should be classified BENIGN for this detector.
+
+{few_shot}
 CODE:
 ```c
 {code}
@@ -711,6 +779,206 @@ def anonymize_benchmark_names(code: str) -> str:
     return code
 
 
+# ── RAG few-shot bank ──────────────────────────────────────────────────────────
+
+# Embedding model for RAG.  Preferred: qwen/qwen3-embedding-0.6b (not yet on OpenRouter).
+# Fallback: openai/text-embedding-3-small (available on OpenRouter).
+# Override with env var EMBED_MODEL if you have a Qwen-compatible endpoint.
+EMBED_MODEL = os.environ.get("EMBED_MODEL", "openai/text-embedding-3-small")
+EMBED_LIMIT = 1024   # chars to embed (keeps cost low, captures key patterns)
+FEWSHOT_DISPLAY = 500  # chars of code to show in few-shot block
+
+# Majors where RAG few-shot is worth adding (poor prompt-only ceiling)
+RAG_MAJORS = {"Memory", "Logic"}
+
+# Canonical hard-case examples always prepended before dynamic RAG hits.
+# Curated specifically for the patterns that trip the model most.
+STATIC_EXAMPLES: Dict[str, List[dict]] = {
+    "Memory": [
+        # ── Hard FP: securec benign code (correct memcpy_s usage)
+        {
+            "label": "BENIGN",
+            "note": "securec correct usage — memcpy_s capacity ≠ count",
+            "code": """\
+void copy_record(char *dst, size_t dst_cap, const char *src, size_t src_len) {
+    if (src_len >= dst_cap) return;           // guard
+    memcpy_s(dst, dst_cap, src, src_len);     // dst_cap != src_len → correct
+}""",
+        },
+        # ── Hard FN: securec macro misuse (same value for both args)
+        {
+            "label": "VULNERABLE",
+            "note": "securec macro passes count as both capacity and copy-count",
+            "code": """\
+#define SAFE_COPY(dst, src, n) memcpy_s((dst), (n), (src), (n))
+// Above: both capacity and count = n — destination capacity is IGNORED.
+void copy_ip(uint8_t *dst, const uint8_t *src) {
+    SAFE_COPY(dst, src, IPV6_ADDR_LEN);  // dst may be smaller than IPV6_ADDR_LEN
+}""",
+        },
+        # ── Hard FP: double-free naming trap — two separate paths, each frees once
+        {
+            "label": "BENIGN",
+            "note": "two free() on mutually exclusive paths is NOT double-free",
+            "code": """\
+int process(Resource *r) {
+    if (r->err) {
+        free(r->buf);   // error path: free once
+        return -1;
+    }
+    use(r->buf);
+    free(r->buf);       // success path: free once — different path, not double-free
+    return 0;
+}""",
+        },
+        # ── Hard FN: dangling global pointer (delete without null)
+        {
+            "label": "VULNERABLE",
+            "note": "global pointer freed but not set to nullptr — dangling",
+            "code": """\
+static Manager *g_mgr = nullptr;
+void shutdown() {
+    delete g_mgr;       // g_mgr still holds old address after delete
+    // missing: g_mgr = nullptr;
+}
+// Any subsequent access to g_mgr dereferences dangling pointer""",
+        },
+    ],
+}
+
+def _cosine_sim(a: List[float], b: List[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na  = sum(x * x for x in a) ** 0.5
+    nb  = sum(x * x for x in b) ** 0.5
+    return dot / (na * nb + 1e-9)
+
+
+class RAGBank:
+    """Embedding-based few-shot retrieval bank.
+
+    Embeds all dataset samples once (cached to disk).  At query time returns
+    the top-1 VULNERABLE + top-1 BENIGN example most similar to the query,
+    combined with the static canonical examples defined in STATIC_EXAMPLES.
+    """
+
+    def __init__(
+        self,
+        dataset: List[dict],
+        major: str,
+        api_key: str,
+        api_base: str,
+    ) -> None:
+        self.dataset  = dataset
+        self.major    = major
+        self.api_key  = api_key
+        self.api_base = api_base
+        self.embeddings: List[Optional[List[float]]] = [None] * len(dataset)
+        cache_dir = Path(RESULTS_DIR) / major
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        self._cache_path = cache_dir / "_rag_embeddings.json"
+
+    # ── Embedding helpers ───────────────────────────────────────────────────
+
+    async def _embed_batch(
+        self,
+        texts: List[str],
+        aclient: "AsyncOpenAI",
+        sem: asyncio.Semaphore,
+    ) -> List[List[float]]:
+        """Embed a batch of texts via OpenRouter embedding endpoint."""
+        async def _one(text: str) -> List[float]:
+            async with sem:
+                resp = await aclient.embeddings.create(
+                    model=EMBED_MODEL,
+                    input=text,
+                )
+                return resp.data[0].embedding
+        return await asyncio.gather(*[_one(t) for t in texts])
+
+    async def _build_async(self) -> None:
+        aclient = AsyncOpenAI(
+            base_url=self.api_base,
+            api_key=self.api_key,
+            timeout=60.0,
+            max_retries=1,
+        )
+        sem = asyncio.Semaphore(20)  # embedding is cheaper, use higher concurrency
+        texts = [s["code"][:EMBED_LIMIT] for s in self.dataset]
+        print(f"  [RAG] embedding {len(texts)} samples with {EMBED_MODEL}...")
+        embs = await self._embed_batch(texts, aclient, sem)
+        await aclient.close()
+        self.embeddings = embs  # type: ignore[assignment]
+
+    def build(self) -> None:
+        """Build (or load cached) embeddings for the dataset."""
+        if self._cache_path.exists():
+            with open(self._cache_path) as f:
+                cached = json.load(f)
+            if len(cached) == len(self.dataset):
+                self.embeddings = cached
+                print(f"  [RAG] loaded {len(cached)} cached embeddings "
+                      f"from {self._cache_path}")
+                return
+        asyncio.run(self._build_async())
+        with open(self._cache_path, "w") as f:
+            json.dump(self.embeddings, f)
+        print(f"  [RAG] saved embeddings → {self._cache_path}")
+
+    # ── Retrieval ───────────────────────────────────────────────────────────
+
+    def retrieve(self, query_idx: int, k_per_class: int = 1) -> Dict[str, List[dict]]:
+        """Return up to k_per_class VULNERABLE + k_per_class BENIGN examples
+        most similar to dataset[query_idx], excluding the query itself."""
+        q_emb = self.embeddings[query_idx]
+        if q_emb is None:
+            return {"VULNERABLE": [], "BENIGN": []}
+
+        sims: List[Tuple[float, int]] = []
+        for j, emb in enumerate(self.embeddings):
+            if j == query_idx or emb is None:
+                continue
+            sims.append((_cosine_sim(q_emb, emb), j))
+        sims.sort(reverse=True)
+
+        results: Dict[str, List[dict]] = {"VULNERABLE": [], "BENIGN": []}
+        for _, j in sims:
+            lbl = self.dataset[j]["label"]
+            if len(results[lbl]) < k_per_class:
+                results[lbl].append(self.dataset[j])
+            if all(len(v) >= k_per_class for v in results.values()):
+                break
+        return results
+
+    # ── Formatting ──────────────────────────────────────────────────────────
+
+    def format_few_shot(self, query_idx: int) -> str:
+        """Return a formatted few-shot block to inject into the prompt."""
+        lines: List[str] = [
+            "## Reference Examples (calibrate your analysis against these):\n"
+        ]
+        # 1. Static canonical examples
+        for ex in STATIC_EXAMPLES.get(self.major, []):
+            snippet = ex["code"][:FEWSHOT_DISPLAY]
+            lines.append(
+                f"### {ex['label']} — {ex['note']}\n"
+                f"```c\n{snippet}\n```\n"
+                f"→ **{ex['label']}**\n"
+            )
+        # 2. Dynamic RAG examples (1 VULNERABLE + 1 BENIGN)
+        retrieved = self.retrieve(query_idx)
+        for lbl, samples in retrieved.items():
+            for s in samples:
+                snippet = s["code"][:FEWSHOT_DISPLAY]
+                cwd_hint = s.get("cwd") or "benign"
+                lines.append(
+                    f"### {lbl} — similar code ({cwd_hint})\n"
+                    f"```c\n{snippet}\n```\n"
+                    f"→ **{lbl}**\n"
+                )
+        lines.append("## Now analyze the target code below:\n")
+        return "\n".join(lines)
+
+
 # ── Prediction parsing ─────────────────────────────────────────────────────────
 
 def parse_prediction(text: str) -> Tuple[str, float]:
@@ -742,6 +1010,7 @@ def evaluate(
     concurrency: int = CONCURRENCY,
     code_limit: int = CODE_LIMIT,
     preprocess: bool = False,
+    rag_bank: Optional["RAGBank"] = None,
 ) -> dict:
     """Evaluate prompt on dataset. Returns metrics dict."""
     api_base = os.environ.get("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1")
@@ -764,7 +1033,12 @@ def evaluate(
             code = sample["code"][:code_limit]
             if preprocess:
                 code = anonymize_benchmark_names(code)
-            prompt = prompt_template.replace("{code}", code)
+            # Inject RAG few-shot block if available
+            if rag_bank is not None and "{few_shot}" in prompt_template:
+                few_shot = rag_bank.format_few_shot(i)
+                prompt = prompt_template.replace("{few_shot}", few_shot).replace("{code}", code)
+            else:
+                prompt = prompt_template.replace("{few_shot}", "").replace("{code}", code)
             try:
                 async with sem:
                     resp = await aclient.chat.completions.create(
@@ -849,7 +1123,7 @@ def print_analysis(metrics: dict, round_num: int, major: str):
 # ── Main evolution loop ────────────────────────────────────────────────────────
 
 def run_major(major: str, rounds: Optional[List[int]] = None, verbose: bool = True,
-              preprocess: bool = False):
+              preprocess: bool = False, use_rag: bool = False):
     out_dir = Path(RESULTS_DIR) / major
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -878,6 +1152,18 @@ def run_major(major: str, rounds: Optional[List[int]] = None, verbose: bool = Tr
 
     run_rounds = rounds if rounds else sorted(prompts.keys())
 
+    # Build RAG bank if needed (only for majors where it helps, or when forced)
+    rag_bank: Optional[RAGBank] = None
+    needs_rag = use_rag and (
+        major in RAG_MAJORS
+        or any("{few_shot}" in (prompts.get(r) or "") for r in run_rounds)
+    )
+    if needs_rag:
+        api_base = os.environ.get("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1")
+        api_key  = os.environ.get("OPENROUTER_API_KEY", "")
+        rag_bank = RAGBank(dataset, major, api_key, api_base)
+        rag_bank.build()
+
     best_accuracy = 0.0
     best_round = 0
 
@@ -886,23 +1172,28 @@ def run_major(major: str, rounds: Optional[List[int]] = None, verbose: bool = Tr
             print(f"[{major}] Round {rnd} not defined. Skipping.")
             continue
 
-        result_path = out_dir / f"round{rnd}.json"
+        prompt = prompts[rnd]
+        has_fewshot = "{few_shot}" in prompt
+        # For RAG rounds, use a distinct result file so we don't overwrite plain results
+        suffix = "_rag" if (has_fewshot and rag_bank is not None) else ""
+        result_path = out_dir / f"round{rnd}{suffix}.json"
         if result_path.exists():
             with open(result_path) as f:
                 saved = json.load(f)
             acc = saved.get("accuracy", 0)
-            print(f"[{major}] Round {rnd}: already done, accuracy={acc:.1%}")
+            print(f"[{major}] Round {rnd}{suffix}: already done, accuracy={acc:.1%}")
             if acc > best_accuracy:
                 best_accuracy = acc
                 best_round = rnd
             continue
 
-        prompt = prompts[rnd]
-        print(f"\n[{major}] Round {rnd} — evaluating {len(dataset)} samples "
-              f"(concurrency={CONCURRENCY}, code_limit={CODE_LIMIT}, preprocess={preprocess})...")
+        active_rag = rag_bank if has_fewshot else None
+        print(f"\n[{major}] Round {rnd}{suffix} — evaluating {len(dataset)} samples "
+              f"(concurrency={CONCURRENCY}, code_limit={CODE_LIMIT}, "
+              f"preprocess={preprocess}, rag={active_rag is not None})...")
         t0 = time.time()
         metrics = evaluate(dataset, prompt, major=major, verbose=verbose,
-                           preprocess=preprocess)
+                           preprocess=preprocess, rag_bank=active_rag)
         elapsed = time.time() - t0
 
         # Save
@@ -945,6 +1236,8 @@ def main():
                         help="Suppress per-sample output")
     parser.add_argument("--preprocess", action="store_true",
                         help="Anonymize benchmark naming traps before sending to LLM")
+    parser.add_argument("--rag", action="store_true",
+                        help="Enable RAG few-shot injection for rounds that have {few_shot} placeholder")
     args = parser.parse_args()
 
     if not HAS_ASYNC_OPENAI:
@@ -968,10 +1261,12 @@ def main():
     rounds = [args.round] if args.round else None
     verbose = not args.quiet
     preprocess = args.preprocess
+    use_rag = args.rag
 
     results_summary: Dict[str, float] = {}
     for major in target_majors:
-        acc = run_major(major, rounds=rounds, verbose=verbose, preprocess=preprocess)
+        acc = run_major(major, rounds=rounds, verbose=verbose,
+                        preprocess=preprocess, use_rag=use_rag)
         if acc is not None:
             results_summary[major] = acc
 

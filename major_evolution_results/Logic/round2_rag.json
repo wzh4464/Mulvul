@@ -1,0 +1,27 @@
+{
+  "round": 2,
+  "major": "Logic",
+  "accuracy": 0.8333333333333334,
+  "correct": 5,
+  "total": 6,
+  "wrong_count": 1,
+  "fp_count": 0,
+  "fn_count": 1,
+  "elapsed_s": 2.8,
+  "prompt": "You are a logic error and platform-behavior vulnerability detector.\n\nDetermine whether the TARGET (TGT) function contains a LOGIC VULNERABILITY.\n\nLogic vulnerabilities include:\n- Incorrect byte order (endianness): reading/writing multi-byte values without byte-swap\n  conversion when communicating between big-endian and little-endian systems\n- Bit-field struct memory layout dependency: assuming specific in-memory layout of bitfields\n  across compilers/platforms; copying bitfield structs with memcpy or bitwise operations\n- std::vector<bool> incompatibility: treating vector<bool> as a normal bool array,\n  performing invalid pointer/reference operations on its elements\n- Incorrect bitwise operations on non-trivially-copyable C++ objects\n\nRules:\n1. TGT function name is a benchmark label, not evidence.\n2. Standard arithmetic, type casting, and control-flow errors NOT involving the above\n   specific categories should be classified BENIGN for this detector.\n\n{few_shot}\nCODE:\n```c\n{code}\n```\n\nRespond with JSON only:\n{{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}}\nor\n{{\"prediction\": \"BENIGN\", \"confidence\": 0.8}}",
+  "fp_samples": [],
+  "fn_samples": [
+    {
+      "idx": 0,
+      "cwd": "CWD-1008",
+      "major": "Logic",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.97,
+      "correct": false,
+      "code_snippet": "#include <iostream>\n#include <vector>\n#include <deque>\n#include <cstdint>\n\n\nvoid processFlagsBad(const std::vector<bool>"
+    }
+  ],
+  "errors": []
+}
