@@ -1,0 +1,436 @@
+[
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\n\ntypedef struct BuffWithLen {\n    char buff[10];\n    int len;\n} BuffWithLen;\n\nvoid *returnlocaladdr5TGT()\n{\n    static BuffWithLen tempStu;\n    tempStu.len = 1;\n    return (void *)&tempStu.len;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1042",
+    "major": "Injection",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\n#include <stdbool.h>\n#include <securec.h>\n\n\n\n\n\nstatic bool IsValidInput(const char *chkStr)\n{\n    for(int i = 0; chkStr[i] != '\\0'; i++) {\n        if (!isprint((unsigned char)chkStr[i])) {\n            return false; \n        }\n        \n\t\t\n    }\n    return true;\n}\n\nstatic bool testcaseTGT(void)\n{\n    char userInput[100] = { 0 };\n\tif(gets_s(userInput, sizeof(userInput)) == NULL) {\n\t\treturn false;\n\t}\n\n    userInput[strcspn(userInput, \"\\n\")] = '\\0';\t\n    \n    \n    (void)printf(userInput);  \n    return true;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.mvel.injectioncase;\n\nimport org.mvel2.MVEL;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.io.Serializable;\nimport java.util.HashMap;\nimport java.util.Map;\n\n\n@Controller\n@RequestMapping(\"/mvel/MVELCompileExpression\")\npublic class MVELCompileExpression {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public Object TGT001(@RequestParam(name = \"exp\") String exp) {\n        Serializable compiledExpression = MVEL.compileExpression(exp); \n        Map<String, Object> vars = new HashMap<>();\n        vars.put(\"foobar\", 100);\n        return MVEL.executeExpression(compiledExpression, vars); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.Velocity;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestPart;\nimport org.springframework.web.multipart.MultipartFile;\n\nimport java.io.File;\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityMergeTemplateInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(VelocityMergeTemplateInjection.class);\n\n    \n    \n\n    \n    \n\n    private File getFile(String path, String fileName) {\n        String filePath = path + System.getProperty(\"file.separator\") + fileName;\n        File file = new File(filePath);\n        if (!file.exists()) {\n            try {\n                file.createNewFile();\n            } catch (IOException ioException) {\n                LOGGER.error(\"exception writing\");\n            }\n        }\n        return file;\n    }\n    @PostMapping(value = \"/mergeTemplate_good1\")\n    public void TGT001(@RequestPart(value = \"multipartFile\") MultipartFile multipartFile) throws IOException {\n        String path = System.getProperty(\"user.dir\");\n        String fileName = multipartFile.getOriginalFilename();\n        File file = getFile(path, fileName);\n        multipartFile.transferTo(file);\n        VelocityContext context = new VelocityContext();\n        StringWriter writer = new StringWriter();\n        \n        com.huawei.us.expression.velocity.Velocity.mergeTemplate(fileName, null, context, writer); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.Velocity;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.io.Reader;\nimport java.io.StringReader;\nimport java.io.StringWriter;\nimport java.io.UnsupportedEncodingException;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityEvaluateInjection {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/evaluate_TGT001\")\n    public void TGT001(@RequestParam String exp) throws UnsupportedEncodingException {\n        VelocityContext context = new VelocityContext();\n        StringWriter writer = new StringWriter();\n        \n        \n        \n        Reader reader = new StringReader(exp);\n        Velocity.evaluate(context, writer, \"\", reader); \n        Velocity.evaluate(context, writer, \"\", exp); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n\n\ntypedef struct NodeKey {\n    int key1;\n    int key2;\n} NodeKey;\n\n\ntypedef struct Node {\n    NodeKey key;\n    struct Node *next;\n} Node;\n\n\nNode *CreateNode(NodeKey *key)\n{\n    Node *newNode = (Node *)malloc(sizeof(Node));\n    newNode->key = *key;\n    newNode->next = NULL;\n    return newNode;\n}\n\n\nvoid Insert(Node **head, NodeKey *key)\n{\n    Node *newNode = CreateNode(key);\n    newNode->next = *head;\n    *head = newNode;\n}\n\n\nvoid Delete(Node **head, NodeKey *key)\n{\n    Node *temp = *head;\n    Node *prev = NULL;\n\n    \n    while (temp != NULL && memcmp(&temp->key, key, sizeof(NodeKey)) != 0) {\n        prev = temp;\n        temp = temp->next;\n    }\n\n    \n    if (temp == NULL) {\n        printf(\"Node with key %d,%d not found\\n\", key->key1, key->key2);\n        return;\n    }\n\n    \n    if (prev == NULL) {\n        *head = temp->next;\n    } else {\n        prev->next = temp->next;\n    }\n\n    free(temp);\n}\n\n\nvoid PrintList(Node *head)\n{\n    Node *temp = head;\n    while (temp != NULL) {\n        printf(\"%d,%d -> \", temp->key.key1, temp->key.key2);\n        temp = temp->next;\n    }\n    printf(\"NULL\\n\");\n}\n\nint TGTcase()\n{\n    Node *head = NULL;\n    NodeKey addkey = {0};\n    NodeKey delKey = {0};\n\n    \n    addkey.key1 = 1;\n    Insert(&head, &addkey);  \n\n    printf(\"链表内容: \");\n    PrintList(head);\n\n    \n    delKey.key1 = 1;\n    Delete(&head, &delKey);  \n\n    printf(\"删除未初始化key后的链表内容: \");\n    PrintList(head);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1070",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.redos.jdkregex;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;\n\n\n@RestController\n@RequestMapping(value = \"/JdkRegexWithConcatenation\")\npublic class JdkRegexWithConcatenation {\n    \n    public static final String EMAIL_SUFFIX_REGEX = \"(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$\";\n\n    private static final Logger LOGGER = LoggerFactory.getLogger(JdkRegexWithConcatenation.class);\n\n    \n    \n    @GetMapping(value = \"/TGT\")\n    public String TGT(String emailAccountFormat, String email) {\n        \n        \n        \n        String emailRegex = emailAccountFormat + EMAIL_SUFFIX_REGEX;\n        boolean result = false;\n\n        Pattern pattern = Pattern.compile(emailRegex); \n        Matcher matcher = pattern.matcher(email); \n        result = matcher.matches();\n\n        if (!result) {\n            LOGGER.info(\"email format is illegal!\");\n            return \"email format is illegal!\";\n        }\n\n        LOGGER.info(\"start business!\");\n        \n\n        return \"business success!\";\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1101",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.unpreparedstatement;\n\nimport com.huawei.bme.container.control.ContextRegistry;\nimport com.huawei.bme.das.orm.jpa.BmeJpaTemplate;\nimport com.huawei.cwd.sqlinjection.util.pojo.User;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.regex.Pattern;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithUnPreparedStatement\")\npublic class BmeInjectionWithUnPreparedStatement {\n    private static final Pattern WHITELIST_PATTERN = Pattern.compile(\"^name|password$\", Pattern.CASE_INSENSITIVE);\n\n    private final BmeJpaTemplate bmeJpaTemplate = (BmeJpaTemplate) ContextRegistry.getContextHolder().getBean(\n        \"bmeJpaTemplate\");\n\n    \n    \n\n    \n    \n\n    \n    public static boolean isValidField(String filed) {\n        return WHITELIST_PATTERN.matcher(filed).matches();\n    }\n    @GetMapping(\"/TGT001\")\n    @ResponseBody\n    public List<User> TGT001(@RequestParam(value = \"order\") String order) {\n        Map<String, String> map = new HashMap<>();\n        map.put(\"order\", order);\n        List<User> result = bmeJpaTemplate.findList(\"getUserWithOrderBy\", map); \n        if (result.isEmpty()) {\n            return new ArrayList<>();\n        }\n        return result;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.arbitrarycmdexec;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.us.common.os.UsProcessBuilderUtils;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.Arrays;\nimport java.util.List;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/ArbitraryCommandExecInProcessBuilder\")\npublic class ArbitraryCommandExecInProcessBuilder {\n    private static final List<String> COMMAND_WHITELIST = Arrays.asList(\"ls\", \"date\", \"uptime\");\n\n    private static final String COMMAND_C = \"cmd.exe /c \";\n\n    private static final String CMD_SEPARATOR = \" \";\n\n    private static final String SUCCESS = \"success\";\n\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"cmdList\") String cmdList) throws IOException {\n        if (Objects.isNull(cmdList)) {\n            return \"cmdList is Null.\";\n        }\n\n        List<String> commands = Arrays.asList(cmdList.split(CMD_SEPARATOR));\n        ProcessBuilder processBuilder = new ProcessBuilder(commands); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return SUCCESS;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1027",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include <stdlib.h>\n#include \"external_data_common.h\"\n\nstruct TIMER_NODE {\n    DWORD mode = 0;  // 定时节点模式\n    void *msg;       // 定时时间到时需要发送的消息\n};\n\n\n\n#include \"memory_leak_common.h\"\n\nvoid internalswatTGTcase(int size)\n{\n    \n    struct TIMER_NODE *p = new TIMER_NODE;\n    \n    p->msg = new uint8_t[size];\n\n    delete p;  \n    return;    \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_ACCT_MSG_LENGTH_VALUE  0xFFFFFFFF\n#define MAX_BILL_POOL_LEN 4096\n\ntypedef enum RF_ENUM_ACR_ORDER {\n    RF_ACR_ORDER_START = 1,\n    RF_ACR_ORDER_SECOND,\n    RF_ACR_ORDER_THREE,\n    RF_ACR_ORDER_BUTT\n}RF_ENUM_ACR_ORDER;\n\ntypedef struct _RFDialog {\n    VOS_UINT32 ulFirstAcctMsgIdx;\n    VOS_UINT32 ulLastAcctMsgIdx;\n    VOS_UINT32 aulActualAcrLength[RF_ACR_ORDER_BUTT];\n    VOS_UINT16 usAcrNumInPool;\n    VOS_UINT8 aucAcrBody[0];\n} RFDialog;\n\nVOS_UINT8 g_rfBillData[MAX_BILL_POOL_LEN] = {0};\n\nVOS_VOID rdbbillupdatedataTGT(vos_uint8 *pnewbilldata, rfdialog *pstrfdialog, vos_uint32 acrbodylen)\n{\n    VOS_UINT8 *pstTempBuf = VOS_NULL_PTR;\n    VOS_UINT32 uiAcctMsgNo = 0;\n    VOS_UINT32 uiAcctMsgLen = 0;\n    VOS_UINT32 uiRetVal = VOS_OK;\n\n    if (pNewBillData == VOS_NULL_PTR || pstRFDialog == VOS_NULL_PTR) {\n        return;\n    }\n\n    \n    if (pstRFDialog->usAcrNumInPool > VOS_NULL) {\n        pstTempBuf = ((RFDialog *)pNewBillData)->aucAcrBody;\n        \n        for (uiAcctMsgNo = RF_ACR_ORDER_START;\n            (uiAcctMsgNo <= pstRFDialog->usAcrNumInPool && uiAcctMsgNo < RF_ACR_ORDER_BUTT); uiAcctMsgNo++) {\n            uiAcctMsgLen = pstRFDialog->aulActualAcrLength[uiAcctMsgNo]; \n            uiRetVal = RdbBillSaveAcctMsgToPool(uiAcctMsgLen, pstTempBuf, uiAcctMsgNo); \n            if (uiRetVal != VOS_OK) {\n                LOG_RunInfo(\"RdbBillSaveAcctMsgToPool Failed!\");\n            }\n            pstTempBuf += uiAcctMsgLen; \n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common.h\"\n#include \"basic_data_type.h\"\n#include \"securec.h\"\n\n\n\nconst DWORD OTDR_DATA_PACK_LEN = 10;\n\nDWORD case1TGT(word pkgid, word pkglen, byte *sorfilebuf, byte *m_eotdrsorfilebuf, size_t buffsize)\n{\n    \n    if ((pkgId >= 1) && ((OTDR_DATA_PACK_LEN * (pkgId - 1)) < buffSize)) {\n        errno_t err = memcpy_s((sorFileBuf + 15), OTDR_DATA_PACK_LEN, (m_EotdrSorFileBuf + OTDR_DATA_PACK_LEN * (pkgId - 1)),  pkgLen);  \n    }\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentException;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\n@Controller\npublic class XMLCBBDataInjectionInProcessingInstruction {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInProcessingInstruction.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/ProcessingInstruction_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String instruction) throws IOException, DocumentException {\n        Document document = DocumentHelper.createDocument();\n        \n        \n        \n        \n        \n        \n        \n        document.addProcessingInstruction(\"instructionTitle\", instruction); \n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.DocumentException;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.FileOutputStream;\nimport java.io.IOException;\nimport java.nio.charset.StandardCharsets;\n\n\n@Controller\npublic class ManualConstructXMLData {\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/xmlDataInjection_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String userName) throws IOException, DocumentException {\n        String userXMLInfoPrefix = \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n\" + \"<Students>\\n\" + \"\\t<Student>\\n\"\n            + \"\\t\\t<name>\";\n        String userXMLInfoSuffix = \"</name>\\n\" + \"\\t\\t<role>user</role>\\n\" + \"\\t</Student>\\n\" + \"</Students>\";\n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        String userXMLInfo = userXMLInfoPrefix + userName + userXMLInfoSuffix;\n        try (FileOutputStream fileOutputStream = new FileOutputStream(\"userXMLInfo.xml\");) {\n            fileOutputStream.write(userXMLInfo.getBytes(StandardCharsets.UTF_8)); \n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.Velocity;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestPart;\nimport org.springframework.web.multipart.MultipartFile;\n\nimport java.io.File;\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityMergeTemplateInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(VelocityMergeTemplateInjection.class);\n\n    \n    \n\n    \n    \n\n    private File getFile(String path, String fileName) {\n        String filePath = path + System.getProperty(\"file.separator\") + fileName;\n        File file = new File(filePath);\n        if (!file.exists()) {\n            try {\n                file.createNewFile();\n            } catch (IOException ioException) {\n                LOGGER.error(\"exception writing\");\n            }\n        }\n        return file;\n    }\n    @PostMapping(value = \"/mergeTemplate_TGT001\")\n    public void TGT001(@RequestPart(value = \"multipartFile\") MultipartFile multipartFile) throws IOException {\n        \n        \n        String path = System.getProperty(\"user.dir\");\n        String fileName = multipartFile.getOriginalFilename();\n        File file = getFile(path, fileName);\n        multipartFile.transferTo(file);\n\n        VelocityContext context = new VelocityContext();\n        StringWriter writer = new StringWriter();\n        \n        Velocity.mergeTemplate(fileName, null, context, writer); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <vector>\n#include <algorithm>\n#include <iostream>\n\nusing namespace std;\n\nvoid invaliditerator1TGT()\n{\n    std::vector<int> data = {1, 2, 3, 4, 5, 6, 7};\n\n    auto pos = std::find(data.begin(), data.end(), 8);  \n    if (pos == data.end()) {\n        return;\n    }\n    std::cout << *pos;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n\nconstexpr size_t BUFFER_SIZE = 10;\nconstexpr const char *SOURCE_MESSAGE = \"Hello, World!\";\n\n\n\n\n\n\n\nvoid TestMemoryCopySafety()\n{\n    std::cout << \"Testing MemoryCopyBad:\" << std::endl;\n    std::cout << \"Case : count = 5 (less than source length)\" << std::endl;\n    MemoryCopyBad(5);\n    std::cout << std::endl;\n\n    std::cout << \"Testing MemoryCopyGood:\" << std::endl;\n    std::cout << \"Case : count = 5 (less than source length)\" << std::endl;\n    MemoryCopyGood(5);\n    std::cout << std::endl;\n}\n\nvoid memorycopyTGT(size_t count)\n{\n    char buffer[BUFFER_SIZE] = { 0 };\n\n    \n    if (memcpy_s(buffer, count, SOURCE_MESSAGE, std::strlen(SOURCE_MESSAGE)) != EOK) {  \n        std::cerr << \"Memory copy failed.\" << std::endl;\n        return;\n    }\n    std::cout << \"Memory copy succeeded. Buffer content: \" << buffer << std::endl;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Drv1 {\n    int para;\n    void (*func)(int para);\n};\n\nstruct RtMsg {\n    int other1;\n    int other2;\n    struct Drv1 mydrv;\n};\n\nvoid overreadforstructTGT(void *msg, int len)\n{\n    if (msg == NULL) {\n        return;\n    }\n\n    if (len < sizeof(struct RtMsg)) {\n        return;\n    }\n    struct RtMsg *rt = (struct RtMsg*)(msg);\n    rt->mydrv.func(rt->mydrv.para); \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include \"basic_data_type.h\"\n\nint nullptrfromreturnvalueTGT4(char *filepath)\n{\n    FILE *fp = fopen(filepath, \"r\");\n    if (fp == NULL) {  \n        return -1;\n    }\n    int buffer[100] = {0};\n    fread(buffer, sizeof(int), 100, fp);  \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1101",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.sqlinput;\n\nimport com.huawei.bme.das.CmdRequest;\nimport com.huawei.bme.das.DASCommand;\nimport com.huawei.bme.das.DASCommandFactory;\nimport com.huawei.bme.das.DataSet;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithSqlInput\")\npublic class BmeInjectionWithSqlInput {\n    \n    \n    @GetMapping(\"/bad001\")\n    @ResponseBody\n    public List<String> ba001(@RequestParam(value = \"sql\") String sql) {\n        CmdRequest cmdRequest = new CmdRequest();\n        cmdRequest.setSQL(sql); \n\n        List<String> users = new ArrayList<>();\n        DASCommand dasCommand = DASCommandFactory.getDASCommand();\n        DataSet dataSet = dasCommand.execute(cmdRequest).getDataSet();\n        if (dataSet != null) {\n            if (dataSet.next()) {\n                users.add(dataSet.getString(\"name\"));\n            }\n        }\n\n        return users;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.envinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.regex.Pattern;\n\n\n@RestController\n@RequestMapping(value = \"/EnvCommandInjectionInProcessBuilder\")\npublic class EnvCommandInjectionInProcessBuilder {\n    \n    \n\n    \n    \n\n    private boolean checkEnv(String envKey, String envValue) {\n        \n        List<String> whiteList = Arrays.asList(\"env1\", \"env2\", \"env3\");\n        \n        if (!whiteList.contains(envKey)) {\n            return false;\n        }\n        \n        Pattern pattern = Pattern.compile(\"^[0-9a-zA-Z_]+$\");\n        return pattern.matcher(envValue).matches();\n    }\n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"envKey\") String envKey, @RequestParam(name = \"envValue\") String envValue)\n        throws IOException {\n        List<String> safeComm = new ArrayList<>();\n        safeComm.add(\"/bin/bash\");\n        safeComm.add(\"id\");\n        ProcessBuilder processBuilder = new ProcessBuilder(safeComm);\n        processBuilder.redirectErrorStream(true);\n\n        \n        \n        \n        Map<String, String> envs = new HashMap<>();\n        envs.put(envKey, envValue);\n        processBuilder.environment().putAll(envs); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return \"success\";\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1084",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xlstcodeinjection;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\nimport org.springframework.web.multipart.MultipartFile;\n\nimport java.io.FileOutputStream;\nimport java.io.IOException;\n\nimport javax.xml.XMLConstants;\nimport javax.xml.transform.Templates;\nimport javax.xml.transform.Transformer;\nimport javax.xml.transform.TransformerException;\nimport javax.xml.transform.TransformerFactory;\nimport javax.xml.transform.stream.StreamResult;\nimport javax.xml.transform.stream.StreamSource;\n\n\n@Controller\n@RequestMapping(value = \"/TransformerXSLTCodeInject\")\npublic class TransformerXSLTCodeInject {\n    \n    \n    @RequestMapping(value = \"/TGT002\", method = RequestMethod.POST)\n    public void TGT002(MultipartFile xsltFile, MultipartFile xmlFile) throws TransformerException, IOException {\n        TransformerFactory factory = TransformerFactory.newInstance();\n        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, \"\");\n        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, \"\");\n        StreamSource streamSourceXslt = new StreamSource(xsltFile.getInputStream());\n        Templates templates = factory.newTemplates(streamSourceXslt); \n        Transformer transformer = templates.newTransformer();\n        StreamSource streamSourceXml = new StreamSource(xmlFile.getInputStream());\n        transformer.transform(streamSourceXml, new StreamResult(new FileOutputStream(\"dstXml\"))); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\nchar g_charNicName[10] = {0};\n\nint freestackmemoryTGTcase2(char *nicname, unsigned int nicnamelength)\n{\n    \n    g_charNicName[1] = nicName[nicNameLength - 1];\n    \n    free(g_charNicName);  \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1070",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.redos.jdkregex;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.util.regex.Pattern;\n\n\n@RestController\n@RequestMapping(value = \"/JdkRegexWithConcatenation\")\npublic class JdkRegexWithConcatenation {\n    \n    public static final String EMAIL_SUFFIX_REGEX = \"(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$\";\n\n    private static final Logger LOGGER = LoggerFactory.getLogger(JdkRegexWithConcatenation.class);\n\n    \n    \n    @GetMapping(value = \"/TGT\")\n    public String TGT(String emailAccountFormat, String email) {\n        \n        \n        \n        String emailRegex = emailAccountFormat + EMAIL_SUFFIX_REGEX;\n        boolean result = false;\n\n        result = Pattern.matches(emailRegex, email); \n\n        if (!result) {\n            LOGGER.info(\"email format is illegal!\");\n            return \"email format is illegal!\";\n        }\n\n        LOGGER.info(\"start business!\");\n        \n\n        return \"business success!\";\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nusing namespace std;\n\nvoid fetchdirshowslotidTGT(cli_oid_s **poidlist, uint32_t dwoidnum) \n{\n    if (pOidList == nullptr) {\n        return;\n    }\n\n    for (uint32_t i = 0; i < dwOidNum; ++i) {\n        uint16_t shelf_id = 0;\n        uint16_t slot_id = 0;\n        CLI_OID_S *pOid = pOidList[i];\n        if (pOid == nullptr || pOid->pbyPara == nullptr) {\n            continue;\n        }\n\n        \n        int ret = sscanf_s(reinterpret_cast<char *>(pOid->pbyPara), \"shelf%hu/%hu\", &shelf_id, &slot_id); \n        if (ret != 2) {\n            return;\n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jexl.injectioncase;\n\nimport org.apache.commons.jexl3.JexlBuilder;\nimport org.apache.commons.jexl3.JexlContext;\nimport org.apache.commons.jexl3.JexlEngine;\nimport org.apache.commons.jexl3.JxltEngine;\nimport org.apache.commons.jexl3.MapContext;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\n\n@Controller\n@RequestMapping(\"/jxlt\")\npublic class JxltInjection {\n    \n    \n    @GetMapping(value = \"/jxltEngine/createExpression_TGT001\")\n    public void TGT001(@RequestParam(name = \"exp\") String exp) {\n        \n        \n        JexlEngine jexl = new JexlBuilder().create();\n        JxltEngine jxltEngine = jexl.createJxltEngine();\n        JxltEngine.Expression expr = jxltEngine.createExpression(exp); \n        JexlContext context = new MapContext();\n        Object object = expr.evaluate(context).toString(); \n        \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\nchar *returnlocaladdr2TGT()\n{\n    static char arr[10];\n    arr[0] = 1;\n    return &arr[2];  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInComment {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInComment.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/comment_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String comment) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        \n        \n        \n        \n        \n        \n        \n        \n        student.addComment(comment); \n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1029",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n#include <stdbool.h>\n#include <stdlib.h>\n\n\ntypedef struct TAG_WCWP_TLV_INFO {\n    uint32_t ulMsgType;\n    uint16_t usMsgLength;\n    uint16_t usElemetId;\n    uint16_t usElemLen;\n    uint16_t usResv;\n} WCWP_TLV_INFO_S;\n\n#define CAPWAP_ELEMENT_HEAD_LEN (4)\n#define CAPWAP_VENDER_HEAD_LEN  (8)\n#define WCWP_MIN_VENDORSPEC_LEN 7\n#define WCWP_FOUR  4\n#define VOS_NTOHL(x) ((((x) & 0x000000ff) << 24) | \\\n                      (((x) & 0x0000ff00) << 8) | \\\n                      (((x) & 0x00ff0000) >> 8) | \\\n                      (((x) & 0xff000000) >> 24))\n\n#define WCWP_GET_4BYTE(ulVal, pucMsgBuf)                                 \\\n    {                                                                    \\\n        ulVal = (uint32_t)VOS_NTOHL(*((uint32_t *)(uintptr_t)(pucMsgBuf))); \\\n        (pucMsgBuf) += WCWP_FOUR;                                        \\\n    }\n\nint BufBufLenMismatch2Tp(WCWP_TLV_INFO_S *pstTlvInfo, void *pMsgData)\n{\n    \n    unsigned char *pucElemData = (unsigned char *)pMsgData;\n    uint16_t usElemTotalLen = pstTlvInfo->usElemLen + CAPWAP_ELEMENT_HEAD_LEN;\n    if (usElemTotalLen < WCWP_MIN_VENDORSPEC_LEN) {\n        return 1;\n    }\n    uint32_t ulVendorId;\n    \n    WCWP_GET_4BYTE(ulVendorId, pucElemData); \n    \n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n\n#define IPV4_ADDR_LEN 4\n#define IPV6_ADDR_LEN 16\n\n#define SAN_IPV4 4\n#define SAN_IPV6 6\n\n#define VOS_HTONL(x) ((((x) & 0x000000ff) << 24) | \\\n             (((x) & 0x0000ff00) <<  8) | \\\n             (((x) & 0x00ff0000) >>  8) | \\\n             (((x) & 0xff000000) >> 24))\n\n#define SAFE_MEMCPY_S(dst, src, count) memcpy_s(dst, count, src, count)   \n\ntypedef struct _tagSAN_IPV6 {\n    union {\n        VOS_UCHAR     u6_ucaddr[16];\n        VOS_UINT16    u6_usaddr[8];\n        VOS_UINT32    u6_uladdr[4];\n        VOS_UINT64    u6_ulladdr[2];\n    } u6_addr;    \n} SAN_IPV6_S;\n\ntypedef struct _tagSaN_IP_Port {\n    VOS_UINT16   usPort;\n    VOS_UCHAR    ucTranProtocol;\n    VOS_UCHAR    ucVer;     \n    union {\n        VOS_UINT32   ulIP;\n        SAN_IPV6_S   stIPv6;\n    } u;\n    VOS_UINT32   ulVrfIndex;\n} SAN_IP_PORT_S;\n\ntypedef struct {\n    union {\n        VOS_UINT8 aucAddr[16];   \n        VOS_UINT16 ausAddr[8];   \n        VOS_UINT32 auiAddr[4];   \n    } u;\n} IPSEC_IPV6_S;\n\ntypedef struct {\n    VOS_UINT8 ucVer;          \n    VOS_UINT8 ucProto;        \n    VOS_UINT16 usPort;        \n    union {\n        VOS_UINT32 uiIp;      \n        IPSEC_IPV6_S stIpV6;  \n    } u;\n    VOS_UINT32 uiVrfIndex;    \n} IPSEC_IP_PORT_S;\n\nVOS_VOID akasaniptoipsecipTGT(san_ip_port_s *pstsanip, ipsec_ip_port_s *pstipsecip)\n{\n    errno_t eRet = EOK;\n\n    if ((VOS_NULL_PTR == pstSanIP) || (VOS_NULL_PTR == pstIPsecIP)) {\n        return;\n    }\n\n    pstIPsecIP->ucVer      = pstSanIP->ucVer;\n    pstIPsecIP->uiVrfIndex = pstSanIP->ulVrfIndex;\n\n    if (SAN_IPV4 == pstSanIP->ucVer) {\n        pstIPsecIP->u.uiIp = VOS_HTONL(pstSanIP->u.ulIP);\n    } else {\n        eRet = SAFE_MEMCPY_S(pstIPsecIP->u.stIpV6.u.aucAddr, \n            pstSanIP->u.stIPv6.u6_addr.u6_ucaddr, IPV6_ADDR_LEN); \n        PUB_CONDITION_OPT((EOK != eRet), LOG_RunInfo(\"SAFE_MEMCPY_S(0) error, eRet[%d].\", eRet));\n    }\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define EAM_PORT_LEN 64\n#define DRV_PORT_LEN 32\n\n\n\n\n\n\n\nvoid TestMemcpyParameter()\n{\n    printf(\"\\nTesting CheckMemcpyParameterBad:\\n\");\n    CheckMemcpyParameterBad();\n\n    printf(\"\\nTesting CheckMemcpyParameterGood:\\n\");\n    CheckMemcpyParameterGood();\n}\n\nvoid checkmemcpyparameterTGT()\n{\n    char dstPortName[EAM_PORT_LEN] = { 0 };\n    char srcPortName[DRV_PORT_LEN] = \"DrvPortName\";\n\n    \n    int32_t ret = memcpy_s(dstPortName, EAM_PORT_LEN, srcPortName, EAM_PORT_LEN);  \n    if (ret != EOK) {\n        printf(\"memcpy_s failed.\\n\");\n        return;\n    }\n    printf(\"Destination port name: %s\\n\", dstPortName);\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#ifndef HEAD_H\n#define HEAD_H\n#include <stdlib.h>\ntypedef void *VOS_MUTEX_T;\ntypedef enum {\n    FGSYNC_TYPE_REALTIME,  // 实时同步\n    FGSYNC_TYPE_BATCH,     // 批量同步\n    FGSYNC_TYPE_MAX,\n} FgSyncType;\n\ntypedef enum {\n    FG_OBJTYPE_MAX,\n} FG_DRV_OBJTYPE_E;\n\ntypedef struct TagVosSll {\n    int stHead;   /**< 链表头节点 */\n    int *pstTail; /**< 指向链表尾 */\n    int uiCount;      /**< 链表节点个数 */\n} VOS_SLL_S;\ntypedef struct {\n    VOS_MUTEX_T lock;\n    VOS_SLL_S nodes;  // FgSyncNode链表\n} FgSyncQueue;\n\nFgSyncQueue g_fgSyncQueue[FGSYNC_TYPE_MAX][FG_OBJTYPE_MAX];\n// 销毁互斥锁\nvoid VOS_MutexDestroy(void *p);\n#endif\n\n\n\n\n\n\n#include <stdio.h>\n#include <securec.h>\n#include \"head.h\"\n\nvoid TGTcase(void)\n{\n    for (int queueType = 0; queueType < FGSYNC_TYPE_MAX; queueType++) {\n        for (int objType = 0; objType < FG_OBJTYPE_MAX; objType++) {\n            (void)VOS_MutexDestroy(&(g_fgSyncQueue[queueType][objType].lock));  \n            \n            g_fgSyncQueue[queueType][objType].lock = NULL;\n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <securec.h>\n#include <pthread.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <unistd.h>\n\n\n\n#define TABLE_MAX_NUM 10\n#define TABLE_NODE_SIZE 100\n\nuint8_t *g_shareTable[TABLE_MAX_NUM] = {0};\n\nint CreateShareTable(void)\n{\n    for (uint8_t i = 0; i < TABLE_MAX_NUM; i++) {\n        g_shareTable[i] = malloc(TABLE_NODE_SIZE);\n        if (g_shareTable[i] == NULL) {\n            continue;\n        }\n    }\n\n    return 0;\n}\n\nvoid DestroyShareTable(void)\n{\n    for (uint8_t i = 0; i < TABLE_MAX_NUM; i++) {\n        if (g_shareTable[i] == NULL) {\n            continue;\n        }\n\n        free(g_shareTable[i]);\n        g_shareTable[i] = NULL;\n    }\n}\n\nuint8_t *FindShareTableNode(uint8_t index)\n{\n    if (index >= TABLE_MAX_NUM) {\n        return NULL;\n    }\n\n    return g_shareTable[index];\n}\n\n\n\n\n\nint BadCase()\n{\n    int ret = CreateShareTable();\n    if (ret != 0) {\n        return ret;\n    }\n\n    pthread_t threadAId;\n    ret = pthread_create(&threadAId, NULL, (void *)ThreadAEntry, NULL);\n\n    pthread_t threadBId;\n    ret = pthread_create(&threadBId, NULL, (void *)ThreadBEntry, NULL);\n\n    return 0;\n}\n\npthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;\n\n\n\n\n\nint GoodCase()\n{\n    int ret = CreateShareTable();\n    if (ret != 0) {\n        return ret;\n    }\n\n    pthread_t threadCId;\n    ret = pthread_create(&threadCId, NULL, (void *)ThreadCEntry, NULL);\n\n    pthread_t threadDId;\n    ret = pthread_create(&threadDId, NULL, (void *)ThreadDEntry, NULL);\n\n    return 0;\n}\n\nvoid *ThreadCEntry(void *para)\n{\n    pthread_mutex_lock(&g_mutex);\n    uint8_t *node = FindShareTableNode(0);\n    if (node == NULL) {\n        pthread_mutex_unlock(&g_mutex);\n        return NULL;  \n    }\n\n    sleep(1);\n\n    node[0] = 1;  \n    pthread_mutex_unlock(&g_mutex);\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.arbitrarycmdexec;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.us.common.os.UsProcessBuilderUtils;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.Arrays;\nimport java.util.List;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/ArbitraryCommandExecInProcessBuilder\")\npublic class ArbitraryCommandExecInProcessBuilder {\n    private static final List<String> COMMAND_WHITELIST = Arrays.asList(\"ls\", \"date\", \"uptime\");\n\n    private static final String COMMAND_C = \"cmd.exe /c \";\n\n    private static final String CMD_SEPARATOR = \" \";\n\n    private static final String SUCCESS = \"success\";\n\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/gtsTGT001\")\n    public String gtsTGT001(@RequestParam(name = \"cmdList\") String cmdList) throws IOException {\n        if (Objects.isNull(cmdList)) {\n            return \"cmdList is Null.\";\n        }\n\n        List<String> commands = Arrays.asList(cmdList.split(CMD_SEPARATOR));\n        /*\n         * 使用US框架提供的UsProcessBuilderUtils.getProcessBuilder获取安全的ProcessBuilder，需要在框架配置文件配置可以执行的命令白\n         * 名单,如未设置，默认可以执行的命令有：chmod,cd,cat,date,pwd,ll,ls,mkdir,cp,df,zip,unzip,tar,free,grep,java,mknod。\n         * 建议根据业务需要重新设置白名单。本示例中在us.config.properties配置文件中设置了仅可以使用ping命令，参考框架使用指导\n         * https://codehub-y.huawei.com/GTS_Cloud_Platform/DSP_Security/SwordOfSecurity/us/files?ref=master\n         */\n        ProcessBuilder processBuilder = UsProcessBuilderUtils.getProcessBuilder(commands); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return SUCCESS;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.VelocityEngine;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.io.IOException;\nimport java.io.Reader;\nimport java.io.StringReader;\nimport java.io.Writer;\n\nimport javax.servlet.http.HttpServletResponse;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityEvaluateInjection {\n    \n    \n    @GetMapping(value = \"/evaluate_TGT002\")\n    public void TGT002(@RequestParam String name, HttpServletResponse response) throws IOException {\n        \n        \n        String helloPageStr = \"\" + \"<html>\\n\" + \"<head>\\n\" + \"<title>welcome</title>\\n\" + \"</head>\\n\" + \"<body>\\n\"\n            + \"hello: \" + name + \" <br/>\\n\" + \"</body>\\n\" + \"</html>\";\n        VelocityEngine engine = new VelocityEngine();\n        VelocityContext context = new VelocityContext();\n        Writer writer = response.getWriter();\n        Reader reader = new StringReader(helloPageStr);\n        engine.evaluate(context, writer, \"\", reader); \n        engine.evaluate(context, writer, \"\", helloPageStr); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.VelocityEngine;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestPart;\nimport org.springframework.web.multipart.MultipartFile;\n\nimport java.io.File;\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityMergeTemplateInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(VelocityMergeTemplateInjection.class);\n\n    \n    \n\n    private File getFile(String path, String fileName) {\n        String filePath = path + System.getProperty(\"file.separator\") + fileName;\n        File file = new File(filePath);\n        if (!file.exists()) {\n            try {\n                file.createNewFile();\n            } catch (IOException ioException) {\n                LOGGER.error(\"exception writing\");\n            }\n        }\n        return file;\n    }\n    @PostMapping(value = \"/mergeTemplate_TGT002\")\n    public void TGT002(@RequestPart(value = \"multipartFile\") MultipartFile multipartFile) throws IOException {\n        \n        \n        String path = System.getProperty(\"user.dir\");\n        String fileName = multipartFile.getOriginalFilename();\n        File file = getFile(path, fileName);\n        multipartFile.transferTo(file);\n\n        VelocityContext context = new VelocityContext();\n        StringWriter writer = new StringWriter();\n        VelocityEngine velocityEngine = new VelocityEngine();\n        \n        velocityEngine.mergeTemplate(fileName, null, context, writer); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInDocType {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInDocType.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/DocType_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String systemID) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        \n        \n        \n        \n        \n        \n        \n        document.addDocType(\"key\", \"\", systemID); \n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1034",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nvoid processdataTGT(int64_t* external_ptr)\n{\n    \n    std::cout << \"External data: \" << *external_ptr << std::endl;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.droolsinjection;\n\nimport org.drools.core.base.RuleNameEndsWithAgendaFilter;\nimport org.kie.api.io.ResourceType;\nimport org.kie.api.runtime.KieSession;\nimport org.kie.internal.utils.KieHelper;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.util.HashMap;\nimport java.util.Map;\nimport java.util.UUID;\n\n\n@Controller\n@RequestMapping(\"/drools\")\npublic class DroolsInjectionController {\n    private static final Logger LOGGER = LoggerFactory.getLogger(DroolsInjectionController.class);\n\n    private static final String GLOBAL = \"Hissec\";\n\n    private static final String KEY = \"hero\";\n\n    private static final String LETTER_DIGIT_REGEX = \"^[a-z0-9A-Z]+$\";\n\n    private static final String DRL_TEMPLATE = \"package eval;\\n\" + \"import java.util.Map;\\n\" + \"global Object %s\\n\"\n        + \"\\n\" + \"rule \\\"rule0\\\"\\n\" + \"    no-loop true\\n\" + \"    when\\n\" + \"        $result:Map(%s);\\n\" + \"    then\\n\"\n        + \"        $result.put(\\\"%s\\\",true);\\n\" + \"end\\n\\n\" + \"rule \\\"rule1\\\"\\n\" + \"    no-loop true\\n\" + \"    when\\n\"\n        + \"        $result:Map(hero);\\n\" + \"    then\\n\" + \"        $result.put(\\\"aaa\\\",true);\\n\" + \"end\\n\";\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT002\")\n    public void TGT002(@RequestParam String param) {\n        \n        String drlExpression = String.format(DRL_TEMPLATE, GLOBAL, param, KEY);\n        KieHelper helper = new KieHelper();\n        helper.setReleaseId(helper.ks.newReleaseId(\"org.default\", UUID.randomUUID().toString(), \"V1.1.1\"));\n        \n        helper.addContent(drlExpression, ResourceType.DRL); \n        KieSession kSession = helper.build().newKieSession();\n        Map<String, Exception> result = new HashMap<>();\n        kSession.insert(result);\n        \n        kSession.fireAllRules(); \n        \n        \n        kSession.dispose();\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jexl.injectioncase;\n\nimport org.apache.commons.jexl3.JexlBuilder;\nimport org.apache.commons.jexl3.JexlContext;\nimport org.apache.commons.jexl3.JexlEngine;\nimport org.apache.commons.jexl3.JexlExpression;\nimport org.apache.commons.jexl3.MapContext;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\n\n@Controller\n@RequestMapping(\"/jexl\")\npublic class JexlInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JexlInjection.class);\n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/jexlEngine/createExpression_TGT001\")\n    public void TGT001(@RequestParam(name = \"exp\") String exp) {\n        JexlEngine jexl = new JexlBuilder().create();\n        \n        \n        JexlExpression expression = jexl.createExpression(exp); \n        JexlContext context = new MapContext();\n        Object object = expression.evaluate(context); \n        LOGGER.info(object.toString());\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\ntypedef struct {\n    int32_t *dataPointer;\n    int32_t dataValue;\n} EventData;\n\n\n\n\n\n\n\nvoid TestCreateEventDataPointer()\n{\n    \n    printf(\"Testing incorrect event data pointer creation:\\n\");\n    int32_t *badPointer = CreateEventDataPointerBad();\n    if (badPointer != NULL) {\n        printf(\"Data value (bad): %d\\n\", *badPointer);\n    } else {\n        printf(\"Error: Invalid pointer (bad)\\n\");\n    }\n\n    \n    printf(\"\\nTesting correct event data pointer creation:\\n\");\n    int32_t *goodPointer = CreateEventDataPointerGood();\n    if (goodPointer != NULL) {\n        printf(\"Data value (good): %d\\n\", *goodPointer);\n        SAFE_FREE(goodPointer);  \n    } else {\n        printf(\"Error: Invalid pointer (good)\\n\");\n    }\n}\n\nint32_t *createeventdatapointerTGT()\n{\n    EventData eventData;\n    int32_t *dynamicData = (int32_t *)SAFE_MALLOC(sizeof(int32_t));  \n    if (dynamicData == NULL) {\n        printf(\"Error: Memory allocation failed\\n\");\n        return NULL;\n    }\n\n    *dynamicData = 100;  \n    eventData.dataPointer = dynamicData;\n    eventData.dataValue = 404;\n\n    return eventData.dataPointer;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\ntypedef struct {\n    int32_t arg;\n    uint32_t flag;\n} ProcessConfig;\n\n\ntypedef struct {\n    int32_t (*create)(ProcessConfig *config);\n} ProcessScheduler;\n\n#define PROCESS_SCHEDULER_COUNT 4\nProcessScheduler g_processSchedulers[PROCESS_SCHEDULER_COUNT] = { 0 };\n\n\nstatic inline uint32_t GetConfigPolicy(const ProcessConfig *config)\n{\n    return ((config->flag & 0xff00) >> 8);\n}\n\n\n\n\n\n\n\nvoid TestProcessConfig()\n{\n    ProcessConfig configBad;\n    configBad.flag = 0x00ff;  \n    int32_t resultBad2 = ProcessConfigBad(&configBad);\n    printf(\"Result: %d\\n\", resultBad2);\n\n    ProcessConfig configGood;\n    configGood.flag = 0x00ff;  \n    int32_t resultGood2 = ProcessConfigGood(&configGood);\n    printf(\"Result: %d\\n\", resultGood2);\n}\n\nint32_t processconfigTGT(processconfig *config)\n{\n    uint32_t policyIndex = GetConfigPolicy(config);  \n    const ProcessScheduler *scheduler = &g_processSchedulers[policyIndex];  \n    if (scheduler->create != NULL) {\n        return scheduler->create(config);\n    }\n\n    return -1;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1019",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\nchar *returnlocaladdr1TGT()\n{\n    char arr[10];\n    arr[0] = 1;\n    return arr;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1025",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define EXECUTE_EXPRESSION(EXPR)                                    \\\n    try {                                                           \\\n        EXPR;                                                       \\\n    } catch (const std::exception &e) {                             \\\n        std::cerr << \"Exception caught: \" << e.what() << std::endl; \\\n    }\n\nclass MemoryPool {\npublic:\n    explicit MemoryPool() = default;\n    ~MemoryPool()\n    {\n        for (auto *ptr : m_allocatedBlocks) {  \n            delete[] ptr;\n        }\n        m_allocatedBlocks.clear();\n    }\n\n    int *AllocateBlock(std::size_t blockSize)\n    {\n        if (blockSize <= 0) {\n            return nullptr;\n        }\n        int *pointer = new int[blockSize];\n        if (pointer != nullptr) {\n            m_allocatedBlocks.insert(pointer);\n        }\n        return pointer;\n    }\n\n    void DeallocateBlock(int *pointer)\n    {\n        if (pointer != nullptr && m_allocatedBlocks.find(pointer) != m_allocatedBlocks.end()) {\n            delete[] pointer;\n            m_allocatedBlocks.erase(pointer);\n        }\n    }\n\nprivate:\n    std::set<int *> m_allocatedBlocks;  \n};\n\n\n\n\n\nvoid MemoryReleaseGood(std::size_t blockSize)\n{\n    MemoryPool pool;\n    int *memoryBlock = pool.AllocateBlock(blockSize);\n    if (memoryBlock == nullptr) {\n        return;\n    }\n    pool.DeallocateBlock(memoryBlock);\n}  \n\nvoid TestMemoryRelease()\n{\n    std::cout << \"Testing MemoryReleaseBad:\" << std::endl;\n    MemoryReleaseBad(5);\n\n    std::cout << \"Testing MemoryReleaseGood:\" << std::endl;\n    MemoryReleaseGood(5);\n}\n\nvoid memoryreleaseTGT(std::size_t blocksize)\n{\n    MemoryPool pool;\n    int *memoryBlock = pool.AllocateBlock(blockSize);\n    if (memoryBlock == nullptr) {\n        return;\n    }\n\n    pool.DeallocateBlock(memoryBlock);\n    \n    EXECUTE_EXPRESSION(delete memoryBlock);  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_WARNING_DESCRIPTION_LEN 128\n#define CHR_MAX_WARN_LENGTH 255\n#define RCSS_SUCCESS \"\\\"Remote Operate Success\\\"\"\n#define RCSS_SUCCESS_LEN 24\n#define SP_IS_USE_NSOPERATE_TID_ON_RCSS 10\n#define SIP_MSG_INVITE_OXX_RSP 1014\n\ntypedef enum {\n    ABC_SC_SUCCESS          = 0,  \n    ABC_SC_REALEASE         = 0x80030, \n    ABC_SC_INNER_ERR        = 0x80FFF \n} ABC_SC_ERROR_CODE;\n\n\ntypedef struct {\n    VOS_UINT32 ulSipcId;            \n    VOS_UINT32 ulMsgCxt;            \n} SIPC_INFO;\n\n\ntypedef struct  {\n    VOS_UINT32      ulBcId;              \n\n    VOS_UINT16      usCurFlowType;       \n    VOS_UINT8       ucUpLegType;         \n    VOS_UINT8       ucDownLegType;       \n\n    VOS_UINT16      usCurSipMsgType;     \n    VOS_UINT32      ulStatusCode;        \n    SIPC_INFO       sipInfo;             \n    VOS_UINT32      ulStackTrs;          \n    VOS_BOOL        bPsiFlag;\n    VOS_UINT8       bIsConfStructFalseMediaFlag : 1;\n    VOS_UINT8       bIsConfSendInviteToMRFFWithMedialag : 1;\n    VOS_UINT8       bCCBSInfoSc : 1;\n    VOS_UINT8       bCPSbeforCallRight : 1;\n    VOS_UINT8       bSvcSendSri : 1;\n    VOS_UINT8       bM1OneNum : 1;\n    VOS_UINT8       bIsSGsMessageTypeFlag : 1;\n    VOS_UINT32      key_reserved_1;\n    VOS_UINT32      key_reserved_2;\n} AbcSipFlowVar;\n\ntypedef struct tagWarningHeaderInfo {\n    VOS_UINT8 ucFlag;\n    VOS_UINT8 szWarnAgent[CHR_MAX_WARN_LENGTH + 1];\n    VOS_UINT8 szRelDescription[MAX_WARNING_DESCRIPTION_LEN + 1];\n} WarningHeaderInfo;\n\nextern VOS_VOID ABC_SendRcssRspMsg(AbcSipFlowVar *pFlowVar, VOS_UINT32 ulErrCode);\nextern VOS_UINT32 ABC_GetWarningTextFromSipInfo(WarningHeaderInfo *pWarningHdrInfo, SIPC_INFO sipInfo);\nextern VOS_INT32 VOS_StrCmp(VOS_CHAR *pscStr1, VOS_CHAR *pscStr2);\nextern VOS_UINT32 VOS_Free(VOS_VOID *pBuf);\n\nVOS_VOID abc_sendrcssrspTGT(abcsipflowvar *pflowvar)\n{\n    VOS_UINT32 ulBcId = VOS_NULL_DWORD;\n    WarningHeaderInfo *pWarningHdrInfo  = VOS_NULL_PTR;\n\n    PUB_CONDITION_VOID(pFlowVar == VOS_NULL_PTR);\n\n    ulBcId = pFlowVar->ulBcId;\n\n    if (SIP_MSG_INVITE_OXX_RSP == pFlowVar->usCurSipMsgType) {\n        \n        pWarningHdrInfo = VOS_MemAlloc(PID_TEST, DYNAMIC_DOPRA_MEM_PT, sizeof(WarningHeaderInfo));\n        PUB_CONDITION_VOID(pWarningHdrInfo == VOS_NULL_PTR);\n\n        if (EOK != memset_s(pWarningHdrInfo,  sizeof(WarningHeaderInfo), VOS_NULL, sizeof(WarningHeaderInfo))) {\n            VOS_MemFree(PID_TEST, pWarningHdrInfo); \n            return;\n        }\n\n        if (VOS_FALSE == ABC_GetWarningTextFromSipInfo(pWarningHdrInfo, pFlowVar->sipInfo)) {\n            VOS_MemFree(PID_TEST, pWarningHdrInfo); \n            ABC_SendRcssRspMsg(pFlowVar, ABC_SC_INNER_ERR);\n            return;\n        }\n\n        if (RCSS_SUCCESS_LEN == VOS_StrNLen((VOS_CHAR *)pWarningHdrInfo->szRelDescription, MAX_WARNING_DESCRIPTION_LEN)\n            && VOS_StrCmp((VOS_CHAR *)RCSS_SUCCESS, (VOS_CHAR *)pWarningHdrInfo->szRelDescription) == 0) {\n            ABC_SendRcssRspMsg(pFlowVar, ABC_SC_SUCCESS);\n        } else {\n            if (VOS_TRUE == SP_IS_USE_NSOPERATE_TID_ON_RCSS) {\n                ABC_SendRcssRspMsg(pFlowVar, ABC_SC_REALEASE);\n            } else {\n                ABC_SendRcssRspMsg(pFlowVar, ABC_SC_INNER_ERR);\n            }\n        }\n\n        VOS_MemFree(PID_TEST, pWarningHdrInfo); \n        return;\n    }\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInCDATA {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInCDATA.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/cdata_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String cData) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        Element students = document.addElement(\"Students\");\n        \n        \n        \n        \n        \n        \n        \n        \n        students.addCDATA(cData); \n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.cmdinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.owasp.esapi.codecs.WindowsCodec;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/CommandInjectionInProcessBuilder\")\npublic class CommandInjectionInProcessBuilder {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"ip\") String ip) throws IOException {\n        if (Objects.isNull(ip)) {\n            return \"ip is Null.\";\n        }\n\n        List<String> commands = new ArrayList<>();\n        commands.add(\"cmd.exe\");\n        commands.add(\"/c\");\n        commands.add(\"ping\");\n        commands.add(ip);\n\n        ProcessBuilder processBuilder = new ProcessBuilder(commands); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return \"success\";\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.spel.injectioncase;\n\nimport org.springframework.expression.Expression;\nimport org.springframework.expression.spel.standard.SpelExpressionParser;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\n\n@Controller\npublic class SpelInjection {\n    \n    \n\n    \n    \n    @GetMapping(path = \"/TGT001\")\n    public void TGT001(@RequestParam String script) {\n        SpelExpressionParser spel = new SpelExpressionParser();\n        \n        \n        Expression expression = spel.parseExpression(script); \n        \n        Object value = expression.getValue(); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1026",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include <sstream>\n#include \"securec.h\"\nusing namespace std;\n\n\ntypedef struct IpsiKeyInfo {\n    unsigned int uiKeyBuffLen;\n    char pcKeyBuff[4096];\n} IPSI_SSH_KEY_INFO_S;\n\nbool setfingerprintkeybuffTGT2(const char *serverpubkey, ipsi_ssh_key_info_s &pubkeyinfo)\n{\n    std::stringstream ss;\n    ss << \" \" << serverPubKey << \" \";\n    const char *tempBuff = ss.str().c_str();     \n    pubKeyInfo.uiKeyBuffLen = strlen(tempBuff);  \n    return true;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"securec.h\"\n#include <stdint.h>\n\n\nstruct HSsnmpv3VacmAccessT {\n    uint8_t *vacmAccessContextPrefix;\n    uint32_t len;\n};\n\nint32_t IAS_MemCmp(void const *pvDest, void const *pvSrc, unsigned int ulCount)\n{\n    return memcmp(pvDest, pvSrc, ulCount);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.cmdinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.owasp.esapi.codecs.WindowsCodec;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/CommandInjectionInRuntime\")\npublic class CommandInjectionInRuntime {\n    private static final String IP_IS_NULL = \"ip is null.\";\n\n    private static final String SUCCESS = \"success\";\n\n    \n    \n    @GetMapping(value = \"/TGT002\")\n    public String TGT002(@RequestParam(name = \"ip\") String ip) throws IOException {\n        if (Objects.isNull(ip)) {\n            return IP_IS_NULL;\n        }\n        String cmd = \"test.bat \" + ip;\n        Runtime runtime = Runtime.getRuntime();\n        Process process = runtime.exec(cmd); \n\n        CommonUtils.showProcessEcho(process);\n        return SUCCESS;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_CDB_IMPU_LEN   64\n#define MAX_IMPU_LEN       128\n\n\ntypedef struct {\n    VOS_CHAR   acImpu[MAX_CDB_IMPU_LEN]; \n    VOS_UINT32 ulScuMid;                 \n    VOS_UINT32 ulRecWriteTime;           \n    VOS_UINT8  ucUserClass;              \n} TblSImpuDispatch;\n\n\ntypedef struct {\n    VOS_BOOL   bRegMethod;      \n    VOS_BOOL   bSNetMerged;     \n    VOS_CHAR   acImpu[MAX_IMPU_LEN];\n    VOS_UINT32 bIsSegReChoose; \n    VOS_UINT32 ulSenderCpuId;  \n    VOS_UINT32 ulSenderPid;    \n    VOS_UINT32 ulQueryMethod;  \n    VOS_UINT32 onlyQuery;    \n} SDispatch;\n\nextern VOS_UINT32 CdbQueryImpuDispTblByImpu(TblSImpuDispatch *pstTblSImpuDispatch, VOS_UINT32 *pulElemIndex);\n\nVOS_INT32 VOS_memcpy_s(VOS_VOID *dest, VOS_UINT32 destMax, const VOS_VOID* src, VOS_UINT32 count) \n{\n    return memcpy_s(dest, count, src, count); \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1093",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jndi.lookupcase;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport javax.naming.InitialContext;\nimport javax.naming.NamingException;\n\n\n@Controller\n@RequestMapping(\"/JndiAttackedLowRMI\")\npublic class JndiAttackedLowRMI {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JndiAttackedLowRMI.class);\n\n    private static final String[] URI_ARRAY = {\"rmi://1.2.3.4/aaa\", \"rmi://5.6.7.8/aaa\"};\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    public void TGT001(@RequestParam String uri) {\n        try {\n            \n            \n            \n            System.setProperty(\"com.sun.jndi.rmi.object.trustURLCodebase\", \"true\");\n            System.setProperty(\"com.sun.jndi.ldap.object.trustURLCodebase\", \"true\");\n            \n            \n            new InitialContext().lookup(uri); \n        } catch (NamingException e) {\n            LOGGER.info(\"TGT001: Lookup failed\");\n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\nvoid ReleaseMemory(int *pointer)\n{\n    if (pointer != NULL) {\n        free(pointer);\n        pointer = NULL;  \n    }\n}\n\n\n#define FREE_MEMORY(pointer)     \\\n    do {                         \\\n        if (NULL != (pointer)) { \\\n            (void)free(pointer); \\\n            (pointer) = NULL;    \\\n        }                        \\\n    } while (0)\n\n\n\n\n\n\n\nvoid TestMemoryAllocation()\n{\n    printf(\"\\nTesting AllocateAndFreeBad:\\n\");\n    int resultBad = AllocateAndFreeBad();\n    printf(\"Result: %s\\n\", resultBad == RETURN_OK ? \"Success\" : \"Failure\");\n\n    printf(\"\\nTesting AllocateAndFreeGood:\\n\");\n    int resultGood = AllocateAndFreeGood();\n    printf(\"Result: %s\\n\", resultGood == RETURN_OK ? \"Success\" : \"Failure\");\n}\n\nint allocateandfreeTGT(void)\n{\n    int *pointer = (int *)SAFE_MALLOC(sizeof(int));\n    if (pointer == NULL) {\n        printf(\"Error: Failed to allocate memory\\n\");\n        return RETURN_ERROR;\n    }\n    \n    FREE_MEMORY(pointer);\n    FREE_MEMORY(pointer);  \n    return RETURN_OK;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1070",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.redos.jdkstring;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n\n@RestController\n@RequestMapping(value = \"/JdkStringWithConcatenation\")\npublic class JdkStringWithConcatenation {\n    \n    public static final String EMAIL_REGEX =\n        \"^([a-zA-Z0-9])(([\\\\-.]|[_]+)?([a-zA-Z0-9]+))*(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$\";\n\n    \n    public static final String EMAIL_SUFFIX_REGEX = \"(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$\";\n\n    private static final Logger LOGGER = LoggerFactory.getLogger(JdkStringWithConcatenation.class);\n\n    \n    \n    @GetMapping(value = \"/TGT\")\n    public String TGT(String emailAccountFormat, String email) {\n        \n        \n        \n        String emailRegex = emailAccountFormat + EMAIL_SUFFIX_REGEX;\n        if (!email.matches(emailRegex)) { \n            LOGGER.info(\"email format is illegal!\");\n            return \"email format is illegal!\";\n        }\n\n        LOGGER.info(\"start business!\");\n        \n\n        return \"business success!\";\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1101",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.sqlconcatenation;\n\nimport com.huawei.bme.das.CmdRequest;\nimport com.huawei.bme.das.DASCommand;\nimport com.huawei.bme.das.DASCommandFactory;\nimport com.huawei.bme.das.DataParam;\nimport com.huawei.bme.das.DataSet;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.Collections;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithSqlConcatenation\")\npublic class BmeInjectionWithSqlConcatenation {\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    @ResponseBody\n    public String TGT001(@RequestParam(value = \"name\") String name) {\n        String sql = \"SELECT * FROM  user WHERE name = '\" + name + \"'\";\n        CmdRequest cmdRequest = new CmdRequest();\n        cmdRequest.setSQL(sql); \n\n        DASCommand dasCommand = DASCommandFactory.getDASCommand();\n        DataSet dataSet = dasCommand.execute(cmdRequest).getDataSet(); \n        if (dataSet != null) {\n            if (dataSet.next()) {\n                return dataSet.getString(\"name\");\n            }\n        }\n        return \"\";\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.cmdinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.owasp.esapi.codecs.WindowsCodec;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/CommandInjectionInRuntime\")\npublic class CommandInjectionInRuntime {\n    private static final String IP_IS_NULL = \"ip is null.\";\n\n    private static final String SUCCESS = \"success\";\n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"ip\") String ip) throws IOException {\n        if (Objects.isNull(ip)) {\n            return IP_IS_NULL;\n        }\n\n        \n        String cmd = \"cmd.exe /c ping \" + ip;\n        Runtime runtime = Runtime.getRuntime();\n        Process process = runtime.exec(cmd); \n\n        CommonUtils.showProcessEcho(process);\n        return SUCCESS;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.juel.injectioncase;\n\nimport org.activiti.engine.impl.javax.el.ExpressionFactory;\nimport org.activiti.engine.impl.javax.el.ValueExpression;\nimport org.activiti.engine.impl.juel.ExpressionFactoryImpl;\nimport org.activiti.engine.impl.juel.SimpleContext;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\n\n@Controller\n@RequestMapping(\"/JuelInjection\")\npublic class JuelInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JuelInjection.class);\n\n    private static final String LETTER_DIGIT_REGEX = \"^[0-9]+$\";\n\n    \n    \n\n    \n    \n    @GetMapping(path = \"/TGT001\")\n    public void TGT001(@RequestParam String activeTaskName) {\n        ExpressionFactory expressionFactory = new ExpressionFactoryImpl();\n        SimpleContext simpleContext = new SimpleContext();\n        \n        \n        \n        \n        ValueExpression expression = expressionFactory.createValueExpression(simpleContext, activeTaskName,\n            String.class); \n        Object value = expression.getValue(simpleContext); \n        LOGGER.info(\"old expression is {}, new expression is {} \", activeTaskName, value.toString());\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <stdio.h>\n\n#include \"types.h\"\n\n#define STREAM_TO_UINT8(dst, p) do { \\\n    (dst) = (uint8)(*(p));    \\\n    (p) += 1; \\\n} while (0)\n\n#define STREAM_TO_UINT64(dst, p) do { \\\n    (dst) = (((uint64)(*(p))) + ((((uint64)(*((p) + 1)))) << 8) + \\\n            ((((uint64)(*((p) + 2)))) << 16) +     \\\n            ((((uint64)(*((p) + 3)))) << 24) +     \\\n            ((((uint64)(*((p) + 4)))) << 32) +     \\\n            ((((uint64)(*((p) + 5)))) << 40) +     \\\n            ((((uint64)(*((p) + 6)))) << 48) +     \\\n            ((((uint64)(*((p) + 7)))) << 56));      \\\n    (p) += 8; \\\n} while (0)\n\nstatic uint64 g_arr[8];\n\nvoid outofboundswriteTGT(const uint8* data, uint32 length)\n{\n    if (data == NULL || length <= 0) {\n        return;\n    }\n\n    uint8 num = 0;\n    uint64 id = 0;\n    STREAM_TO_UINT8(num, data);\n    \n    uint32 n = num < 8 ? num : 8;\n    uint32 l = (length - 1) / 8;\n    num = n < l ? n : l;\n    for (uint8 i = 0; i < num; i++) {\n        STREAM_TO_UINT64(id, data);\n        g_arr[i] = id; \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1115",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xee.jdkscene;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\nimport org.springframework.web.multipart.MultipartFile;\nimport org.xml.sax.InputSource;\n\nimport java.io.IOException;\n\nimport javax.xml.xpath.XPath;\nimport javax.xml.xpath.XPathConstants;\nimport javax.xml.xpath.XPathExpression;\nimport javax.xml.xpath.XPathExpressionException;\nimport javax.xml.xpath.XPathFactory;\n\n\n@Controller\n@RequestMapping(value = \"/XEEInXPathExpression\")\npublic class XEEInXPathExpression {\n    private static final String EXPRESSION = \"/student/name\";\n\n    \n    \n    @RequestMapping(value = \"/TGT001\", method = RequestMethod.POST)\n    public void TGT001(MultipartFile file) throws XPathExpressionException, IOException {\n        XPathFactory xPathFactory = XPathFactory.newInstance(); \n        XPath xpath = xPathFactory.newXPath();\n        XPathExpression compiledExpression = xpath.compile(EXPRESSION);\n        InputSource inputSource = new InputSource(file.getInputStream());\n        \n        compiledExpression.evaluate(inputSource, XPathConstants.NODESET); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include \"external_data_common.h\"\n\nvoid Case2(char *ptr, unsigned int ptrlen)\n{\n    u32 uiIndex;\n    SAS_CQ_ENTRY_U *entry = nullptr;\n    u16 ldiot;\n    SCSI_PROC_HANDLE_S *procHandle = nullptr;\n    u8 ucCmplStatus;\n    errno_t errRet;\n    SAS_CQ_PENDING_BUFFER_S *cqPending = SAS_GetSasCqPendingBuf(); \n\n    for (uiIndex = 0; uiIndex < cqPending->PendingNum; uiIndex++) {\n        entry = (SAS_CQ_ENTRY_U *)(&(cqPending->pPendingBuffer[uiIndex]));\n        ldiot = GET_COMP_LDIOT(entry->uiData32[1]);\n        procHandle = &g_stCmdTmHandle[ldiot];  \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1093",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jndi.lookupcase;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport javax.naming.InitialContext;\nimport javax.naming.NamingException;\n\n\n@Controller\n@RequestMapping(\"/JndiAttackedHighRMI\")\npublic class JndiAttackedHighRMI {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JndiAttackedHighRMI.class);\n\n    private static final String[] URI_ARRAY = {\"rmi://1.2.3.4/aaa\", \"rmi://5.6.7.8/aaa\"};\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    public void TGT001(@RequestParam String uri) {\n        try {\n            \n            new InitialContext().lookup(uri); \n        } catch (NamingException e) {\n            LOGGER.info(\"bad002: Lookup failed\");\n        }\n    }\n}"
+  }
+]

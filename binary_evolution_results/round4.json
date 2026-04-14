@@ -1,0 +1,9 @@
+{
+  "round": 4,
+  "accuracy": 0.7545454545454545,
+  "correct": 83,
+  "total": 110,
+  "prompt": "Security code review. Determine: VULNERABLE (missing a safety check) or BENIGN (check present).\n\nCODE:\n```\n{code}\n```\n\nSTEP 1 — Identify the target function:\nFind the function ending in \"TGT\". That is the function to audit.\nIgnore all other helper functions (they exist for comparison, not as the audit target).\n\nSTEP 2 — Find the SINGLE critical operation in the TGT function:\nWhat is the ONE security-sensitive operation this function performs?\n(e.g., \"allocates memory based on user input\", \"dereferences a pointer\", \"calls exec with user string\")\n\nSTEP 3 — Is there a guard for that operation?\nA guard is: null check before deref, bounds check before array access, size validation before alloc,\ninput sanitization before exec/eval, signed/overflow check before arithmetic-as-size.\n\nDoes the TGT function have a guard? YES or NO?\n\nSTEP 4 — Verdict:\n- Guard present (YES) → BENIGN\n- Guard absent (NO) → VULNERABLE\n- No clear single critical operation found → BENIGN (default)\n- std::vector<bool> used in C++ → VULNERABLE\n\nRespond with JSON only:\n{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}\nor\n{\"prediction\": \"BENIGN\", \"confidence\": 0.85}",
+  "wrong_count": 27,
+  "errors": []
+}

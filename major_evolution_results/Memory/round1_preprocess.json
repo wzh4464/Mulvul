@@ -1,0 +1,343 @@
+{
+  "round": "1+preprocess",
+  "major": "Memory",
+  "accuracy": 0.8051948051948052,
+  "correct": 124,
+  "total": 154,
+  "fp_count": 15,
+  "fn_count": 15,
+  "fp_samples": [
+    {
+      "idx": 5,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.95,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_TBL_PMOFC_REC_NUM 1000\n#define MAX_PMOF"
+    },
+    {
+      "idx": 14,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"header_type.h\"\n\nvoid *TestFu"
+    },
+    {
+      "idx": 27,
+      "cwd": "CWD-1038",
+      "major": "Input",
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.95,
+      "correct": false,
+      "code_snippet": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Drv1 {\n    int para;\n    void (*func)(int para);\n};\n\nstruct RtMsg {\n    i"
+    },
+    {
+      "idx": 34,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <stdint.h>\n\n\n\n\ntypedef struct {\n    void *buff1;\n    void *buff2;\n} StructA;\n\nuint32_t TGT("
+    },
+    {
+      "idx": 72,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.97,
+      "correct": false,
+      "code_snippet": "#include \"external_data_common.h\"\n\n\nstruct BuffWithLen {\n    char buff[10];\n    int len;\n};\n\nint process_buffer(char *ni"
+    },
+    {
+      "idx": 74,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define MAX_SIZE 10\n\ntypedef struct {\n    char data[MAX_SIZE];\n"
+    },
+    {
+      "idx": 75,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include \"external_data_common.h\"\n\n\n\n\nvoid TestFunc()\n{\n    \n    char charNicName[10];\n    ProcessBuffer(charNicName, 10"
+    },
+    {
+      "idx": 91,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.97,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_IMPU_LEN 128\n#define MAX_TRACE_USER_HAN"
+    },
+    {
+      "idx": 94,
+      "cwd": "CWD-1006",
+      "major": "Logic",
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.99,
+      "correct": false,
+      "code_snippet": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state"
+    },
+    {
+      "idx": 96,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include \"common/public.h\"\n\n#define MAX_ARRAY_SIZE 10\n\n\n\n\n\nvoid TestInitializeArray()\n{\n    printf(\"Testing InitializeAr"
+    },
+    {
+      "idx": 100,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.93,
+      "correct": false,
+      "code_snippet": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"header_type.h\"\n\nvoid Case21("
+    },
+    {
+      "idx": 106,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.96,
+      "correct": false,
+      "code_snippet": "#include <stdint.h>\n#include <securec.h>\n\n\nextern void *JSON_ObjNewObj();\nextern uint32_t JSON_ObjAddKeyValueString(void"
+    },
+    {
+      "idx": 112,
+      "cwd": "CWD-1040",
+      "major": "Input",
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.97,
+      "correct": false,
+      "code_snippet": "#include \"securec.h\"\n#include <stdint.h>\n#include \"basic_data_type.h\"\n\n\n#define XPON_PROF_NAME_LEN 32\n\ntypedef struct {\n"
+    },
+    {
+      "idx": 123,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <stdio.h>\n#include <stdint.h>\n\n\ntypedef uint16_t VOS_UINT16;\ntypedef uint32_t VOS_UINT32;\n#define VOS_NULL_PTR "
+    },
+    {
+      "idx": 134,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#include <stdlib.h>\n#define VOID void\n\n"
+    }
+  ],
+  "fn_samples": [
+    {
+      "idx": 1,
+      "cwd": "CWD-1015",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include \"securec.h\"\n#include <stdint.h>\n\n\nstruct HSsnmpv3VacmAccessT {\n    uint8_t *vacmAccessContextPrefix;\n    uint32"
+    },
+    {
+      "idx": 20,
+      "cwd": "CWD-1016",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.93,
+      "correct": false,
+      "code_snippet": "#include \"securec.h\"\n#include \"basic_data_type.h\"\n\nstatic int FuncIndexA()\n{\n    return 10;\n}\n\nvoid casestrcpysTGT(char "
+    },
+    {
+      "idx": 32,
+      "cwd": "CWD-1019",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <cstdint>\n#include <map>\n#include <functional>\nusing namespace std;\n\n\nclass DrvOpmImpl {\npublic:\n    int m_valu"
+    },
+    {
+      "idx": 39,
+      "cwd": "CWD-1022",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.96,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_WARNING_DESCRIPTION_LEN 128\n#define CHR"
+    },
+    {
+      "idx": 41,
+      "cwd": "CWD-1030",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.99,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include \"basic_data_type.h\"\n\nvoid dereferenceptrTGT(char *p)\n{\n    if (p == NULL) {\n        return;"
+    },
+    {
+      "idx": 43,
+      "cwd": "CWD-1002",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <iostream>\n#include <vector>\n#include <string>\n#include <cstdint>\n\n#include \"external_data_common.h\"\n\nusing nam"
+    },
+    {
+      "idx": 45,
+      "cwd": "CWD-1030",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <malloc.h>\n#include \"basic_data_type.h\"\n\nvoid freeptrTGT(char *p)\n{\n    if (p == NULL) {\n        return;\n    }\n"
+    },
+    {
+      "idx": 73,
+      "cwd": "CWD-1002",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <stdint.h>\n#include <vector>\n#include <string>\n#include \"securec.h\"\n\nusing namespace std;\n\n\n\n\n\nconst uint32_t M"
+    },
+    {
+      "idx": 80,
+      "cwd": "CWD-1009",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.96,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n\n#define IPV4_ADDR_LEN 4\n#define IPV6_ADDR_LEN 16\n\n"
+    },
+    {
+      "idx": 87,
+      "cwd": "CWD-1009",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.95,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_CDB_IMPU_LEN   64\n#define MAX_IMPU_LEN "
+    },
+    {
+      "idx": 92,
+      "cwd": "CWD-1026",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "class PtrMgr {\npublic:\n    int *m_ptr;\n    PtrMgr()\n    {\n        m_ptr = new int[1];\n    }\n    virtual ~PtrMgr()\n    {\n"
+    },
+    {
+      "idx": 118,
+      "cwd": "CWD-1015",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.96,
+      "correct": false,
+      "code_snippet": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define EAM_PORT_LEN 64\n#define DRV_PORT_LEN 32\n\n\n\n\n\n\n\nvoid Tes"
+    },
+    {
+      "idx": 126,
+      "cwd": "CWD-1026",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#ifndef HEAD_H\n#define HEAD_H\n#include "
+    },
+    {
+      "idx": 128,
+      "cwd": "CWD-1027",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n\nint callocreleaseTGT(char *nicname, unsigned int nicnamelength)\n{\n    char *ch"
+    },
+    {
+      "idx": 147,
+      "cwd": "CWD-1026",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <stdio.h>\n#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\nVOS_CHAR *g_n29Str = VOS_NULL_PT"
+    }
+  ]
+}

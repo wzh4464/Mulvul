@@ -1,0 +1,9 @@
+{
+  "round": 2,
+  "accuracy": 0.6545454545454545,
+  "correct": 72,
+  "total": 110,
+  "prompt": "You are a security code auditor analyzing code from a vulnerability benchmark.\n\nCODE:\n```\n{code}\n```\n\nIMPORTANT CONTEXT:\n- This benchmark has paired vulnerable/benign versions of each function.\n- Functions named \"...Bad\", \"...Unsafe\" are TEST HELPERS — their presence alone is NOT evidence.\n- The primary subject is the function named \"...TGT\" (target) — that is what you must analyze.\n- A benign TGT has the FIX applied (proper checks). A vulnerable TGT is MISSING the fix.\n\nSTEP 1 — Find the TGT function (ends in \"TGT\"):\nIf found, this is your ONLY analysis target.\nIf not found, focus on the main logic function (not test harness functions).\n\nSTEP 2 — Analyze TGT function's OWN code logic:\n- Does it check for null/nullptr before dereferencing a pointer? (missing → VULNERABLE)\n- Does it validate array indices before access? (missing → VULNERABLE)\n- Does it validate buffer sizes before copy/write? (missing → VULNERABLE)\n- Does it check for integer overflow before using values as sizes? (missing → VULNERABLE)\n- For Java: Does it sanitize/validate user input before passing to exec/eval/xpath? (missing → VULNERABLE)\n- Does it use std::vector<bool> with element access? (yes → VULNERABLE: proxy-reference bug)\n\nSTEP 3 — Verdict:\nVULNERABLE: TGT function is clearly missing a required safety check.\nBENIGN: TGT function has the necessary checks in place OR no clear flaw found.\nDefault to BENIGN when uncertain.\n\nRespond with JSON only:\n{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}\nor\n{\"prediction\": \"BENIGN\", \"confidence\": 0.85}",
+  "wrong_count": 38,
+  "errors": []
+}

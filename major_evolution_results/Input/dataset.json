@@ -1,0 +1,156 @@
+[
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1039",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n#include \"external_data_common.h\"\n\n\nconst DWORD DMM_MSG_LEN = 4;\nconstexpr uint32_t SERVICE_TYPE_YANGDS_DB_CHANGE_LEN = (sizeof(uint32_t)) + 100;\n\nDWORD DMM_GetMsgDataLength(void *, uint32_t &)\n{\n    return 0;\n}\n\nvoid ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    \n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    \n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo1 = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  \n\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1038",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct AppConfig {\n    int v2;\n    int v3;\n    int v4;\n    int v5;\n    int status;\n};\n\n\n\nstatic void Op1(struct AppConfig *configInfo)\n{\n    if (configInfo == NULL) {\n        return;\n    }\n    printf(\"%d\", configInfo->status);\n}\n\nvoid overreadforstructTGT(void *param)\n{\n    if (param == NULL) {\n        return;\n    }\n    int subcmd = *((int*)param);\n    struct AppConfig *cfgInfo = (struct AppConfig*)((int*)param + 1); \n    switch (subcmd) {\n        case 0:\n            Op1(cfgInfo);\n            break;\n        case 1:\n            break;\n        default:\n            break;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\ntypedef struct {\n    int32_t fieldA;\n    int32_t fieldB;\n} Block;\n\n\nBlock *g_globalBlock = NULL;\n\n\n\n\n\nvoid TestGlobalVariableInitBad(void)\n{\n    InitializeGlobalBlockBad();  \n    if (g_globalBlock == NULL) {\n        printf(\"The global block initialize failed.\\n\");\n        return;\n    }\n\n    if (g_globalBlock->fieldA == 123 && g_globalBlock->fieldB == 456) {\n        printf(\"The global block initialize succeeded.\\n\");\n    } else {\n        printf(\"The global block initialize failed.\\n\");\n    }\n}\n\n\n\n\n\nvoid TestGlobalVariableInitGood(void)\n{\n    InitializeGlobalBlockGood();  \n    if (g_globalBlock == NULL) {\n        printf(\"The global block initialize failed.\\n\");\n        return;\n    }\n\n    if (g_globalBlock->fieldA == 123 && g_globalBlock->fieldB == 456) {\n        printf(\"The global block initialize succeeded.\\n\");\n    } else {\n        printf(\"The global block initialize failed.\\n\");\n    }\n\n    SAFE_FREE(g_globalBlock);\n}\n\nvoid TestGlobalVariableInitialization()\n{\n    printf(\"\\nTesting TestGlobalVariableInitBad:\\n\");\n    TestGlobalVariableInitBad();\n\n    printf(\"\\nTesting TestGlobalVariableInitGood:\\n\");\n    TestGlobalVariableInitGood();\n}\n\nvoid initializeglobalblockTGT(void)\n{\n    \n    g_globalBlock = (Block *)SAFE_MALLOC(sizeof(Block));  \n    if (g_globalBlock == NULL) {\n        fprintf(stderr, \"Memory allocation failed.\\n\");\n        return;\n    }\n    g_globalBlock->fieldA = 123;\n    g_globalBlock->fieldB = 456;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nusing namespace std;\n\nvoid structmemberstrlenTGT(crm_cmd_s *pcmd) \n{\n    uint32_t offset = 0;\n    WORD bid = 0;\n    if (pCmd == nullptr || pCmd->pbyPara == nullptr) {\n        return;\n    }\n    BYTE *pbyInPara = pCmd->pbyPara; \n    \n    DWORD dwLen = strlen(reinterpret_cast<CHAR *>(&pbyInPara[2]));  \n\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include \"securec.h\"\n#include \"basic_data_type.h\"\n\nusing namespace std;\n\n\nconstexpr int MAX_STRING_LENGTH = 26;\n\n\n\nuint32_t Case4Bad(const std::string &sourceString)\n{\n    char buf[MAX_STRING_LENGTH];\n    \n    errno_t err = memcpy_s(buf, sizeof(buf), sourceString.data(), sourceString.length());\n    if (err != EOK) {\n        return 1;\n    }\n\n    PrintContentBad(buf);\n    return 0;\n}\n\n\n\nuint32_t Case4Good(const std::string &sourceString)\n{\n    char buf[MAX_STRING_LENGTH];\n    \n    errno_t err = strncpy_s(buf, sizeof(buf), sourceString.data(), sourceString.length());\n    if (err != EOK) {\n        return 1;\n    }\n\n    PrintContentGood(buf);\n    return 0;\n}\n\n\n\nuint32_t Case4Good2(const std::string &sourceString)\n{\n    char buf[MAX_STRING_LENGTH];\n    errno_t err = memcpy_s(buf, sizeof(buf), sourceString.data(), sourceString.length());\n    if (err != EOK) {\n        return 1;\n    }\n\n    \n    buf[MAX_STRING_LENGTH - 1] = '\\0';\n\n    PrintContentGood2(buf);\n    return 0;\n}\n\nstatic void printcontentTGT(char *buf)\n{\n    printf(\"buf content: %s\\n\", buf);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1038",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"basic_data_type.h\"\n\n\ntypedef struct {\n    uint32_t version;\n    char *msgHead;\n    char *msgValue;\n    uint32_t msgLen;\n} MSG_STRUCT;\n\nuint32_t CheckMsgLength(MSG_STRUCT *msg, uint32_t msgLen)\n{\n    if (msg->msgLen < msgLen + sizeof(uint32_t)) {\n        return 1;\n    }\n    return 0;\n}\n\nchar *convertmsgwithoutlengthcheck1TGT(void *msg, uint32_t msglen)\n{\n    MSG_STRUCT *tlv;\n    \n    tlv = (MSG_STRUCT *)msg;  \n    uint32_t flag = CheckMsgLength(tlv, msgLen);\n    if (flag == 1) {\n        printf(\"msgLen error\\n\");\n        return nullptr;\n    }\n    char *msgValue = tlv->msgValue;  \n    return msgValue;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nusing namespace std;\n\nvoid fetchdirshowslotidTGT(cli_oid_s **poidlist, uint32_t dwoidnum) \n{\n    if (pOidList == nullptr) {\n        return;\n    }\n\n    for (uint32_t i = 0; i < dwOidNum; ++i) {\n        uint16_t shelf_id = 0;\n        uint16_t slot_id = 0;\n        CLI_OID_S *pOid = pOidList[i];\n        if (pOid == nullptr || pOid->pbyPara == nullptr) {\n            continue;\n        }\n\n        \n        int ret = sscanf_s(reinterpret_cast<char *>(pOid->pbyPara), \"shelf%hu/%hu\", &shelf_id, &slot_id); \n        if (ret != 2) {\n            return;\n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <malloc.h>\n#include <iostream>\n\n\nvoid *VW_Malloc(long size)\n{\n    char *buf = NULL;\n\n    if (0 >= size) {\n        return NULL;\n    }\n\n    buf = (char *)malloc((unsigned long)size);\n    if (NULL == buf) {\n        return NULL;\n    }\n\n    return buf;\n}\n\nvoid VW_Free(void *buff)\n{\n    if (NULL != buff) {\n        free(buff);\n    }\n}\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid NewLenthNotCheck4Bood()\n{\n    int len;\n    std::cin >> len;\n\n    \n    if (len <= 0 || len > MAX_COUNT) {\n        return;\n    }\n\n    char *p = (char *)VW_Malloc(len);  \n    p[0] = 1;\n    VW_Free(p);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1038",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#ifndef HEAD_H\n#define HEAD_H\n#include <stdint.h>\n\nint GetParamApi(int *param);\n#endif\n\n\n\n\n\n\n#include <stdio.h>\n#include <securec.h>\n#include \"head.h\"\n\n\n\n\n\n\n\n\n#include <stdlib.h>\n\nint GetParamApi(int *param)\n{\n    if (param == NULL) {\n        return -1;\n    }\n\n    *param = 10;\n\n    return 0;\n}\n\nint TGTcase(uint16_t *param)\n{\n    int ret = GetParamApi((int *)&param); \n    if (ret == -1) {\n        return -1; \n    }\n\n    return 0; \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInDocType {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInDocType.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/DocType_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String systemID) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        \n        String safeSystemID = HWEncoder.encodeForXML(systemID);\n        document.addDocType(\"key\", \"\", safeSystemID); \n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <securec.h>\n\n\n#define MODULE_ID_ADDR 0\n#define RESULT_BUFFER_SIZE 16\n#define DEVICE_TYPE 0xe\n#define DATA_BUFFER_SIZE 3\n\ntypedef unsigned int UINT32;\ntypedef unsigned char UCHAR;\ntypedef char CHAR;\ntypedef void VOID;\n\ntypedef struct {\n    UCHAR myAddr;\n} DeviceInfo;\n\nVOID TGTcase(uchar *pdata, uchar length, deviceinfo deviceinfo)\n{\n    UCHAR dataBuffer[DATA_BUFFER_SIZE] = {0};\n    CHAR resultBuffer[RESULT_BUFFER_SIZE] = {0};\n    UINT32 offset = 0;\n\n    offset += snprintf_truncated_s(resultBuffer + offset, RESULT_BUFFER_SIZE - offset, \"20\");\n\n    dataBuffer[0] = pData[deviceInfo.myAddr * length + (length - 1)];\n    dataBuffer[1] = pData[(deviceInfo.myAddr + 1) * length + (length - 1)];\n    \n    offset += snprintf_truncated_s(resultBuffer + offset, RESULT_BUFFER_SIZE - offset, \"%s\", dataBuffer); \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\nchar g_charNicName[10] = {0};\n\nint freestackmemoryTGTcase2(char *nicname, unsigned int nicnamelength)\n{\n    \n    g_charNicName[1] = nicName[nicNameLength - 1];\n    \n    free(g_charNicName);  \n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <vector>\n#include <iostream>\n\nusing namespace std;\n\n\nstd::vector<int>::iterator FindValue(std::vector<int> &vec, int value)\n{\n    for (auto it = vec.begin(); it != vec.end(); ++it) {\n        if (*it == value) {\n            return it;\n        }\n    }\n    return vec.end();  \n}\n\nvoid invaliditerator4TGT()\n{\n    std::vector<int> vec = {1, 2, 3, 4, 5};\n    int value = 6;\n    auto it = FindValue(vec, value);\n    if (it == vec.end()) {\n        return;\n    }\n\n    std::cout << \"Value \" << *it << \" not found\" << std::endl;  \n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1016",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define HEADER_LEN (sizeof(VOS_UINT16) + sizeof(VOS_UINT16))\n#define MAX_IMSI_LEN_15 15\n#define MAX_HLRGTNUM_LEN_16 16\n\n#pragma pack(1)\ntypedef struct Map_Cc_Msg {\n    VOS_UINT8 msgType;\n    VOS_UINT32 ieLen;\n    VOS_UINT8 ies[0];\n} MapScMsg;\n\n#define ELEMENT_HEADER \\\n    VOS_UINT16 ie;     \\\n    VOS_UINT16 elength\n\ntypedef struct {\n    ELEMENT_HEADER;\n    VOS_UINT8 IMSI[MAX_IMSI_LEN_15 + 1];\n} MapIeIMSI;\n#define MAP_IE_IMSI_LEN (sizeof(MapIeIMSI) - HEADER_LEN)\n\ntypedef struct {\n    ELEMENT_HEADER;\n    VOS_UINT8 aucImeisv[MAX_HLRGTNUM_LEN_16 + 1];\n} MapIeImeisv;\n#define MAP_IE_IMEI_LEN (sizeof(MapIeImeisv) - HEADER_LEN)\n\ntypedef struct _MAP_Support_MTRF {\n    ELEMENT_HEADER;\n    VOS_UINT8 ucSupportMtrf;\n} MapIeSupportMTRF;\n#define MAP_IE_SUPPORT_MTRF_LEN (sizeof(MapIeSupportMTRF) - HEADER_LEN)\n\ntypedef struct {\n    MapIeIMSI stIeIMSI;\n    MapIeImeisv stIeIMEISV;\n} SC_MAPLocReq;\n#pragma pack()\n\n\n\n\n\n\n\n\n\n\nVOS_UINT32 SC_SendLocationToMapReqBad()\n{\n    VOS_UINT16 usMsgLen = VOS_NULL;\n    MapScMsg *pstMapMsg = VOS_NULL_PTR;\n\n    \n    usMsgLen = (sizeof(MapScMsg) + sizeof(SC_MAPLocReq));\n    pstMapMsg = (MapScMsg *)VOS_MemAlloc(PID_TEST, DYNAMIC_MEM_PT, usMsgLen);\n    PUB_CONDITION_RET(VOS_NULL_PTR == pstMapMsg, VOS_ERR);\n\n    usMsgLen = 0;\n    (VOS_VOID) SC_MakeUpdateLocationMsgBodyBad(pstMapMsg, &usMsgLen);\n\n    pstMapMsg->ieLen = usMsgLen;\n\n    VOS_MemFree(PID_TEST, pstMapMsg);\n    return VOS_OK;\n}\n\n\n\n\n\n\n\n\n\nVOS_UINT32 SC_SendLocationToMapReqGood()\n{\n    VOS_UINT16 usMsgLen = VOS_NULL;\n    MapScMsg *pstMapMsg = VOS_NULL_PTR;\n    VOS_UINT16 maxIeLen = VOS_NULL;\n\n    \n    usMsgLen = (sizeof(MapScMsg) + sizeof(SC_MAPLocReq));\n    pstMapMsg = (MapScMsg *)VOS_MemAlloc(PID_TEST, DYNAMIC_MEM_PT, usMsgLen);\n    PUB_CONDITION_RET(VOS_NULL_PTR == pstMapMsg, VOS_ERR);\n\n    usMsgLen = 0;\n    maxIeLen = sizeof(SC_MAPLocReq);\n    (VOS_VOID) SC_MakeUpdateLocationMsgBodyGood(pstMapMsg, &usMsgLen, maxIeLen);\n\n    pstMapMsg->ieLen = usMsgLen;\n\n    VOS_MemFree(PID_TEST, pstMapMsg);\n    return VOS_OK;\n}\n\nVOS_BOOL sc_makeupdatelocationmsgbodyTGT(mapscmsg *pstmapmsg, vos_uint16 *pusmsglen)\n{\n    SC_MakeImsiForReportBad(pstMapMsg, pusMsgLen); \n    SC_AddMapImeisvToUpdateLoctionBad(pstMapMsg, pusMsgLen); \n    \n    SC_MakeIeMtrfBad(pstMapMsg, pusMsgLen); \n    return VOS_TRUE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.envinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.regex.Pattern;\n\n\n@RestController\n@RequestMapping(value = \"/EnvCommandInjectionInProcessBuilder\")\npublic class EnvCommandInjectionInProcessBuilder {\n    \n    \n\n    \n    \n\n    private boolean checkEnv(String envKey, String envValue) {\n        \n        List<String> whiteList = Arrays.asList(\"env1\", \"env2\", \"env3\");\n        \n        if (!whiteList.contains(envKey)) {\n            return false;\n        }\n        \n        Pattern pattern = Pattern.compile(\"^[0-9a-zA-Z_]+$\");\n        return pattern.matcher(envValue).matches();\n    }\n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"envKey\") String envKey, @RequestParam(name = \"envValue\") String envValue)\n        throws IOException {\n        List<String> safeComm = new ArrayList<>();\n        safeComm.add(\"/bin/bash\");\n        safeComm.add(\"id\");\n        ProcessBuilder processBuilder = new ProcessBuilder(safeComm);\n        processBuilder.redirectErrorStream(true);\n\n        \n        \n        \n        Map<String, String> envs = new HashMap<>();\n        envs.put(envKey, envValue);\n        processBuilder.environment().putAll(envs); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return \"success\";\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define MAX_ARRAY_SIZE 10\n\n\n\n\n\nvoid TestInitializeArray()\n{\n    printf(\"Testing InitializeArrayBad:\\n\");\n    InitializeArrayBad(MAX_ARRAY_SIZE - 1);\n\n    printf(\"\\nTesting InitializeArrayGood:\\n\");\n    InitializeArrayGood(MAX_ARRAY_SIZE - 1);\n}\n\nint32_t initializearrayTGT(uint16_t start)\n{\n    if (start >= MAX_ARRAY_SIZE) {\n        printf(\"Error: Start index out of bounds\\n\");\n        return -1;\n    }\n\n    uint16_t arrayData[MAX_ARRAY_SIZE] = { 0 };\n    uint16_t index = start;\n    while (index--) {  \n        if (index - 1 < 0 || index - 1 >= MAX_ARRAY_SIZE) {\n            printf(\"Error: Array index out of bounds\\n\");\n            break;\n        }\n        arrayData[index - 1] = index;  \n        printf(\"Set arrayData[%u] = %u\\n\", index - 1, index);\n    }\n\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\n\n\n\n\n\nvoid TestVectorElementAccess()\n{\n    std::vector<int> data = { 1, 2, 3, 4, 5 };\n\n    std::cout << \"Testing AccessVectorElementBad:\" << std::endl;\n    int unsafeValue = AccessVectorElementBad(data);\n    std::cout << \"Unsafe access value: \" << unsafeValue << std::endl;\n\n    std::cout << \"Testing AccessVectorElementGood:\" << std::endl;\n    int safeValue = AccessVectorElementGood(data);\n    std::cout << \"Safe access value: \" << safeValue << std::endl;\n}\n\nint accessvectorelementTGT(const std::vector<int> &data)\n{\n    int index = 5;\n    int value = 0;\n\n    if (index < data.size()) {\n        value = data[index];  \n    } else {\n        std::cerr << \"Index out of bounds, access prevented.\" << std::endl;\n    }\n\n    return value;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1038",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Drv1 {\n    int para;\n    void (*func)(int para);\n};\n\nstruct RtMsg {\n    int other1;\n    int other2;\n    struct Drv1 mydrv;\n};\n\nvoid overreadforstructTGT(void *msg)\n{\n    if (msg == NULL) {\n        return;\n    }\n    struct RtMsg *rt = (struct RtMsg*)(msg);\n    rt->mydrv.func(rt->mydrv.para); \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"securec.h\"\n#include <stdint.h>\n#include \"basic_data_type.h\"\n\n\n#define XPON_PROF_NAME_LEN 32\n\ntypedef struct {\n    uint8_t ucPotsNum;\n    uint8_t ucEthPortNum;\n    uint8_t ucVdslPortNum;\n    char szProfDisc[XPON_PROF_NAME_LEN + 1];\n} XPONPROF_SRVPROF_COMMON_S;\n\n\n\nuint32_t StringInitBad(XPONPROF_SRVPROF_COMMON_S *record)\n{\n    if (record == NULL) {\n        return RET_ERR;\n    }\n\n    XPONPROF_SRVPROF_COMMON_S dbRecord;\n\n    \n    (void)memset_s(&dbRecord, sizeof(dbRecord), UINT8_MAX, sizeof(dbRecord));\n\n    return XPONPROF_IfDdmSrvProfDataChangeBad(&dbRecord, record);\n}\n\n\n\nuint32_t StringInitGood(XPONPROF_SRVPROF_COMMON_S *record)\n{\n    if (record == NULL) {\n        return RET_ERR;\n    }\n\n    XPONPROF_SRVPROF_COMMON_S dbRecord;\n\n    \n    (void)memset_s(&dbRecord, sizeof(dbRecord), 0, sizeof(dbRecord));\n\n    return XPONPROF_IfDdmSrvProfDataChangeGood(&dbRecord, record);\n}\n\n\n\nuint32_t StringInitGood2(XPONPROF_SRVPROF_COMMON_S *record)\n{\n    if (record == NULL) {\n        return RET_ERR;\n    }\n\n    XPONPROF_SRVPROF_COMMON_S dbRecord;\n\n    (void)memset_s(&dbRecord, sizeof(dbRecord), UINT8_MAX, sizeof(dbRecord));\n\n    \n    dbRecord.szProfDisc[XPON_PROF_NAME_LEN] = '\\0';\n\n    return XPONPROF_IfDdmSrvProfDataChangeGood2(&dbRecord, record);\n}\n\nstatic uint32_t xponprof_ifddmsrvprofdatachangeTGT(xponprof_srvprof_common_s *olddata, xponprof_srvprof_common_s *newdata)\n{\n    if (strcmp(oldData->szProfDisc, newData->szProfDisc) != 0) {  \n        return 0;\n    }\n\n    return 1;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1038",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdint.h>\n\n\ntypedef uint16_t VOS_UINT16;\ntypedef uint32_t VOS_UINT32;\n#define VOS_NULL_PTR NULL\n#define IPV4_PROTOCOL_TCP 6\n#define IPV4_PROTOCOL_UDP 17\n#define PS_TRUE 1\n#define PS_FALSE 0\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint8_t  verIhl;        \n    uint8_t  tos;            \n    uint16_t totalLength;   \n    uint16_t id;             \n    uint16_t fragOffs;      \n    uint8_t  ttl;            \n    uint8_t  protocol;       \n    uint16_t checksum;       \n    uint32_t srcAddr;       \n    uint32_t dstAddr;       \n} IPV4_Hdr;\n#pragma pack(pop)\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint16_t srcPort;       \n    uint16_t dstPort;       \n    uint32_t seqNum;        \n    uint32_t ackNum;        \n    uint8_t  dataOffset;    \n    uint8_t  flags;          \n    uint16_t window;         \n    uint16_t checksum;       \n    uint16_t urgentPtr;     \n} TCP_Hdr;\n#pragma pack(pop)\n\nstruct XXX_IpInfo {\n    VOS_UINT16 protocol;\n    VOS_UINT16 dstPort;\n};\n\n\n#define IP_NTOHS(val) ((((val) >> 8) & 0x00FF) | (((val) << 8) & 0xFF00))\n\n#define IPV4_HDR_LEN 20\n\nVOS_UINT32 xxxdecodebstdlpacketTGT(vos_uint32 *ippktaddr, struct xxx_ipinfo *ipinfo)\n{\n    IPV4_Hdr *ipv4Hdr = VOS_NULL_PTR;\n    TCP_Hdr *tcpHdr = VOS_NULL_PTR;\n\n    ipv4Hdr = (IPV4_Hdr *)(ipPktAddr);\n    \n    if ((ipv4Hdr->protocol != IPV4_PROTOCOL_TCP) && (ipv4Hdr->protocol != IPV4_PROTOCOL_UDP)) {\n        return PS_FALSE;\n    }\n    \n    ipInfo->protocol = ipv4Hdr->protocol;\n\n    tcpHdr = (TCP_Hdr *)(ipPktAddr + IPV4_HDR_LEN);\n    \n    \n    ipInfo->dstPort = IP_NTOHS(tcpHdr->dstPort); \n\n    return PS_TRUE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"securec.h\"\n#include \"basic_data_type.h\"\n\nstatic void FuncIndex(int *index)\n{\n    *index = 10;\n    return;\n}\n\nvoid casesprintfsTGT(char *str, size_t strlen) \n{\n    if (str == NULL) {\n        return;\n    }\n    int index = 0;\n    FuncIndex(&index);  \n\n    \n    \n    \n    if (index <= 0 || index > strLen) {\n        return;\n    }\n\n    int32_t ret = sprintf_s(str, index, \"xxxxxxxxxxxxx\");  \n    if (ret != -1) {\n        return;\n    }\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1002",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid newlenthnotcheck2TGT()\n{\n    int len;\n    std::cin >> len; \n    \n    char *p = new char[len]; \n    p[0] = 1;\n    delete[] p;\n}"
+  }
+]

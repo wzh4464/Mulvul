@@ -1,0 +1,61 @@
+{
+  "round": 1,
+  "major": "Injection",
+  "accuracy": 0.9354838709677419,
+  "correct": 58,
+  "total": 62,
+  "wrong_count": 4,
+  "fp_count": 1,
+  "fn_count": 3,
+  "elapsed_s": 9.1,
+  "prompt": "You are an injection vulnerability detector for C/C++ and Java code.\n\nDetermine whether the TARGET (TGT) function contains an INJECTION vulnerability.\n\nInjection vulnerabilities include:\n- OS command injection: user-controlled data passed to exec(), system(), Runtime.exec(),\n  ProcessBuilder, popen() without sanitization\n- SQL injection: user input concatenated into SQL query string\n- XPath injection: user input embedded in XPath expression\n- XML/XSLT injection: user-controlled XML structure or stylesheet\n- Expression Language injection (Spring EL, OGNL, Unified EL): user input in EL evaluation\n- Template injection (Velocity, Thymeleaf, FreeMarker): user input in template rendering\n- Format string injection: user-controlled format string in printf/sprintf/fprintf family\n- JNDI injection: user input in InitialContext.lookup() or similar\n- XML External Entity (XXE/XEE): user-controlled XML with entity expansion\n\nRules:\n1. TGT function name (even \"Bad\", \"Unsafe\", \"without*\") is a benchmark label, not evidence.\n2. If user input is properly sanitized, validated, or escaped before reaching the sink — BENIGN.\n3. If the injection sink is reached only from a hardcoded literal — BENIGN.\n4. If the sink receives data from a server-side index (integer field, not user string) — BENIGN.\n\nCODE:\n```\n{code}\n```\n\nRespond with JSON only:\n{{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}}\nor\n{{\"prediction\": \"BENIGN\", \"confidence\": 0.8}}",
+  "fp_samples": [
+    {
+      "idx": 3,
+      "cwd": null,
+      "major": null,
+      "lang": "java",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.96,
+      "correct": false,
+      "code_snippet": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.a"
+    }
+  ],
+  "fn_samples": [
+    {
+      "idx": 6,
+      "cwd": "CWD-1070",
+      "major": "Injection",
+      "lang": "java",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.96,
+      "correct": false,
+      "code_snippet": "package com.huawei.cwd.redos.jdkregex;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframew"
+    },
+    {
+      "idx": 23,
+      "cwd": "CWD-1070",
+      "major": "Injection",
+      "lang": "java",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.97,
+      "correct": false,
+      "code_snippet": "package com.huawei.cwd.redos.jdkregex;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframew"
+    },
+    {
+      "idx": 54,
+      "cwd": "CWD-1070",
+      "major": "Injection",
+      "lang": "java",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.91,
+      "correct": false,
+      "code_snippet": "package com.huawei.cwd.redos.jdkstring;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframe"
+    }
+  ],
+  "errors": []
+}

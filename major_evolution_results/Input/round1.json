@@ -1,0 +1,60 @@
+{
+  "round": 1,
+  "major": "Input",
+  "accuracy": 0.8181818181818182,
+  "correct": 18,
+  "total": 22,
+  "wrong_count": 4,
+  "fp_count": 4,
+  "fn_count": 0,
+  "elapsed_s": 6.4,
+  "prompt": "You are an input validation and type-safety vulnerability detector.\n\nDetermine whether the TARGET (TGT) function contains an INPUT VALIDATION vulnerability.\n\nInput validation vulnerabilities include:\n- Pointer type confusion: casting between incompatible pointer types (e.g., object pointer\n  to unrelated object type) causing misinterpretation of memory\n- Integer-to-pointer or pointer-to-integer casts with incorrect semantics\n- Missing or incorrect null terminator: string operations where null terminator is not\n  guaranteed, leading to over-read or buffer overflow downstream\n- Improper input validation: trusting user-supplied size/length that is used without\n  bounds checking\n\nRules:\n1. TGT function name is a benchmark label, not evidence.\n2. Safe casts with explicit checks, or casts between compatible types — BENIGN.\n3. Null-terminator issues only count if a string function later reads past the buffer.\n\nCODE:\n```c\n{code}\n```\n\nRespond with JSON only:\n{{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}}\nor\n{{\"prediction\": \"BENIGN\", \"confidence\": 0.8}}",
+  "fp_samples": [
+    {
+      "idx": 11,
+      "cwd": "CWD-1021",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.99,
+      "correct": false,
+      "code_snippet": "#include \"external_data_common.h\"\n\n\nchar g_charNicName[10] = {0};\n\nint freestackmemoryTGTcase2(char *nicname, unsigned i"
+    },
+    {
+      "idx": 13,
+      "cwd": "CWD-1016",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.97,
+      "correct": false,
+      "code_snippet": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define HEADER_LEN (sizeof(VOS_UINT16) + sizeof(VOS"
+    },
+    {
+      "idx": 15,
+      "cwd": null,
+      "major": null,
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include \"common/public.h\"\n\n#define MAX_ARRAY_SIZE 10\n\n\n\n\n\nvoid TestInitializeArray()\n{\n    printf(\"Testing InitializeAr"
+    },
+    {
+      "idx": 21,
+      "cwd": "CWD-1002",
+      "major": "Memory",
+      "lang": "cpp",
+      "label": "BENIGN",
+      "pred": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "code_snippet": "#include <iostream>\n\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid newlenthnotcheck2TGT()\n{\n    int len;\n    std::cin >> len"
+    }
+  ],
+  "fn_samples": [],
+  "errors": []
+}

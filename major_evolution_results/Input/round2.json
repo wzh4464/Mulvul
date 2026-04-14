@@ -1,0 +1,27 @@
+{
+  "round": 2,
+  "major": "Input",
+  "accuracy": 0.9545454545454546,
+  "correct": 21,
+  "total": 22,
+  "wrong_count": 1,
+  "fp_count": 0,
+  "fn_count": 1,
+  "elapsed_s": 7.6,
+  "prompt": "You are a type-safety and input-validation vulnerability detector for C/C++.\n\nDetermine whether the TARGET (TGT) function contains a TYPE CONFUSION or INPUT VALIDATION\nvulnerability — NOT a memory overflow or injection.\n\nThis detector covers:\n1. Pointer type confusion: casting an object pointer to an INCOMPATIBLE object type\n   (e.g., Base* → DerivedB* when the object is actually DerivedA*), causing the code to\n   misinterpret the object's memory layout. Sign: reinterpret_cast, C-style cast between\n   unrelated class pointers, or void* cast without runtime type check.\n2. Integer↔pointer casts: casting an integer value to a pointer and dereferencing it, or\n   storing a pointer in a too-small integer type, losing address bits.\n3. Missing null terminator: writing bytes into a char buffer without guaranteeing the\n   terminating '\\0', then passing to strlen/strcmp/strcpy/etc. downstream.\n\nThis detector does NOT cover:\n- Buffer overflows or out-of-bounds writes (those are Memory)\n- Injection (SQL, command, format string etc.)\n- Bounds check failures (those are Memory / bounds)\n\nRules:\n1. TGT function name is a benchmark label, not evidence.\n2. reinterpret_cast or C-style cast between RELATED types (base↔derived in correct hierarchy)\n   with proper virtual dispatch — BENIGN.\n3. Code that only does arithmetic on integers without pointer cast — BENIGN.\n\nCODE:\n```c\n{code}\n```\n\nRespond with JSON only:\n{{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}}\nor\n{{\"prediction\": \"BENIGN\", \"confidence\": 0.8}}",
+  "fp_samples": [],
+  "fn_samples": [
+    {
+      "idx": 6,
+      "cwd": "CWD-1040",
+      "major": "Input",
+      "lang": "cpp",
+      "label": "VULNERABLE",
+      "pred": "BENIGN",
+      "conf": 0.93,
+      "correct": false,
+      "code_snippet": "#include \"external_data_common.h\"\n\nusing namespace std;\n\nvoid fetchdirshowslotidTGT(cli_oid_s **poidlist, uint32_t dwoid"
+    }
+  ],
+  "errors": []
+}

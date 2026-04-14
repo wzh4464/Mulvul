@@ -1,0 +1,44 @@
+[
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1008",
+    "major": "Logic",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <deque>\n#include <cstdint>\n\n\nvoid processFlagsBad(const std::vector<bool>& flags)\n{\n    \n    for (bool flag : flags) {\n        std::cout << flag << ' ';\n    }\n}\n\n\n\n\nvoid processFlagsGood(const std::deque<bool>& flags)\n{\n    \n    for (bool flag : flags) {\n        std::cout << flag << ' ';\n    }\n}\n\nint32_t testcaseTGT(void)\n{\n    std::vector<bool> boolFlags = {true, false, true, true, false}; \n    \n    \n    processFlagsBad(boolFlags);\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1005",
+    "major": "Logic",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdint.h>\n#include <arpa/inet.h>  \n\n\n#define IPV6_ADDR_LENGTH 16\n#define UCHAR unsigned char\n#define COPY_IPV6_ADDR(d, s) do {                   \\\n    int i = 0;                               \\\n    for (; i < IPV6_ADDR_LENGTH; i++) {                  \\\n        ((UCHAR*)(d))[i] = ((UCHAR*)(s))[i]; \\\n    }                                          \\\n} while (0)\n\ntypedef struct {\n    uint8_t spare;\n    uint8_t ipv4Flag;\n    uint8_t ipv6Flag;\n    uint64_t identifier;\n    union {\n        uint32_t ipv4Addr;\n        uint8_t ipv6Addr[IPV6_ADDR_LENGTH];\n    } ip;\n} DataStructure;\n\nvoid TGTcase(void *indata, void *outdata)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  \n\n    if (input->ipv4Flag) {\n        output->ip.ipv4Addr = input->ip.ipv4Addr;  \n    } else if (input->ipv6Flag) {\n        \n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1030",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n\n\ntypedef struct NodeKey {\n    int key1;\n    int key2;\n} NodeKey;\n\n\ntypedef struct Node {\n    NodeKey key;\n    struct Node *next;\n} Node;\n\n\nNode *CreateNode(NodeKey *key)\n{\n    Node *newNode = (Node *)malloc(sizeof(Node));\n    newNode->key = *key;\n    newNode->next = NULL;\n    return newNode;\n}\n\n\nvoid Insert(Node **head, NodeKey *key)\n{\n    Node *newNode = CreateNode(key);\n    newNode->next = *head;\n    *head = newNode;\n}\n\n\nvoid Delete(Node **head, NodeKey *key)\n{\n    Node *temp = *head;\n    Node *prev = NULL;\n\n    \n    while (temp != NULL && memcmp(&temp->key, key, sizeof(NodeKey)) != 0) {\n        prev = temp;\n        temp = temp->next;\n    }\n\n    \n    if (temp == NULL) {\n        printf(\"Node with key %d,%d not found\\n\", key->key1, key->key2);\n        return;\n    }\n\n    \n    if (prev == NULL) {\n        *head = temp->next;\n    } else {\n        prev->next = temp->next;\n    }\n\n    free(temp);\n}\n\n\nvoid PrintList(Node *head)\n{\n    Node *temp = head;\n    while (temp != NULL) {\n        printf(\"%d,%d -> \", temp->key.key1, temp->key.key2);\n        temp = temp->next;\n    }\n    printf(\"NULL\\n\");\n}\n\nint TGTcase()\n{\n    Node *head = NULL;\n    NodeKey addkey;\n    NodeKey delKey;\n\n    \n    addkey.key1 = 1;\n    Insert(&head, &addkey);  \n\n    printf(\"链表内容: \");\n    PrintList(head);\n\n    \n    delKey.key1 = 1;\n    Delete(&head, &delKey);  \n\n    printf(\"删除未初始化key后的链表内容: \");\n    PrintList(head);\n\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1006",
+    "major": "Logic",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state : 3;  \n    uint8_t error : 3;  \n} DeviceStatus;\n\nstatic int32_t structbitfieldTGT(char *outbuf, size_t buflen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  \n    \n    \n    ptr[0] = 0xB9;\t\n    \n    \n    \n    \n\t(void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\ntypedef struct {\n    int32_t fieldA;\n    int32_t fieldB;\n} Block;\n\n\nBlock *g_globalBlock = NULL;\n\n\n\n\n\nvoid TestGlobalVariableInitBad(void)\n{\n    InitializeGlobalBlockBad();  \n    if (g_globalBlock == NULL) {\n        printf(\"The global block initialize failed.\\n\");\n        return;\n    }\n\n    if (g_globalBlock->fieldA == 123 && g_globalBlock->fieldB == 456) {\n        printf(\"The global block initialize succeeded.\\n\");\n    } else {\n        printf(\"The global block initialize failed.\\n\");\n    }\n}\n\n\n\n\n\nvoid TestGlobalVariableInitGood(void)\n{\n    InitializeGlobalBlockGood();  \n    if (g_globalBlock == NULL) {\n        printf(\"The global block initialize failed.\\n\");\n        return;\n    }\n\n    if (g_globalBlock->fieldA == 123 && g_globalBlock->fieldB == 456) {\n        printf(\"The global block initialize succeeded.\\n\");\n    } else {\n        printf(\"The global block initialize failed.\\n\");\n    }\n\n    SAFE_FREE(g_globalBlock);\n}\n\nvoid TestGlobalVariableInitialization()\n{\n    printf(\"\\nTesting TestGlobalVariableInitBad:\\n\");\n    TestGlobalVariableInitBad();\n\n    printf(\"\\nTesting TestGlobalVariableInitGood:\\n\");\n    TestGlobalVariableInitGood();\n}\n\nvoid initializeglobalblockTGT(void)\n{\n    \n    g_globalBlock = (Block *)SAFE_MALLOC(sizeof(Block));  \n    if (g_globalBlock == NULL) {\n        fprintf(stderr, \"Memory allocation failed.\\n\");\n        return;\n    }\n    g_globalBlock->fieldA = 123;\n    g_globalBlock->fieldB = 456;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef unsigned int UINT32;\ntypedef unsigned char UINT8;\ntypedef int INT32;\n\n#define CMD_SET_GID_REQ 1\nstruct LbCtrlT {\n    UINT32 gid;\n    UINT32 cmd;\n};\nstruct Table {\n};\n\nstruct Device {\n    struct Table ptbl[128];\n};\nstruct Device g_dev;\nINT32 SetGidBad(UINT32);\nINT32 SetGidGood(UINT32);\n\n\n\n\nINT32 Powerup(void)\n{\n    \n    return 0;\n}\n\n\nvoid GidPolicySet(struct Table* tbl)\n{\n    \n}\n\n\nINT32 MsgCheck(const void *data, UINT32 len)\n{\n    return (len >= sizeof(struct LbCtrlT)) ? 0 : -1;\n}\n\nvoid ApMsgProcBad(const void *data, UINT32 len)\n{\n    UINT8 cmd;\n    INT32 ret = 0;\n    struct LbCtrlT *pctrl = NULL;\n\n    if (MsgCheck(data, len)) {\n        return;\n    }\n\n    pctrl = (struct LbCtrlT *)data;\n    cmd = pctrl->cmd;\n\n    switch (cmd) {\n    case CMD_SET_GID_REQ:\n        ret = SetGidBad(pctrl->gid);\n        break;\n    default:\n        return;\n    }\n}\n\n\n\nvoid ApMsgProcGood(const void *data, UINT32 len)\n{\n    UINT8 cmd;\n    INT32 ret = 0;\n    struct LbCtrlT *pctrl = NULL;\n\n    if (MsgCheck(data, len)) {\n        return;\n    }\n\n    pctrl = (struct LbCtrlT *)data;\n    cmd = pctrl->cmd;\n\n    switch (cmd) {\n    case CMD_SET_GID_REQ:\n        ret = SetGidGood(pctrl->gid);\n        break;\n    default:\n        return;\n    }\n}\n\nINT32 setgidTGT(uint32 gid)\n{\n    int ret = 0;\n    ret = Powerup();\n    if (ret != 0) {\n        goto out;\n    }\n\n    if (gid >= 128) {\n        ret = -1;\n        goto out;\n    }\n    GidPolicySet(&g_dev.ptbl[gid]); \nout:\n    return ret;\n}"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "round": 11,
+  "accuracy": 0.7818181818181819,
+  "correct": 86,
+  "total": 110,
+  "clean_accuracy": 0.7962962962962963,
+  "clean_correct": 86,
+  "clean_total": 108,
+  "prompt": "You are a security auditor. This code is from a paired vulnerability benchmark.\nOne version is VULNERABLE (safety fix missing) and the other BENIGN (fix applied).\nYour task: determine which version THIS code is.\n\nCODE:\n```\n{code}\n```\n\nSTEP 1 — Target:\nFind the function ending in \"TGT\" or \"TGTcase\". Audit ONLY that function's body.\nIf no TGT function exists, use the primary business-logic function.\n\nSTEP 2 — Ignore (benchmark artifacts):\n- Any helper function named Test...() or test...() that calls ...Bad() / ...Good() variants\n- ALL function names containing \"Bad\", \"Unsafe\", \"withoutCheck\" — anywhere in the file\n- The TGT function's own name even if it says \"without\" or \"Bad\"\n- Do NOT treat the presence of \"...Bad()\" calls in the file as vulnerability evidence\n\nSTEP 3 — What is the ONE critical operation in the TGT function body?\n\nSTEP 4 — Is there a guard (safety fix) for that operation?\n\nC/C++ guards:\n- Null check before deref: `if (ptr == NULL)` — valid ONLY if no unsafe pointer arithmetic follows (ptr+N) without additional size validation\n- Bounds check before array/buffer op: index < size, or memcpy_s with correct count vs dest size\n- Error check after safe functions: memcpy_s/memset_s return value checked\n\nJava guards:\n- exec/eval/xpath/KieHelper with @RequestParam STRING: is string validated with regex/whitelist? If yes → BENIGN\n- exec/eval/xpath/KieHelper with @RequestParam INT/int: integer param is NOT a string injection risk → BENIGN\n- Using com.huawei.* security-wrapped API instead of raw org.mvel2/org.springframework directly → assume BENIGN\n\nALSO VULNERABLE (patterns that are inherently broken regardless of guards):\n- C++: `tempObj.str().c_str()` or `tempObj.method().c_str()` — dangling pointer\n- C++: global pointer deleted without ptr=nullptr when the pointer is used elsewhere\n\nSTEP 5:\nGuard present → BENIGN\nGuard absent for a clear security-sensitive operation → VULNERABLE\nUncertain / no critical operation identified → BENIGN (default)\nC++ std::vector<bool> with element access → VULNERABLE\n\nRespond with JSON only:\n{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}\nor\n{\"prediction\": \"BENIGN\", \"confidence\": 0.85}",
+  "wrong_count": 22,
+  "errors": []
+}

@@ -1,0 +1,1080 @@
+[
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <deque>\n#include <cstdint>\n\n\nvoid processFlagsBad(const std::vector<bool>& flags)\n{\n    \n    for (bool flag : flags) {\n        std::cout << flag << ' ';\n    }\n}\n\n\n\n\nvoid processFlagsGood(const std::deque<bool>& flags)\n{\n    \n    for (bool flag : flags) {\n        std::cout << flag << ' ';\n    }\n}\n\nint32_t testcaseTGT(void)\n{\n    \n    std::deque<bool> boolFlags = {true, false, true, true, false};  \n    \n    \n    processFlagsGood(boolFlags);\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"securec.h\"\n#include <stdint.h>\n\n\nstruct HSsnmpv3VacmAccessT {\n    uint8_t *vacmAccessContextPrefix;\n    uint32_t len;\n};\n\nint32_t IAS_MemCmp(void const *pvDest, void const *pvSrc, unsigned int ulCount)\n{\n    return memcmp(pvDest, pvSrc, ulCount);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\n\n\n\n\n\nvoid TestBufferCast()\n{\n    std::cout << \"Testing CastBufferToDifferentTypesBad:\" << std::endl;\n    CastBufferToDifferentTypesBad();\n    std::cout << std::endl;\n\n    std::cout << \"Testing CastBufferToDifferentTypesGood:\" << std::endl;\n    CastBufferToDifferentTypesGood();\n    std::cout << std::endl;\n}\n\nvoid castbuffertodifferenttypesTGT()\n{\n    constexpr int32_t bufferSize = 22;\n    uint8_t buffer[bufferSize] = { 0 };  \n\n    \n    uint16_t *pointer16 = reinterpret_cast<uint16_t *>(buffer) + 1;\n    uint32_t *pointer32 = reinterpret_cast<uint32_t *>(pointer16) + 1;\n    uint64_t *pointer64 = reinterpret_cast<uint64_t *>(pointer32) + 1;\n    uint64_t value64 = *pointer64;  \n\n    \n    uint8_t *pointer8 = reinterpret_cast<uint8_t *>(pointer64 + 1);\n    uint8_t value8 = *pointer8;  \n    std::cout << \"Value8: \" << static_cast<int>(value8) << std::endl;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.mvel.injectioncase;\n\nimport org.mvel2.MVEL;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.io.Serializable;\nimport java.util.HashMap;\nimport java.util.Map;\n\n\n@Controller\n@RequestMapping(\"/mvel/MVELCompileExpression\")\npublic class MVELCompileExpression {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public Object TGT001(@RequestParam(name = \"exp\") String exp) {\n        Serializable compiledExpression = MVEL.compileExpression(exp); \n        Map<String, Object> vars = new HashMap<>();\n        vars.put(\"foobar\", 100);\n        return MVEL.executeExpression(compiledExpression, vars); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1002",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n\ntemplate <class T> T* IVS_NEW(T*& m, unsigned long ulMuili = 0)\n{\n    m = NULL;\n    if (ulMuili == 0) {\n        try {\n            m = new (T);\n        } catch (...) {\n            if (NULL != m) {\n                delete m;\n            }\n            m = NULL;\n        }\n    } else {\n        try {\n            m = new (T[ulMuili]);\n        } catch (...) {\n            if (NULL != m) {\n                delete[] m;\n            }\n            m = NULL;\n        }\n    }\n\n    return m;\n};\n\ntemplate <class T> void IVS_DELETE(T*& m, unsigned long ulMuili = 0)\n{\n    if (NULL == m) {\n        return;\n    }\n\n    try {\n        if (0 == ulMuili) {\n            delete m;\n        } else {\n            delete[] m;\n        }\n    } catch (...) {\n    }\n\n    m = NULL;\n};\n\n\n\n\n\n#include <iostream>\n#include \"alloc_error_common.h\"\n\nvoid newlenthnotcheck3TGTcase()\n{\n    int len;\n    std::cin >> len; \n    \n    char *p = IVS_NEW(p, len);   \n    p[0] = 1;\n    IVS_DELETE(p);\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_TBL_PMOFC_REC_NUM 1000\n#define MAX_PMOFC_OFCNAME_LEN 64\n#define IPV6_ADDR_LEN 16\n#define RID_TBL_PMOFC 3279  \n\ntypedef struct {\n    VOS_UINT32 index;\n    VOS_UINT16 pmofcId;                             \n    VOS_CHAR   officeName[MAX_PMOFC_OFCNAME_LEN];   \n    VOS_UINT8  addressType;                         \n    VOS_UINT32 ipv4Addr;                            \n    VOS_UINT32 maskIpV4;                            \n    VOS_UCHAR  ipv6Addr[IPV6_ADDR_LEN];             \n    VOS_UCHAR  maskIpV6[IPV6_ADDR_LEN];             \n    VOS_UINT8  ucStatus;\n} TABLE_PMOFC_S;\n\ntypedef struct tagDB_STDBUF_STRU {\n    VOS_UINT32  ulBufLen;  \n    VOS_UINT32  ulActLen;  \n    VOS_UINT8*  pucData;   \n} DB_STDBUF_STRU;\n\ntypedef struct tagDB_DSBUF_STRU {\n    VOS_UINT16 usRecLen;   \n    VOS_UINT16 usRecNum;   \n    DB_STDBUF_STRU StdBuf; \n} DB_DSBUF_STRU;\n\n\ntypedef enum IP_ADDR_TYPE {\n    IP_ADDR_TYPE_IPV4 = 0,\n    IP_ADDR_TYPE_IPV6,\n    IP_ADDR_TYPE_BUTT        \n} EN_IP_ADDR_TYPE;\n\nVOS_UINT32 gulDbId = 1;\n\nextern VOS_UINT32 DbGetTblActualRecNumById(VOS_UINT16 usTblId);\nextern VOS_UINT32 DBS_LocalGetAllRecordForDatabase(VOS_UINT32 ulDbId, VOS_UINT16 usRelNo, DB_DSBUF_STRU *pstDsBuf);\nextern VOS_VOID DbmsAddPmofcIpV4AnyTree(TABLE_PMOFC_S *ipv4AnyTree);\nextern VOS_VOID DbmsAddPmofcIpV6AnyTree(TABLE_PMOFC_S *ipv6AnyTree);\n\nVOS_UINT32 dbmsgetpmofcrecordtotreeTGT()\n{\n    VOS_UINT32 ret = VOS_NULL;\n    VOS_UINT32 curIdx = VOS_NULL;\n    DB_DSBUF_STRU stBuf = {0};\n    TABLE_PMOFC_S *tblPmofcInfo = VOS_NULL_PTR;\n    TABLE_PMOFC_S *tmpPofc = VOS_NULL_PTR;\n\n    \n    VOS_UINT32 bufLen = MAX_TBL_PMOFC_REC_NUM * sizeof(TABLE_PMOFC_S);\n    tblPmofcInfo = (TABLE_PMOFC_S *)VOS_MemAlloc(PID_TEST, STATIC_MEM_PT, bufLen);\n    PUB_CONDITION_RET((tblPmofcInfo == VOS_NULL_PTR), VOS_ERR);\n\n    memset_s(tblPmofcInfo, bufLen, 0, bufLen);\n\n    stBuf.StdBuf.ulBufLen = bufLen;\n    stBuf.StdBuf.pucData = (VOS_UINT8 *)tblPmofcInfo;\n\n    ret = DBS_LocalGetAllRecordForDatabase(gulDbId, RID_TBL_PMOFC, &stBuf);\n    if (ret != VOS_OK) {\n        VOS_MemFree(PID_TEST, tblPmofcInfo);\n        tblPmofcInfo = VOS_NULL_PTR;\n        return VOS_ERR;\n    }\n\n    \n    VOS_UINT32 recNum = DbGetTblActualRecNumById(RID_TBL_PMOFC);\n    if (recNum > MAX_TBL_PMOFC_REC_NUM) {\n        VOS_MemFree(PID_TEST, tblPmofcInfo);\n        tblPmofcInfo = VOS_NULL_PTR;\n        return VOS_ERR;\n    }\n    tmpPofc = tblPmofcInfo;\n    for (VOS_UINT32 curIdx = 0; curIdx < recNum; curIdx++) {\n        if (tmpPofc->addressType == IP_ADDR_TYPE_IPV4) {\n            DbmsAddPmofcIpV4AnyTree(tmpPofc);\n        } else if (tmpPofc->addressType == IP_ADDR_TYPE_IPV6) {\n            DbmsAddPmofcIpV6AnyTree(tmpPofc);\n        }\n        tmpPofc++; \n    }\n\n    \n    VOS_MemFree(PID_TEST, tblPmofcInfo); \n    tblPmofcInfo = VOS_NULL_PTR;\n    return VOS_OK;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nusing namespace std;\n\nvoid fetchdirshowslotidTGT(cli_oid_s **poidlist, uint32_t dwoidnum) \n{\n    if (pOidList == nullptr) {\n        return;\n    }\n\n    for (uint32_t i = 0; i < dwOidNum; ++i) {\n        uint16_t shelf_id = 0;\n        uint16_t slot_id = 0;\n        CLI_OID_S *pOid = pOidList[i];\n        if (pOid == nullptr || pOid->pbyPara == nullptr) {\n            continue;\n        }\n\n        \n        int ret = sscanf_s(reinterpret_cast<char *>(pOid->pbyPara), \"shelf%hu/%hu\", &shelf_id, &slot_id); \n        if (ret != 2) {\n            return;\n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include <cstdbool>\n#include \"securec.h\"\n#include \"basic_data_type.h\"\n\n#define PM_RSP_ATTRDATA_PARALEN_OFFSET 50\n\ntypedef struct CrmCmdS03Pre {\n    uint16_t wCmdIdx;  \n    uint16_t wCtrlCmd;  \n    union {\n        uint16_t wCmd;  \n        uint16_t wEvent;  \n    };\n    uint16_t wParaLen;  \n    uint8_t *pbyPara;   \n} CrmCmdS03;\n\nbool parseattrcrmTGT(crmcmds03 &stsrccmdinfo)  \n{\n    uint32_t offset = 2;\n    uint8_t *pbyPara = stSrcCmdInfo.pbyPara;\n    uint16_t paraLen = stSrcCmdInfo.wParaLen;\n    if (paraLen < PM_RSP_ATTRDATA_PARALEN_OFFSET + offset) {    \n        return false;\n    }\n    uint8_t parseData[PM_RSP_ATTRDATA_PARALEN_OFFSET] = {0};\n    errno_t ret = memcpy_s(parseData, PM_RSP_ATTRDATA_PARALEN_OFFSET, pbyPara + offset, PM_RSP_ATTRDATA_PARALEN_OFFSET); \n    if (ret != EOK) {\n        return false;\n    }\n    return true;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1027",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#ifndef HEAD_H\n#define HEAD_H\n#include <stdlib.h>\n\ntypedef enum UserDefineMemTypeEm {\n    USER_DEFINE_MEM1,\n    USER_DEFINE_MEM2\n}UserDefineMemType;\n\ntypedef struct UserDefineMemNodeSt {\n    int32_t type;\n    void *value;\n} UserDefineMemNode;\n\nUserDefineMemNode *UserDefineMemAlloc(UserDefineMemType type);\nvoid UserDefineMemFree(UserDefineMemNode *node);\nint UserDefineMemDoBusiness(UserDefineMemNode *node, void *param);\n\n#endif\n\n\n\n\n\n\n#include <stdio.h>\n#include <securec.h>\n#include \"head.h\"\n\n\n\n\n\n\n\n \n#include <stdlib.h>\n#include \"head.h\"\n\n#define USER_DEFINE_MEM_DEFAULT_VALUE_SIZE 100\n#define USER_DEFINE_MEM1_VALUE_SIZE 200\n#define USER_DEFINE_MEM2_VALUE_SIZE 300\n\nUserDefineMemNode *UserDefineMemAlloc(UserDefineMemType type)\n{\n    UserDefineMemNode *node = (UserDefineMemNode *)malloc(sizeof(UserDefineMemNode));\n    if (node == NULL) {\n        return NULL;\n    }\n    node->type = type;\n\n    size_t size = USER_DEFINE_MEM_DEFAULT_VALUE_SIZE;\n    if (type == USER_DEFINE_MEM1) {\n        size = USER_DEFINE_MEM1_VALUE_SIZE;\n    } else if (type == USER_DEFINE_MEM2) {\n        size = USER_DEFINE_MEM2_VALUE_SIZE;\n    }\n\n    node->value = malloc(size);\n    if (node->value == NULL) {\n        free(node);\n        node = NULL;\n    }\n    return node;\n}\n\nvoid UserDefineMemFree(UserDefineMemNode *node)\n{\n    if (node != NULL) {\n        if (node->value != NULL) {\n            free(node->value);\n            node->value = NULL;\n        }\n        free(node);\n    }\n}\n\nint UserDefineMemDoBusiness(UserDefineMemNode *node, void *param)\n{\n    return 0;\n}\n\nint TGTcase(userdefinememtype type, void *param)\n{\n    UserDefineMemNode *node = UserDefineMemAlloc(type); \n    if (node == NULL) {\n        \n        return -1; \n    }\n\n    \n    int ret = UserDefineMemDoBusiness(node, param);\n    if (ret != 0) {\n        \n        UserDefineMemFree(node);\n        return -1; \n    }\n\n    \n    return 0; \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n\nconstexpr size_t BUFFER_SIZE = 10;\nconstexpr const char *SOURCE_MESSAGE = \"Hello, World!\";\n\n\n\n\n\n\n\nvoid TestMemoryCopySafety()\n{\n    std::cout << \"Testing MemoryCopyBad:\" << std::endl;\n    std::cout << \"Case : count = 5 (less than source length)\" << std::endl;\n    MemoryCopyBad(5);\n    std::cout << std::endl;\n\n    std::cout << \"Testing MemoryCopyGood:\" << std::endl;\n    std::cout << \"Case : count = 5 (less than source length)\" << std::endl;\n    MemoryCopyGood(5);\n    std::cout << std::endl;\n}\n\nvoid memorycopyTGT(size_t count)\n{\n    char buffer[BUFFER_SIZE] = { 0 };\n\n    \n    if (memcpy_s(buffer, count, SOURCE_MESSAGE, std::strlen(SOURCE_MESSAGE)) != EOK) {  \n        std::cerr << \"Memory copy failed.\" << std::endl;\n        return;\n    }\n    std::cout << \"Memory copy succeeded. Buffer content: \" << buffer << std::endl;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1034",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nvoid processdataTGT(int64_t* external_ptr)\n{\n    \n    std::cout << \"External data: \" << *external_ptr << std::endl;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include <stdlib.h>\n#include <stdint.h>\n\n/*\n * 释放后使用公共内容头文件\n */\n\n#ifndef USE_AFTER_FREE_COMMON_H\n#define USE_AFTER_FREE_COMMON_H\n\n#include <stdlib.h>\n\n/* for ipv6 */\ntypedef struct TagIN6Addr {\n    union {\n        uint8_t u6Ucaddr[16];\n        uint16_t u6Usaddr[8];\n        uint32_t u6Uladdr[4];\n    } u6Addr; /* 128-bit IP6 address */\n} IN6ADDR_S;\ntypedef struct {\n    AVL_NODE duidAvlNode;\n    VOS_LIST_HEAD_S ipList;     /* 一个ia所带的ip地址链表 */\n    VOS_LIST_HEAD_S prefixList; /* 一个ia所带的前缀地址链表 */\n    uint32_t ipCnt;\n    uint32_t prefixCnt;\n} Poolv6ClientNode;\ntypedef struct {\n    AVL_NODE allocIpAvlNode;\n    IN6ADDR_S ipAddr;\n    VOS_LIST_HEAD_S ipListNode; /* 挂在ClientNode下 */\n    uint32_t preferLifeTime;\n    uint32_t validLifeTime;\n    uint32_t birthTime;\n    Poolv6ClientNode *clientNode;\n    AVL_TREE ipv6Tree; /* ip地址信息，反查用户 */\n    uint8_t hasRequest;\n    uint8_t hasReply;\n    uint8_t tmpFlag;\n    uint8_t rsv;\n} Poolv6IpNode;\n\ntypedef struct {\n    uint32_t ifIndex;\n    IN6ADDR_S ipAddr;\n    uint8_t prefixLen;\n    uint8_t iaType;\n    uint8_t rsv[2];\n} Poolv6HaUserDel;\n#define POOLV6_MAX_DNS_COUNT          2\n#define DHCP6S_MAX_DOMAIN_NAME_LEN     63\ntypedef struct {\n    uint8_t initFlag;\n    uint8_t allowHint;\n    uint8_t allowUnicast;\n    uint8_t preference;\n    uint8_t rapidCommit;\n    uint8_t rebindPercent;\n    uint8_t renewPercent;\n    uint8_t serverPrefix;\n    uint8_t prefixLen;\n    uint8_t rsv[3];\n    uint16_t vlanId;\n    uint32_t ifIndex;\n    uint32_t clientCnt;\n    uint32_t pdClientCnt;\n    uint32_t poolIpAddrCnt;\n    uint32_t poolPrefixCnt;\n    uint32_t conflictCnt;\n    uint32_t preferLifeTime;\n    uint32_t validLifeTime;\n    uint32_t lastBlockIndex;\n    uint32_t lastPrefixBlockIndex;\n    AVL_TREE dhcpClientTree;      /* client信息，以duid+iaid+iaType做key */\n    AVL_TREE ipv6Tree;            /* ip地址信息，反查用户 */\n    AVL_TREE vendorTree;          /* 配置的vendor选项 */\n    AVL_TREE conflictTree;        /* 冲突树，批量老化冲突节点时使用 */\n    AVL_TREE excludeIpTree;       /* 排除地址树 */\n    AVL_TREE prefixTree;          /* 前缀地址树 */\n    uint32_t conflictAddrExpireTime;\n    IN6ADDR_S startIp;\n    IN6ADDR_S startPdIp;\n    IN6ADDR_S serverIp;\n    IN6ADDR_S prefixAddr;\n    IN6ADDR_S dnsV6Addr[POOLV6_MAX_DNS_COUNT];\n    char domainV6Name[DHCP6S_MAX_DOMAIN_NAME_LEN + 1];\n    uint32_t *ipv6AddrBitTable;\n    uint32_t *ipv6PdBitTable;\n} Poolv6Core;\n\nuint32_t IAS_MemFree(uint32_t ulPidSid, void *pAddr)\n{\n    free(pAddr);\n    return 0;\n}\n\n#endif  // USE_AFTER_FREE_COMMON_H\n\n\n\n\n\n#include \"securec.h\"\n#include \"vos_list.h\"\n#include \"v_avl_base.h\"\n#include \"use_after_free_common.h\"\n\nusing namespace std;\n\n\n\n\nPoolv6IpNode *GetIpAddrNode(const IN6ADDR_S *ipAddr, Poolv6Core *poolCore)\n{\n    return (Poolv6IpNode *)VOS_AVL_FIND(poolCore->ipv6Tree, ipAddr);\n}\n\nvoid NotifyBakIpUserDel(const Poolv6Core *poolCore, const IN6ADDR_S *ipAddr)\n{\n    Poolv6HaUserDel info = {0};\n    info.ifIndex = poolCore->ifIndex;\n    info.iaType = 1;\n    (void)memcpy_s(&info.ipAddr, sizeof(IN6ADDR_S), ipAddr, sizeof(IN6ADDR_S));\n    return;\n}\n\nvoid delipaddrnodeTGTcase(in6addr_s *ipaddr, poolv6core *poolcore)\n{\n    \n    Poolv6IpNode *ipAddrNode = GetIpAddrNode(ipAddr, poolCore);\n    if (ipAddrNode == nullptr) {\n        return;\n    }\n    Poolv6ClientNode *clientNode = ipAddrNode->clientNode;\n    if ((clientNode != nullptr) && (clientNode->ipCnt > 0)) {\n        clientNode->ipCnt--;\n    }\n    VOS_ListRemove(&ipAddrNode->ipListNode);\n    ipAddrNode->clientNode = nullptr;\n    VOS_AVL_DELETE(poolCore->ipv6Tree, ipAddrNode->allocIpAvlNode);\n\n    \n    IN6ADDR_S tempIpAddr;\n    (void)memcpy_s(&tempIpAddr, sizeof(IN6ADDR_S), ipAddr, sizeof(IN6ADDR_S));\n\n    \n    (void)IAS_MemFree(425, ipAddrNode);\n    ipAddrNode = nullptr;\n\n    \n    NotifyBakIpUserDel(poolCore, &tempIpAddr);  \n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1026",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include <sstream>\n#include \"securec.h\"\nusing namespace std;\n\n\ntypedef struct IpsiKeyInfo {\n    unsigned int uiKeyBuffLen;\n    char pcKeyBuff[4096];\n} IPSI_SSH_KEY_INFO_S;\n\nbool setfingerprintkeybuffTGT2(const char *serverpubkey, ipsi_ssh_key_info_s &pubkeyinfo)\n{\n    std::stringstream ss;\n    ss << \" \" << serverPubKey << \" \";\n    const char *tempBuff = ss.str().c_str();     \n    pubKeyInfo.uiKeyBuffLen = strlen(tempBuff);  \n    return true;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1023",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_TBL_PMOFC_REC_NUM 1000\n#define MAX_PMOFC_OFCNAME_LEN 64\n#define IPV6_ADDR_LEN 16\n#define RID_TBL_PMOFC 3279  \n\ntypedef struct {\n    VOS_UINT32 index;\n    VOS_UINT16 pmofcId;                             \n    VOS_CHAR   officeName[MAX_PMOFC_OFCNAME_LEN];   \n    VOS_UINT8  addressType;                         \n    VOS_UINT32 ipv4Addr;                            \n    VOS_UINT32 maskIpV4;                            \n    VOS_UCHAR  ipv6Addr[IPV6_ADDR_LEN];             \n    VOS_UCHAR  maskIpV6[IPV6_ADDR_LEN];             \n    VOS_UINT8  ucStatus;\n} TABLE_PMOFC_S;\n\ntypedef struct tagDB_STDBUF_STRU {\n    VOS_UINT32  ulBufLen;  \n    VOS_UINT32  ulActLen;  \n    VOS_UINT8*  pucData;   \n} DB_STDBUF_STRU;\n\ntypedef struct tagDB_DSBUF_STRU {\n    VOS_UINT16 usRecLen;   \n    VOS_UINT16 usRecNum;   \n    DB_STDBUF_STRU StdBuf; \n} DB_DSBUF_STRU;\n\n\ntypedef enum IP_ADDR_TYPE {\n    IP_ADDR_TYPE_IPV4 = 0,\n    IP_ADDR_TYPE_IPV6,\n    IP_ADDR_TYPE_BUTT        \n} EN_IP_ADDR_TYPE;\n\nVOS_UINT32 gulDbId = 1;\n\nextern VOS_UINT32 DbGetTblActualRecNumById(VOS_UINT16 usTblId);\nextern VOS_UINT32 DBS_LocalGetAllRecordForDatabase(VOS_UINT32 ulDbId, VOS_UINT16 usRelNo, DB_DSBUF_STRU *pstDsBuf);\nextern VOS_VOID DbmsAddPmofcIpV4AnyTree(TABLE_PMOFC_S *ipv4AnyTree);\nextern VOS_VOID DbmsAddPmofcIpV6AnyTree(TABLE_PMOFC_S *ipv6AnyTree);\n\nVOS_UINT32 dbmsgetpmofcrecordtotreeTGT()\n{\n    VOS_UINT32 ret = VOS_NULL;\n    VOS_UINT32 curIdx = VOS_NULL;\n    DB_DSBUF_STRU stBuf = {0};\n    TABLE_PMOFC_S *tblPmofcInfo = VOS_NULL_PTR;\n\n    \n    VOS_UINT32 bufLen = MAX_TBL_PMOFC_REC_NUM * sizeof(TABLE_PMOFC_S);\n    tblPmofcInfo = (TABLE_PMOFC_S *)VOS_MemAlloc(PID_TEST, STATIC_MEM_PT, bufLen);\n    PUB_CONDITION_RET((tblPmofcInfo == VOS_NULL_PTR), VOS_ERR);\n\n    memset_s(tblPmofcInfo, bufLen, 0, bufLen);\n\n    stBuf.StdBuf.ulBufLen = bufLen;\n    stBuf.StdBuf.pucData = (VOS_UINT8 *)tblPmofcInfo;\n\n    ret = DBS_LocalGetAllRecordForDatabase(gulDbId, RID_TBL_PMOFC, &stBuf);\n    if (ret != VOS_OK) {\n        VOS_MemFree(PID_TEST, tblPmofcInfo);\n        tblPmofcInfo = VOS_NULL_PTR;\n        return VOS_ERR;\n    }\n\n    \n    VOS_UINT32 recNum = DbGetTblActualRecNumById(RID_TBL_PMOFC);\n    if (recNum > MAX_TBL_PMOFC_REC_NUM) {\n        VOS_MemFree(PID_TEST, tblPmofcInfo);\n        tblPmofcInfo = VOS_NULL_PTR;\n        return VOS_ERR;\n    }\n\n    for (VOS_UINT32 curIdx = 0; curIdx < recNum; curIdx++) {\n        if (tblPmofcInfo->addressType == IP_ADDR_TYPE_IPV4) {\n            DbmsAddPmofcIpV4AnyTree(tblPmofcInfo);\n        } else if (tblPmofcInfo->addressType == IP_ADDR_TYPE_IPV6) {\n            DbmsAddPmofcIpV6AnyTree(tblPmofcInfo);\n        }\n        tblPmofcInfo++; \n    }\n\n    \n    VOS_MemFree(PID_TEST, tblPmofcInfo); \n    tblPmofcInfo = VOS_NULL_PTR;\n    return VOS_OK;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"header_type.h\"\n\nvoid *BadCase(WMP_MSG_BUFF_MODE_E enBuffMode, uint32_t ulMaxPacketLen, uint32_t *pulUserData, uint32_t ulUserDataLen);\n\nvoid *GoodCase(WMP_MSG_BUFF_MODE_E enBuffMode, uint32_t ulMaxPacketLen, uint32_t *pulUserData, uint32_t ulUserDataLen);\n/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"common.h\"\n\ntypedef int errno_t;\n\n#ifndef EOK\n#define EOK 0\n#endif\n\ntypedef enum WMP_MSG_PACKET_BUFF_MODE {\n    WMP_MSG_PACKET_BUFF_OUTSIDE_DEF,\n    WMP_MSG_PACKET_BUFF_INNER_DEF,\n    WMP_MSG_PACKET_BUFF_BUT\n} WMP_MSG_BUFF_MODE_E;\n\ntypedef struct TagWMP_MSG_PACKET_QUE {\n    uint32_t ulInterval;\n    uint32_t ulMaxPacketBuffLen;\n    uint32_t ulCacheNodeMaxNum;\n    WMP_MSG_BUFF_MODE_E enBuffMode;\n    uint32_t aulUserData[20];\n    unsigned char *pucPacketBuff;\n} WMP_MSG_PACKET_QUE_S;\n\n\n\n#include \"header_func.h\"\n#include \"securec.h\"\n\nvoid *internalnodeTGTcase(\n    wmp_msg_buff_mode_e enbuffmode, uint32_t ulmaxpacketlen, uint32_t *puluserdata, uint32_t uluserdatalen)\n{\n    WMP_MSG_PACKET_QUE_S *pstQue = malloc(sizeof(WMP_MSG_PACKET_QUE_S));\n    if (pstQue == NULL) {\n        return NULL;\n    }\n\n    if (enBuffMode == WMP_MSG_PACKET_BUFF_INNER_DEF) {\n        pstQue->pucPacketBuff = malloc(ulMaxPacketLen);\n        if (pstQue->pucPacketBuff == NULL) {\n            free(pstQue);\n            return NULL;\n        }\n    }\n\n    errno_t err = memcpy_s(pstQue->aulUserData, sizeof(pstQue->aulUserData), pulUserData, ulUserDataLen);\n    if (err != EOK) {\n        \n        if (pstQue->pucPacketBuff != NULL) {\n            free(pstQue->pucPacketBuff);\n        }\n        free(pstQue);  \n        return NULL;   \n    }\n\n    return pstQue;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInDocType {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInDocType.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/DocType_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String systemID) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        \n        \n        \n        \n        \n        \n        \n        document.addDocType(\"key\", \"\", systemID); \n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1043",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\nusing namespace std;\n\n\nconstexpr uint8_t APS_PROTECT_NUM{2};\n\nvoid containeraccessTGT(const vector<int> &vec)\n{\n    if (vec.size() != APS_PROTECT_NUM) {  \n        \n        cout << \"Error! vec[0]: \" << vec[0] << endl;  \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1101",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.sqlinput;\n\nimport com.huawei.bme.das.CmdRequest;\nimport com.huawei.bme.das.DASCommand;\nimport com.huawei.bme.das.DASCommandFactory;\nimport com.huawei.bme.das.DataSet;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithSqlInput\")\npublic class BmeInjectionWithSqlInput {\n    \n    \n    @GetMapping(\"/bad001\")\n    @ResponseBody\n    public List<String> ba001(@RequestParam(value = \"sql\") String sql) {\n        CmdRequest cmdRequest = new CmdRequest();\n        cmdRequest.setSQL(sql); \n\n        List<String> users = new ArrayList<>();\n        DASCommand dasCommand = DASCommandFactory.getDASCommand();\n        DataSet dataSet = dasCommand.execute(cmdRequest).getDataSet();\n        if (dataSet != null) {\n            if (dataSet.next()) {\n                users.add(dataSet.getString(\"name\"));\n            }\n        }\n\n        return users;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include \"external_data_common.h\"\n\nvoid Case2(char *ptr, unsigned int ptrlen)\n{\n    u32 uiIndex;\n    SAS_CQ_ENTRY_U *entry = nullptr;\n    u16 ldiot;\n    SCSI_PROC_HANDLE_S *procHandle = nullptr;\n    u8 ucCmplStatus;\n    errno_t errRet;\n    SAS_CQ_PENDING_BUFFER_S *cqPending = SAS_GetSasCqPendingBuf(); \n\n    for (uiIndex = 0; uiIndex < cqPending->PendingNum; uiIndex++) {\n        entry = (SAS_CQ_ENTRY_U *)(&(cqPending->pPendingBuffer[uiIndex]));\n        ldiot = GET_COMP_LDIOT(entry->uiData32[1]);\n        procHandle = &g_stCmdTmHandle[ldiot];  \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1093",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jndi.lookupcase;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport javax.naming.InitialContext;\nimport javax.naming.NamingException;\n\n\n@Controller\n@RequestMapping(\"/JndiAttackedLowRMI\")\npublic class JndiAttackedLowRMI {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JndiAttackedLowRMI.class);\n\n    private static final String[] URI_ARRAY = {\"rmi://1.2.3.4/aaa\", \"rmi://5.6.7.8/aaa\"};\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    public void TGT001(@RequestParam String uri) {\n        try {\n            \n            \n            \n            System.setProperty(\"com.sun.jndi.rmi.object.trustURLCodebase\", \"true\");\n            System.setProperty(\"com.sun.jndi.ldap.object.trustURLCodebase\", \"true\");\n            \n            \n            new InitialContext().lookup(uri); \n        } catch (NamingException e) {\n            LOGGER.info(\"TGT001: Lookup failed\");\n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1016",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"securec.h\"\n#include \"basic_data_type.h\"\n\nstatic int FuncIndexA()\n{\n    return 10;\n}\n\nvoid casestrcpysTGT(char *str)\n{\n    if (str == NULL) {\n        return;\n    }\n\n    int index = FuncIndexA(); \n    \n    errno_t rc = strcpy_s(str, index, \"dddfffff\");  \n    if (rc != EOK) {\n        return;\n    }\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n\ntypedef struct {\n    int a;\n    int b;\n} IndexStruct;\n\n\n\nstatic int FuncIndexA(void)\n{\n    return 10;\n}\n\nvoid Case15(IndexStruct *strList, uint32_t len)\n{\n    if (strList == nullptr) {\n        return;\n    }\n\n    int index = FuncIndexA();\n    int a = strList[index].a; \n    int b = strList[index].b; \n\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include \"securec.h\"\n#include \"basic_data_type.h\"\n\nusing namespace std;\n\n\nconstexpr int MAX_STRING_LENGTH = 26;\n\n\n\nuint32_t Case4Bad(const std::string &sourceString)\n{\n    char buf[MAX_STRING_LENGTH];\n    \n    errno_t err = memcpy_s(buf, sizeof(buf), sourceString.data(), sourceString.length());\n    if (err != EOK) {\n        return 1;\n    }\n\n    PrintContentBad(buf);\n    return 0;\n}\n\n\n\nuint32_t Case4Good(const std::string &sourceString)\n{\n    char buf[MAX_STRING_LENGTH];\n    \n    errno_t err = strncpy_s(buf, sizeof(buf), sourceString.data(), sourceString.length());\n    if (err != EOK) {\n        return 1;\n    }\n\n    PrintContentGood(buf);\n    return 0;\n}\n\n\n\nuint32_t Case4Good2(const std::string &sourceString)\n{\n    char buf[MAX_STRING_LENGTH];\n    errno_t err = memcpy_s(buf, sizeof(buf), sourceString.data(), sourceString.length());\n    if (err != EOK) {\n        return 1;\n    }\n\n    \n    buf[MAX_STRING_LENGTH - 1] = '\\0';\n\n    PrintContentGood2(buf);\n    return 0;\n}\n\nstatic void printcontentTGT(char *buf)\n{\n    printf(\"buf content: %s\\n\", buf);  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.cmdinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.owasp.esapi.codecs.WindowsCodec;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/CommandInjectionInProcessBuilder\")\npublic class CommandInjectionInProcessBuilder {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"ip\") String ip) throws IOException {\n        if (Objects.isNull(ip)) {\n            return \"ip is null\";\n        }\n        List<String> commands = new ArrayList<>();\n        commands.add(\"cmd.exe\");\n        commands.add(\"/c\");\n        commands.add(\"ping\");\n        \n        commands.add(HWEncoder.encodeForOS(new WindowsCodec(), ip));\n\n        ProcessBuilder processBuilder = new ProcessBuilder(commands); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return \"success\";\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1025",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <securec.h>\n#include <pthread.h>\n#include <unistd.h>\n\n\n\n#define MEM_SIZE 100\n\nvoid *g_globalPtr[2] = {0};\npthread_mutex_t g_mutex;\n\nvoid *GetPtr(int index)\n{\n    return g_globalPtr[index];\n}\n\nvoid SavePtr(int index, void *ptr)\n{\n    g_globalPtr[index] = ptr;\n}\n\n\n\n\n\nvoid *ThreadFunctionB(void *arg)\n{\n    while (1) {\n        pthread_mutex_lock(&g_mutex);\n        void *ptr = GetPtr(1);\n        if (ptr != NULL) {\n            free(ptr);\n            printf(\"Thread B freed memory at %p\\n\", ptr);\n            SavePtr(1, NULL);\n        }\n        pthread_mutex_unlock(&g_mutex);\n        sleep(1);\n    }\n}\n\nint BadCase()\n{\n    pthread_mutex_init(&g_mutex, NULL);\n\n    pthread_t threadA, threadB;\n    pthread_attr_t attr;\n    pthread_attr_init(&attr);\n    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);\n\n    if (pthread_create(&threadA, &attr, ThreadFunctionABad, NULL) != 0) {\n        perror(\"pthread_create\");\n    }\n    if (pthread_create(&threadB, &attr, ThreadFunctionB, NULL) != 0) {\n        perror(\"pthread_create\");\n    }\n\n    sleep(5);  \n\n    pthread_attr_destroy(&attr);\n    pthread_mutex_destroy(&g_mutex);\n\n    return 0;\n}\n\nint GoodCase()\n{\n    pthread_mutex_init(&g_mutex, NULL);\n\n    pthread_t threadA, threadB;\n    pthread_attr_t attr;\n    pthread_attr_init(&attr);\n    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);\n\n    if (pthread_create(&threadA, &attr, ThreadFunctionAGood, NULL) != 0) {\n        perror(\"pthread_create\");\n    }\n    if (pthread_create(&threadB, &attr, ThreadFunctionB, NULL) != 0) {\n        perror(\"pthread_create\");\n    }\n\n    sleep(5);  \n\n    pthread_attr_destroy(&attr);\n    pthread_mutex_destroy(&g_mutex);\n\n    return 0;\n}\n\nvoid *threadfunctionaTGT(void *arg)\n{\n    while (1) {\n        pthread_mutex_lock(&g_mutex);\n        void *ptr = GetPtr(1);\n        if (ptr == NULL) {\n            ptr = malloc(MEM_SIZE);\n            if (ptr == NULL) {\n                perror(\"malloc\");\n                pthread_mutex_unlock(&g_mutex);\n                sleep(1);\n                continue;\n            }\n            printf(\"Thread A allocated memory at %p\\n\", ptr);\n        }\n        memset_s(ptr, MEM_SIZE, 0, MEM_SIZE);\n        SavePtr(1, ptr);\n        free(ptr);\n        \n        SavePtr(0, NULL); \n        pthread_mutex_unlock(&g_mutex);\n        sleep(1);\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1027",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <securec.h>\n#include <stdint.h>\n\n\n\ntypedef struct Node {\n    struct Node *next;\n} LinkListNode;\n\nvoid FreeLinkList(LinkListNode *head)\n{\n    LinkListNode *curNode = head;\n    while (curNode != NULL) {\n        LinkListNode *tmp = curNode;\n        curNode = curNode->next;\n        free(tmp);\n    }\n}\n\nLinkListNode *CreateLinkList(int num)\n{\n    LinkListNode *head = malloc(sizeof(LinkListNode));\n    if (head == NULL) {\n        return NULL;\n    }\n    LinkListNode *cur = head;\n    for (int i = 0; i < num - 1; ++i) {\n        cur->next = malloc(sizeof(LinkListNode));\n        if (cur->next == NULL) {\n            FreeLinkList(head);\n            return NULL;\n        }\n        cur = cur->next;\n    }\n    return head;\n}\n\nuint32_t RemoveNodeFromLinkList(LinkListNode *head, LinkListNode *node)\n{\n    return 0;\n}\n\nLinkListNode *DoSomething(LinkListNode *head)\n{\n    return head;\n}\n\nint TGTcase(int num)\n{\n    LinkListNode *head = CreateLinkList(num); \n    if (head == NULL) {\n        \n        return -1; \n    }\n\n    \n    LinkListNode *removeNode = DoSomething(head);\n    if (removeNode == NULL) {\n        return -1; \n    }\n\n    \n    return 0; \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include \"securec.h\"\n\n\nclass DoubleFreeCase01 {\npublic:\n    DoubleFreeCase01() = default;\n    ~DoubleFreeCase01();\n    int Init();\n    void ProcBadFunc();\n    void ProcGoodFunc();\n\nprivate:\n    void *m_ptr{nullptr};\n};\n\nint DoubleFreeCase01::Init()\n{\n    int len = 100;\n    m_ptr = malloc(len);\n    if (m_ptr == nullptr) {\n        return 1;\n    }\n\n    (void)memset_s(m_ptr, len, 0, len);\n    return 0;\n}\n\n\n\n\n\n\n，析构函数再次释放，导致内存双重释放\nDoubleFreeCase01::~DoubleFreeCase01()\n{\n    if (m_ptr != nullptr) {\n        free(m_ptr);\n        m_ptr = nullptr;\n    }\n}\n\nint BadTestCase()\n{\n    DoubleFreeCase01 badCase;\n    \n    if (badCase.Init() != 0) {\n        return -1;\n    }\n    badCase.ProcBadFunc();\n    return 0;\n}\n\nint GoodTestCase()\n{\n    DoubleFreeCase01 goodCase;\n    \n    if (goodCase.Init() != 0) {\n        return -1;\n    }\n    goodCase.ProcGoodFunc();\n    return 0;\n}\n\nvoid doublefreecase01::procTGTfunc()\n{\n    if (m_ptr != nullptr) {\n        free(m_ptr);\n        m_ptr = nullptr;  \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1038",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Drv1 {\n    int para;\n    void (*func)(int para);\n};\n\nstruct RtMsg {\n    int other1;\n    int other2;\n    struct Drv1 mydrv;\n};\n\nvoid overreadforstructTGT(void *msg)\n{\n    if (msg == NULL) {\n        return;\n    }\n    struct RtMsg *rt = (struct RtMsg*)(msg);\n    rt->mydrv.func(rt->mydrv.para); \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1002",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid newlenthnotcheck2TGT()\n{\n    int len;\n    std::cin >> len; \n    \n    char *p = new char[len]; \n    p[0] = 1;\n    delete[] p;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nvoid convertstructwithoutlengthcheck3TGT(void *output, unsigned int outlen)\n{\n    \n    if (output == nullptr || outLen < sizeof(StaFttrSpeedTotInfo)) {\n        return;\n    }\n\n    StaFttrSpeedTotInfo *result = (StaFttrSpeedTotInfo *)output; \n    StaFttrSpeedTotInfo *resultInfo = nullptr;\n    (void)WLAN_SPD_DelDiagnosisInfo(&resultInfo);\n    result = resultInfo;   \n\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\n\n\n\n\n\nvoid TestFreeStackMemory()\n{\n    printf(\"\\nTesting FreeStackMemoryBad:\\n\");\n    printf(\"Note: This may cause undefined behavior or program crash.\\n\");\n    FreeStackMemoryBad();\n\n    printf(\"\\nTesting FreeStackMemoryGood:\\n\");\n    FreeStackMemoryGood();\n    printf(\"Function executed safely.\\n\");\n}\n\nvoid freestackmemoryTGT()\n{\n    int32_t stackArray[3] = { 0 };\n    int32_t *stackPointer = stackArray;\n\n    \n    free(stackPointer);  \n    stackPointer = NULL;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1031",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\ntypedef struct Iovec {\n    VOS_CHAR *iov_base;     \n    VOS_INT32 iov_len;        \n} Iovec;\n\ntypedef struct Msghdr {\n    VOS_CHAR  *msg_name;             \n    VOS_INT16 msg_namelen;            \n    Iovec *msgIov;      \n    VOS_INT16 msgIovLen;             \n    VOS_CHAR  *msgControl;        \n    VOS_INT16 msgControlLen;       \n    VOS_INT16 msgFlags;\n} Msghdr;\n\ntypedef struct TagIN6EnumAddr {\n    union {\n        unsigned char u6Ucaddr[16];\n        unsigned short u6Usaddr[8];\n        unsigned long u6Uladdr[4];\n    } u6Addr; \n#define S6_ADDR u6Addr.u6Ucaddr\n#define S6_ADDR8 u6Addr.u6Ucaddr\n#define S6_ADDR16 u6Addr.u6Usaddr\n#define S6_ADDR32 u6Addr.u6Uladdr\n} IN6ENUMADDR_S;\n\nstruct SockaddrIn6 {\n    unsigned char ucSin6Len;      \n    unsigned char ucSin6Family;   \n    unsigned short usSin6Port;    \n    unsigned long ulSin6Flowinfo; \n    IN6ENUMADDR_S stSin6Addr;     \n    unsigned long ulSin6ScopeId; \n};\n\n#define SOCKET_BUFFER_SIZE 0xFFFF\n\nVOS_UINT32 GRE_RawSocketRecvPkgIPv6(VOS_INT32 *recvLen)\n{\n    VOS_UINT8             aucData[300] = { 0 };   \n    struct Msghdr         stMsgHdr     = {0};\n    struct SockaddrIn6   stIp6        = {0};\n    struct Iovec          stIov        = {0};\n    VOS_UCHAR            *buffTemp     = VOS_NULL_PTR;\n\n    buffTemp = VOS_MemAlloc(PID_TEST, STATIC_MEM_PT, SOCKET_BUFFER_SIZE);\n\n    (VOS_VOID)memset(buffTemp, 0, SOCKET_BUFFER_SIZE);   \n\n    stMsgHdr.msg_name = (VOS_CHAR*)&stIp6;\n    stMsgHdr.msg_namelen = sizeof(stIp6);\n    stIov.iov_base = buffTemp;\n    stIov.iov_len = SOCKET_BUFFER_SIZE;\n    stMsgHdr.msgIov = &stIov;\n    stMsgHdr.msgIovLen  = 1;\n\n    stMsgHdr.msgControl = (VOS_CHAR*)aucData;\n    stMsgHdr.msgControlLen = sizeof(aucData);\n\n    (VOS_VOID)VOS_MemFree(PID_TEST, buffTemp);\n    buffTemp = VOS_NULL_PTR;\n\n    return VOS_OK;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1019",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include <map>\n#include <functional>\nusing namespace std;\n\n\nclass DrvOpmImpl {\npublic:\n    int m_value = 0;\n    int SetValue(int value)\n    {\n        m_value = value;\n        return 0;\n    }\n    void GetDetailPowerBad(int index);\n    void GetDetailPowerGood(int index);\n};\n\nvoid drvopmimpl::getdetailpowerTGT(int index)\n{\n    using AnalysisFunc = std::map<int, std::function<int()>>;\n    \n    const static AnalysisFunc ANALYSIS_FUNC_MAP = {         \n        {0, [this]() { return SetValue(0); }},  \n    };\n\n    auto iter = ANALYSIS_FUNC_MAP.find(index);\n    if (iter == ANALYSIS_FUNC_MAP.end()) {\n        return;\n    }\n    iter->second();\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1019",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\nchar *returnlocaladdr1TGT()\n{\n    char arr[10];\n    arr[0] = 1;\n    return arr;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <stdint.h>\n\n\n\n\ntypedef struct {\n    void *buff1;\n    void *buff2;\n} StructA;\n\nuint32_t TGTcase()\n{\n    StructA *s = (StructA*)malloc(sizeof(StructA));\n    if (s == nullptr) {\n        return 1;\n    }\n\n    s->buff1 = malloc(10);\n    if (s->buff1 == nullptr) {\n        free(s);\n        return 1;\n    }\n\n    s->buff2 = malloc(10);\n    if (s->buff2 == nullptr) {\n        \n        free(s->buff1);\n        free(s);  \n        return 1;\n    }\n\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nusing namespace std;\n\nvoid TransUpdateAppFile_correct(CRM_CMD_S &crmCmd)\n{\n    const uint16_t SHA512_HEX_SIZE = 512;\n    uint8_t hexSha[SHA512_HEX_SIZE + 1] {0};\n    \n    if (crmCmd.wParaLen > SHA512_HEX_SIZE) {\n        return;\n    }\n    errno_t err = memcpy_s(hexSha, sizeof(hexSha), crmCmd.pbyPara, crmCmd.wParaLen);\n    if (err != EOK) {\n        return;\n    }\n    \n    hexSha[crmCmd.wParaLen] = '\\0';\n    string hex(reinterpret_cast<const char*>(hexSha)); \n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1019",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"basic_data_type.h\"\n#include <stdio.h>\n#include <stdbool.h>\n#include <stdint.h>\n\n\nuint16_t *g_handleList[200] = {0};\ntypedef struct {\n    uint32_t handle;\n    uint32_t uiLength;\n    uint32_t uiName;\n    uint32_t uvParam1;\n    uint32_t uvParam2;\n    uint8_t ucMode;\n    uint8_t ucPrioty;\n    uint8_t ucQueueId;\n    uint8_t ucReserved[5];\n} VOS_REL_START_PARAM_S;\n\nuint32_t VosReltmrMsgStartByQuePrio(uint16_t *tmrHandle, VOS_REL_START_PARAM_S *para)\n{\n    for (uint32_t loop = 0; loop < sizeof(g_handleList); loop++) {\n        if (g_handleList[loop] != NULL) {\n            g_handleList[loop] = tmrHandle;\n            return RET_OK;\n        }\n    }\n\n    return RET_ERR;\n}\n\nvoid ScheduleDelayTimer(uint64_t addrId, uint16_t targetQueue, uint32_t identity, uint16_t *tmrHandle, uint32_t delay)\n{\n    VOS_REL_START_PARAM_S startPara = {0, 0, identity, 0, targetQueue, 0, 0, (uint8_t)(targetQueue)};\n    uint32_t ret = VosReltmrMsgStartByQuePrio(tmrHandle, &startPara);\n    if (ret != RET_OK) {\n        printf(\"Register handle fail\");\n    }\n}\n\nbool delaytimerTGTcase()\n{\n    uint16_t handle = 0;\n    ScheduleDelayTimer(0, 0, 0, &handle, 0);  \n    return true;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define LOCAL_APP_MODULE 401\n#define MAX_CALL_ID_HEADER_LEN 128\n#define LOG_DATASECTION_PROTOCOL_INFO (0x0100) \n\n#define IS_VALID_STRING_PTR(_pstrVar) ((VOS_NULL_PTR != (_pstrVar)) \\\n    && (VOS_NULL_PTR != (_pstrVar)->pcData) \\\n    && (0 < (_pstrVar)->iLength))\n\ntypedef struct _String {\n    VOS_UINT32 iLength; \n    VOS_UCHAR *pcData;  \n} String;\n\ntypedef struct {\n    VOS_UINT32      eSoType;                           \n    VOS_UINT32      ulModuleId;                        \n    VOS_UINT32      ulogID;                            \n    VOS_UINT32      ulBlogTime;                        \n    VOS_CHAR        aucCallid[MAX_CALL_ID_HEADER_LEN]; \n    union {                                            \n        VOS_UINT8     aucIpV4[4];\n        VOS_UINT8     aucIpV6[16];\n    } aucIp;\n    VOS_UINT8       enModuleType;                      \n    VOS_UINT8       ulAddrType;                        \n} LogProtocolBasicInfo;\n\n\nextern VOS_UINT32 LOG_CSCF_RDInfo(VOS_UINT32 ulSoType, VOS_UINT32 ulSoID,\n    VOS_UINT32 ulDatasectionType, VOS_UINT32 ulLength, VOS_VOID *data);\n\nint SafeMemcpyS(void *pvDst, size_t uiDstMax, const void *pvSrc, size_t uiCount)  \n{\n    if (pvDst == NULL || pvSrc == NULL) {\n        return -1;  \n    }\n    \n    if (uiDstMax < uiCount) {\n        return -1;  \n    }\n    \n    \n    memcpy(pvDst, pvSrc, uiCount);\n    return 0;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1043",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n#include \"spt_bare_smart_ptr.h\"\n\n\ntypedef struct {\n    uint8_t type : 5U;\n    uint8_t nri : 2U;\n    uint8_t f : 1U;\n} Header;\ntypedef struct {\n    uint8_t type : 5U;  \n    uint8_t r : 1U;     \n    uint8_t e : 1U;     \n    uint8_t s : 1U;     \n} FuHeader;\ntypedef struct {\n    uint8_t forbiddenBit;\n    uint8_t nalRefIdc;\n    uint8_t naluType;\n} Nalu;\ntypedef struct {\n    Header fuIndicator;\n    FuHeader fuHeader;\n    Nalu nalu;\n    uint8_t marker;\n} FuPackInfo;\ntypedef struct {\n    size_t totalLen;\n    size_t payloadLen;\n    std::vector<uint8_t> recvBuf; \n} PacketInfo;\ninline constexpr uint8_t FU_INDICATOR_POSITION = 12U;\ninline constexpr uint8_t FU_HEADER_POSITION = 13U;\n\nvoid ProcFuAPack(FuPackInfo& fuPack, PacketInfo& pack)\n{\n    fuPack.fuIndicator = *(reinterpret_cast<Header*>(&pack.recvBuf[FU_INDICATOR_POSITION])); \n    fuPack.fuHeader = *(reinterpret_cast<FuHeader*>(&pack.recvBuf[FU_HEADER_POSITION])); \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1022",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_WARNING_DESCRIPTION_LEN 128\n#define CHR_MAX_WARN_LENGTH 255\n#define RCSS_SUCCESS \"\\\"Remote Operate Success\\\"\"\n#define RCSS_SUCCESS_LEN 24\n#define SP_IS_USE_NSOPERATE_TID_ON_RCSS 10\n#define SIP_MSG_INVITE_OXX_RSP 1014\n\ntypedef enum {\n    ABC_SC_SUCCESS          = 0,  \n    ABC_SC_REALEASE         = 0x80030, \n    ABC_SC_INNER_ERR        = 0x80FFF \n} ABC_SC_ERROR_CODE;\n\n\ntypedef struct {\n    VOS_UINT32 ulSipcId;            \n    VOS_UINT32 ulMsgCxt;            \n} SIPC_INFO;\n\n\ntypedef struct  {\n    VOS_UINT32      ulBcId;              \n\n    VOS_UINT16      usCurFlowType;       \n    VOS_UINT8       ucUpLegType;         \n    VOS_UINT8       ucDownLegType;       \n\n    VOS_UINT16      usCurSipMsgType;     \n    VOS_UINT32      ulStatusCode;        \n    SIPC_INFO       sipInfo;             \n    VOS_UINT32      ulStackTrs;          \n    VOS_BOOL        bPsiFlag;\n    VOS_UINT8       bIsConfStructFalseMediaFlag : 1;\n    VOS_UINT8       bIsConfSendInviteToMRFFWithMedialag : 1;\n    VOS_UINT8       bCCBSInfoSc : 1;\n    VOS_UINT8       bCPSbeforCallRight : 1;\n    VOS_UINT8       bSvcSendSri : 1;\n    VOS_UINT8       bM1OneNum : 1;\n    VOS_UINT8       bIsSGsMessageTypeFlag : 1;\n    VOS_UINT32      key_reserved_1;\n    VOS_UINT32      key_reserved_2;\n} AbcSipFlowVar;\n\ntypedef struct tagWarningHeaderInfo {\n    VOS_UINT8 ucFlag;\n    VOS_UINT8 szWarnAgent[CHR_MAX_WARN_LENGTH + 1];\n    VOS_UINT8 szRelDescription[MAX_WARNING_DESCRIPTION_LEN + 1];\n} WarningHeaderInfo;\n\nextern VOS_VOID ABC_SendRcssRspMsg(AbcSipFlowVar *pFlowVar, VOS_UINT32 ulErrCode);\nextern VOS_UINT32 ABC_GetWarningTextFromSipInfo(WarningHeaderInfo *pWarningHdrInfo, SIPC_INFO sipInfo);\nextern VOS_INT32 VOS_StrCmp(VOS_CHAR *pscStr1, VOS_CHAR *pscStr2);\nextern VOS_UINT32 VOS_Free(VOS_VOID *pBuf);\n\nVOS_VOID abc_sendrcssrspTGT(abcsipflowvar *pflowvar)\n{\n    VOS_UINT32 ulBcId = VOS_NULL_DWORD;\n    WarningHeaderInfo *pWarningHdrInfo  = VOS_NULL_PTR;\n\n    PUB_CONDITION_VOID(pFlowVar == VOS_NULL_PTR);\n\n    ulBcId = pFlowVar->ulBcId;\n\n    if (SIP_MSG_INVITE_OXX_RSP == pFlowVar->usCurSipMsgType) {\n        \n        pWarningHdrInfo = VOS_MemAlloc(PID_TEST, DYNAMIC_DOPRA_MEM_PT, sizeof(WarningHeaderInfo));\n        PUB_CONDITION_VOID(pWarningHdrInfo == VOS_NULL_PTR);\n\n        if (EOK != memset_s(pWarningHdrInfo,  sizeof(WarningHeaderInfo), VOS_NULL, sizeof(WarningHeaderInfo))) {\n            \n            VOS_Free(pWarningHdrInfo); \n            return;\n        }\n\n        if (VOS_FALSE == ABC_GetWarningTextFromSipInfo(pWarningHdrInfo, pFlowVar->sipInfo)) {\n            VOS_Free(pWarningHdrInfo); \n            ABC_SendRcssRspMsg(pFlowVar, ABC_SC_INNER_ERR);\n            return;\n        }\n\n        if (RCSS_SUCCESS_LEN == VOS_StrNLen((VOS_CHAR *)pWarningHdrInfo->szRelDescription, MAX_WARNING_DESCRIPTION_LEN)\n            && VOS_StrCmp((VOS_CHAR *)RCSS_SUCCESS, (VOS_CHAR *)pWarningHdrInfo->szRelDescription) == 0) {\n            ABC_SendRcssRspMsg(pFlowVar, ABC_SC_SUCCESS);\n        } else {\n            if (VOS_TRUE == SP_IS_USE_NSOPERATE_TID_ON_RCSS) {\n                ABC_SendRcssRspMsg(pFlowVar, ABC_SC_REALEASE);\n            } else {\n                ABC_SendRcssRspMsg(pFlowVar, ABC_SC_INNER_ERR);\n            }\n        }\n\n        VOS_Free(pWarningHdrInfo); \n        return;\n    }\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1027",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <securec.h>\n#include <stdint.h>\n\n\n\n#define MAX_NUM 10\nusing BYTE = unsigned char;\n\nint SwatCase()\n{\n    const uint16_t len = 10;\n    BYTE *outCmd[MAX_NUM];\n    memset_s(outCmd, sizeof(outCmd), 0, sizeof(outCmd));\n\n    for (int i = 0; i < MAX_NUM; i++) {\n        outCmd[i] = new uint8_t[len];\n        if (outCmd[i] == nullptr) {\n            \n            return -1;   \n        }\n    }\n\n    \n    for (int i = 0; i < MAX_NUM; i++) {\n        if (outCmd[i] != nullptr) {\n            delete[] outCmd[i];\n            outCmd[i] = nullptr;\n        }\n    }\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1030",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include \"basic_data_type.h\"\n\nvoid dereferenceptrTGT(char *p)\n{\n    if (p == NULL) {\n        return;\n    }\n    p[0] = 1;  \n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_ACCT_MSG_LENGTH_VALUE  0xFFFFFFFF\n#define MAX_BILL_POOL_LEN 4096\n\ntypedef enum RF_ENUM_ACR_ORDER {\n    RF_ACR_ORDER_START = 1,\n    RF_ACR_ORDER_SECOND,\n    RF_ACR_ORDER_THREE,\n    RF_ACR_ORDER_BUTT\n}RF_ENUM_ACR_ORDER;\n\ntypedef struct _RFDialog {\n    VOS_UINT32 ulFirstAcctMsgIdx;\n    VOS_UINT32 ulLastAcctMsgIdx;\n    VOS_UINT32 aulActualAcrLength[RF_ACR_ORDER_BUTT];\n    VOS_UINT16 usAcrNumInPool;\n    VOS_UINT8 aucAcrBody[0];\n} RFDialog;\n\nVOS_UINT8 g_rfBillData[MAX_BILL_POOL_LEN] = {0};\n\nVOS_UINT32 RdbBillSaveAcctMsgToPool(VOS_UINT32 acctMsgLen, VOS_UINT8 *acctMsg, VOS_UINT32 acctMsgNo)\n{\n    if (acctMsg == VOS_NULL_PTR) {\n        return VOS_ERR;\n    }\n\n    if (memcpy_s(g_rfBillData, MAX_BILL_POOL_LEN, acctMsg, acctMsgLen) != EOK) { \n        return VOS_ERR;\n    }\n\n    return VOS_OK;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1002",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <cstdint>\n\n#include \"external_data_common.h\"\n\nusing namespace std;\n\nint OSFusionService::case3(const std::string &packagePath, uint64_t offset, uint32_t readSize,\n    std::vector<char> &packagePart, std::string &checksum)\n{\n    if (m_status != ServiceStatus::RUNNING) {\n        return -1;\n    }\n\n    if (readSize == 0) {\n        return -1;\n    }\n    std::ifstream ifs(packagePath.c_str(), std::ios::binary);\n    if (!ifs) {\n        return -1;\n    }\n\n    ifs.seekg(offset);\n    packagePart.resize(readSize);  \n\n    uint32_t actualSize = 0;\n    while (actualSize < readSize) {\n        auto currentSize = ifs.readsome(packagePart.data() + actualSize, readSize - actualSize);\n        if (currentSize <= 0) {\n            break;\n        }\n        actualSize += currentSize;\n    }\n    checksum = std::to_string(actualSize);\n    return static_cast<int>(actualSize);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1031",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\nstruct DataWrapper {\n    std::unique_ptr<int> data;\n};\n\nDataWrapper CreateDataWrapper()\n{\n    return { std::unique_ptr<int>(new (std::nothrow) int(0)) };  \n}\n\n\n\n\n\n\n\nvoid TestStructMemberAccess()\n{\n    std::cout << \"Testing AccessStructMembersUnsafe:\" << std::endl;\n    AccessStructMembersUnsafe();\n\n    std::cout << \"Testing AccessStructMembersSafe:\" << std::endl;\n    AccessStructMembersSafe();\n}\n\nvoid AccessStructMembersUnsafe()\n{\n    DataWrapper wrapper = CreateDataWrapper();\n    *(wrapper.data) = 10;  \n    std::cerr << \"Wrote to struct inner pointer without check.\" << std::endl;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1030",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <malloc.h>\n#include \"basic_data_type.h\"\n\nvoid freeptrTGT(char *p)\n{\n    if (p == NULL) {\n        return;\n    }\n    free(p);  \n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\ntypedef struct {\n    int32_t arg;\n    uint32_t flag;\n} ProcessConfig;\n\n\ntypedef struct {\n    int32_t (*create)(ProcessConfig *config);\n} ProcessScheduler;\n\n#define PROCESS_SCHEDULER_COUNT 4\nProcessScheduler g_processSchedulers[PROCESS_SCHEDULER_COUNT] = { 0 };\n\n\nstatic inline uint32_t GetConfigPolicy(const ProcessConfig *config)\n{\n    return ((config->flag & 0xff00) >> 8);\n}\n\n\n\n\n\n\n\nvoid TestProcessConfig()\n{\n    ProcessConfig configBad;\n    configBad.flag = 0x00ff;  \n    int32_t resultBad2 = ProcessConfigBad(&configBad);\n    printf(\"Result: %d\\n\", resultBad2);\n\n    ProcessConfig configGood;\n    configGood.flag = 0x00ff;  \n    int32_t resultGood2 = ProcessConfigGood(&configGood);\n    printf(\"Result: %d\\n\", resultGood2);\n}\n\nint32_t processconfigTGT(processconfig *config)\n{\n    uint32_t policyIndex = GetConfigPolicy(config);  \n    const ProcessScheduler *scheduler = &g_processSchedulers[policyIndex];  \n    if (scheduler->create != NULL) {\n        return scheduler->create(config);\n    }\n\n    return -1;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1031",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "class ObjMgr9 {\npublic:\n    int *m_ptr = nullptr;\n    void Init(int flag, int *p)\n    {\n        if (flag == 1) {\n            return;\n        }\n        m_ptr = p;\n    }\n    \n\n    \n};\n\nint Case9Bad()\n{\n    int val = 0;\n    ObjMgr9 obj1;\n    obj1.Init(1, &val);\n    obj1.SetValueBad(1);\n    return 0;\n}\n\nint Case9Good()\n{\n    int val = 0;\n    ObjMgr9 obj1;\n    obj1.Init(1, &val);\n    obj1.SetValueGood(1);\n    return 0;\n}\n\nvoid setvalueTGT(int val)\n    {\n        \n        *m_ptr = val;  \n    }"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <stdio.h>\n\n#include \"types.h\"\n\n#define STREAM_TO_UINT8(dst, p) do { \\\n    (dst) = (uint8)(*(p));    \\\n    (p) += 1; \\\n} while (0)\n\n#define STREAM_TO_UINT64(dst, p) do { \\\n    (dst) = (((uint64)(*(p))) + ((((uint64)(*((p) + 1)))) << 8) + \\\n            ((((uint64)(*((p) + 2)))) << 16) +     \\\n            ((((uint64)(*((p) + 3)))) << 24) +     \\\n            ((((uint64)(*((p) + 4)))) << 32) +     \\\n            ((((uint64)(*((p) + 5)))) << 40) +     \\\n            ((((uint64)(*((p) + 6)))) << 48) +     \\\n            ((((uint64)(*((p) + 7)))) << 56));      \\\n    (p) += 8; \\\n} while (0)\n\nstatic uint64 g_arr[8];\n\nvoid outofboundswriteTGT(const uint8* data, uint32 length)\n{\n    if (data == NULL || length <= 0) {\n        return;\n    }\n\n    uint8 num = 0;\n    uint64 id = 0;\n    STREAM_TO_UINT8(num, data);\n    \n    uint32 n = num < 8 ? num : 8;\n    uint32 l = (length - 1) / 8;\n    num = n < l ? n : l;\n    for (uint8 i = 0; i < num; i++) {\n        STREAM_TO_UINT64(id, data);\n        g_arr[i] = id; \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1016",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n\ntypedef struct {\n    int32_t a;\n    char c;\n} NotifyRequest;\n\n\ntypedef struct {\n    int32_t a;\n    char c;\n} NoticeRequest;\n\n\ntypedef struct {\n    int32_t a;\n    char b;\n    int32_t c;\n} NotifyResponse;\n\n\n\n\n\n\n\n\n\n\nvoid TestInitializeNotifyRequest()\n{\n    NotifyRequest *request1 = (NotifyRequest *)SAFE_MALLOC(sizeof(NotifyRequest));\n    int result1 = InitializeNotifyRequestBad1(request1);\n    printf(\"Result: %s\\n\", result1 == RETURN_OK ? \"Success\" : \"Failure\");\n\n    NotifyRequest *request2 = (NotifyRequest *)SAFE_MALLOC(sizeof(NotifyRequest));\n    int result2 = InitializeNotifyRequestBad2(request2);\n    printf(\"Result: %s\\n\", result2 == RETURN_OK ? \"Success\" : \"Failure\");\n    SAFE_FREE(request2);\n\n    NotifyRequest *request3 = (NotifyRequest *)SAFE_MALLOC(sizeof(NotifyRequest));\n    int result3 = InitializeNotifyRequestGood(request3);\n    printf(\"Result: %s\\n\", result3 == RETURN_OK ? \"Success\" : \"Failure\");\n    SAFE_FREE(request3);\n}\n\nint initializenotifyrequestTGT1(notifyrequest *request)\n{\n    if (request == NULL) {\n        printf(\"Error: Invalid request pointer\\n\");\n        return RETURN_ERROR;\n    }\n\n    \n    if (memset_s(request, sizeof(NotifyResponse), 0, sizeof(NotifyResponse)) != EOK) {  \n        printf(\"Error: Failed to clear request data\\n\");\n        return RETURN_ERROR;\n    }\n\n    return RETURN_OK;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1007",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <cstring>\n#include <securec.h>\n#include <cstdint>\n\n#define DEVICE_CONTROLLER_NUM\t1001\n\n\n\nclass DeviceControllerBad {\npublic:\n    DeviceControllerBad(int id) : deviceId(id)\n    {\n        config = new int(0x12345678);  \n    }\n    \n    virtual ~DeviceControllerBad()\n    {  \n        delete config;  \n        config = nullptr;\n    }\n    \n    virtual void showConfig() const\n    {  \n        std::cout << \"Device ID: \" << deviceId \n                  << \", Config: \" << *config << std::endl;\n    }\n\nprivate:\n    int deviceId;\n    int* config;  \n};\n\n\n\n\n\n\nclass DeviceControllerGood {\npublic:\n    DeviceControllerGood(int id) : deviceId(id)\n    {\n        config = new int(0x12345678);  \n    }\n    \n    \n    DeviceControllerGood(const DeviceControllerGood& other) : deviceId(other.deviceId)\n    {\n        config = new int(*other.config);  \n    }\n    \n    \n    DeviceControllerGood& operator=(const DeviceControllerGood& other)\n    {\n        if (this != &other) {\n            deviceId = other.deviceId;\n            int* newConfig = new int(*other.config);  \n            delete config;  \n            config = newConfig;\n        }\n        return *this;\n    }\n    \n    virtual ~DeviceControllerGood()\n    {\n        delete config;\n        config = nullptr;\n    }\n    \n    virtual void showConfig() const\n    {\n        std::cout << \"Device ID: \" << deviceId \n                  << \", Config: \" << *config << std::endl;\n    }\n\nprivate:\n    int deviceId;\n    int* config;  \n};\n\nint32_t testcaseTGT(void)\n{\n    \n    DeviceControllerBad* original = new DeviceControllerBad(DEVICE_CONTROLLER_NUM);\n    \n    \n    void* rawMemory = ::operator new(sizeof(DeviceControllerBad));\n    \n    \n    memcpy_s(rawMemory, sizeof(DeviceControllerBad), original, sizeof(DeviceControllerBad));    \n    \n    \n    DeviceControllerBad* copied = static_cast<DeviceControllerBad*>(rawMemory);\n    \n    \n    copied->showConfig();  \n    \n    \n    delete original;  \n    delete copied;    , 未定义行为：虚表指针损坏\n    \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nint freestackmemoryTGTcase1(char *nicname, unsigned int nicnamelength)\n{\n    \n    char charNicName[10];\n    charNicName[1] = nicName[nicNameLength - 1];\n    \n    free(charNicName);  \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1002",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <malloc.h>\n#include <iostream>\n\n\nvoid *VW_Malloc(long size)\n{\n    char *buf = NULL;\n\n    if (0 >= size) {\n        return NULL;\n    }\n\n    buf = (char *)malloc((unsigned long)size);\n    if (NULL == buf) {\n        return NULL;\n    }\n\n    return buf;\n}\n\nvoid VW_Free(void *buff)\n{\n    if (NULL != buff) {\n        free(buff);\n    }\n}\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid newlenthnotcheck4TGT()\n{\n    int len;\n    std::cin >> len;\n    char *p = (char *)VW_Malloc(len);  \n    p[0] = 1;\n    VW_Free(p);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1031",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include \"basic_data_type.h\"\n\nvoid deferencebeforechecknull04TGT(int size)\n{\n    int *ptr = NULL;\n    if (size > 0) {\n        ptr = &size;\n    }\n    printf(\"%d\", *ptr);  \n    if (ptr == NULL) {\n        return;\n    }\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\n\n\nconst uint32_t MAX_STRING_COUNT = 1000;\n\nvoid funmsgparsescriptTGT(uint8_t *pbypara, uint16_t wparalen)\n{\n    ParaGetTool ParaGetObj;\n    uint32_t dwCount = 0;\n    (void)ParaGetObj.Init(pbyPara, wParaLen);\n    (void)ParaGetObj.GetBENext(dwCount);  \n\n    \n    if (dwCount == 0 || dwCount > MAX_STRING_COUNT) {\n        return;\n    }\n\n    char **ppString = new char *[dwCount];                   \n    for (uint32_t dwLoop = 0; dwLoop < dwCount; dwLoop++) {\n    }\n\n    delete[] ppString;\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <vector>\n#include <algorithm>\n#include <iostream>\n\nusing namespace std;\n\nvoid invaliditerator1TGT()\n{\n    std::vector<int> data = {1, 2, 3, 4, 5, 6, 7};\n\n    auto pos = std::find(data.begin(), data.end(), 8);  \n    if (pos == data.end()) {\n        return;\n    }\n    std::cout << *pos;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include \"basic_data_type.h\"\n\nvoid dereferenceuninitptrTGT()\n{\n    char *p = (char *)malloc(1);  \n    DereferencePtrGood(p);        \n    free(p);\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.scriptengine.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.VelocityEngine;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\nimport javax.script.Compilable;\nimport javax.script.CompiledScript;\nimport javax.script.ScriptEngine;\nimport javax.script.ScriptEngineManager;\nimport javax.script.ScriptException;\n\n\n@RestController\npublic class CompiledScriptEvalInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(CompiledScriptEvalInjection.class);\n\n    private static final String LETTER_DIGIT_REGEX = \"^[a-z0-9A-Z]+$\";\n\n    private static final String[] SCRIPT_ARRAY = {\"print('hello $param')\", \"print('age is $param')\"};\n\n    \n    \n\n    \n    \n    @GetMapping(path = \"/CompiledScriptEvalInjection/TGT001\")\n    public void TGT001(int index, String param) {\n        ScriptEngineManager manager = new ScriptEngineManager();\n        ScriptEngine engine = manager.getEngineByName(\"JavaScript\");\n        try (StringWriter writer = new StringWriter()) {\n            \n            String script = SCRIPT_ARRAY[index];\n\n            \n            if (!param.matches(LETTER_DIGIT_REGEX)) {\n                LOGGER.error(\"param is illegal\");\n                return;\n            }\n            VelocityEngine velocityEngine = new VelocityEngine();\n            VelocityContext context = new VelocityContext();\n            context.put(\"param\", param);\n            velocityEngine.evaluate(context, writer, \"\", script);\n\n            \n            CompiledScript compile = ((Compilable) engine).compile(writer.toString()); \n            compile.eval(); \n        } catch (ScriptException | IOException exception) {\n            LOGGER.error(\"Some errors happened when executing the script\");\n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_ACCT_MSG_LENGTH_VALUE  0xFFFFFFFF\n#define MAX_BILL_POOL_LEN 4096\n\ntypedef enum RF_ENUM_ACR_ORDER {\n    RF_ACR_ORDER_START = 1,\n    RF_ACR_ORDER_SECOND,\n    RF_ACR_ORDER_THREE,\n    RF_ACR_ORDER_BUTT\n}RF_ENUM_ACR_ORDER;\n\ntypedef struct _RFDialog {\n    VOS_UINT32 ulFirstAcctMsgIdx;\n    VOS_UINT32 ulLastAcctMsgIdx;\n    VOS_UINT32 aulActualAcrLength[RF_ACR_ORDER_BUTT];\n    VOS_UINT16 usAcrNumInPool;\n    VOS_UINT8 aucAcrBody[0];\n} RFDialog;\n\nVOS_UINT8 g_rfBillData[MAX_BILL_POOL_LEN] = {0};\n\nVOS_VOID rdbbillupdatedataTGT(vos_uint8 *pnewbilldata, rfdialog *pstrfdialog, vos_uint32 acrbodylen)\n{\n    VOS_UINT8 *pstTempBuf = VOS_NULL_PTR;\n    VOS_UINT32 uiAcctMsgNo = 0;\n    VOS_UINT32 uiAcctMsgLen = 0;\n    VOS_UINT32 uiRetVal = VOS_OK;\n\n    if (pNewBillData == VOS_NULL_PTR || pstRFDialog == VOS_NULL_PTR) {\n        return;\n    }\n\n    \n    if (pstRFDialog->usAcrNumInPool > VOS_NULL) {\n        pstTempBuf = ((RFDialog *)pNewBillData)->aucAcrBody;\n        \n        for (uiAcctMsgNo = RF_ACR_ORDER_START;\n            (uiAcctMsgNo <= pstRFDialog->usAcrNumInPool && uiAcctMsgNo < RF_ACR_ORDER_BUTT); uiAcctMsgNo++) {\n            uiAcctMsgLen = pstRFDialog->aulActualAcrLength[uiAcctMsgNo]; \n            uiRetVal = RdbBillSaveAcctMsgToPool(uiAcctMsgLen, pstTempBuf, uiAcctMsgNo); \n            if (uiRetVal != VOS_OK) {\n                LOG_RunInfo(\"RdbBillSaveAcctMsgToPool Failed!\");\n            }\n            pstTempBuf += uiAcctMsgLen; \n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define MAX_ARRAY_SIZE 10\n\n\n\n\n\nvoid TestSetArrayElement()\n{\n    uint16_t index = 0;\n\n    printf(\"Testing bad array element setting:\\n\");\n    int32_t resultBad = SetArrayElementBad(index);\n    printf(\"Result: %d\\n\", resultBad);\n\n    printf(\"\\nTesting good array element setting:\\n\");\n    int32_t resultGood = SetArrayElementGood(index);\n    printf(\"Result: %d\\n\", resultGood);\n}\n\nint32_t setarrayelementTGT(uint16_t index)\n{\n    int32_t arrayData[MAX_ARRAY_SIZE] = { 0 };\n    if (index < 1 || index > MAX_ARRAY_SIZE) {\n        printf(\"Error: Index out of bounds\\n\");\n        return -1;\n    }\n\n    arrayData[index - 1] = 1;  \n    printf(\"Array element at position %u set to 1\\n\", index);\n\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1031",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <map>\n\nusing namespace std;\n\n\nclass OgdcFgPortInfo {\n    int m_val = 0;\n\npublic:\n    void SetValue(int val)\n    {\n        m_val = val;\n    }\n};\n\nclass OptTaskBdModCacheInfo {\npublic:\n    std::map<int, OgdcFgPortInfo> m_bdPortInfo;\n    OgdcFgPortInfo *GetPort(int bid);\n};\n\nOgdcFgPortInfo *OptTaskBdModCacheInfo::GetPort(int bid)\n{\n    auto portItr = m_bdPortInfo.find(bid);\n    if (portItr != m_bdPortInfo.end()) {\n        return &portItr->second;\n    }\n    return nullptr;  \n}\n\nclass OsaTraveller {\n    OptTaskBdModCacheInfo m_bdCacheInfo;\n    void GenerateCacheBad(int bid);\n    void GenerateCacheGood(int bid);\n};\n\nvoid osatraveller::generatecacheTGT(int bid)\n{\n    OgdcFgPortInfo *portInfo = m_bdCacheInfo.GetPort(bid);\n    \n    portInfo->SetValue(1);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1028",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#define MAX_ARRAY_SIZE 4\n#define BITS_PER_ELEMENT 32\ntypedef unsigned int uint32_t;\n\ntypedef struct {\n    uint32_t array[MAX_ARRAY_SIZE];\n} ArrayData;\n\nArrayData g_arrayData = {0};\n\nint IsBitSet(uint32_t *bmp, uint32_t bitId)\n{\n    return (bmp[bitId / BITS_PER_ELEMENT] & (1 << (bitId % BITS_PER_ELEMENT))) != 0;\n}\n\nvoid ClearBit(uint32_t *bmp, uint32_t bitId)\n{\n    bmp[bitId / BITS_PER_ELEMENT] &= ~(1 << (bitId % BITS_PER_ELEMENT));\n}\n\nvoid TGTcase(uint32_t index)\n{\n    uint32_t *array = g_arrayData.array;\n\n    for (uint32_t i = 0; i < MAX_ARRAY_SIZE; i++) {\n        if (IsBitSet(&(array[i - 1]), index)) {  \n            ClearBit(&(array[i - 1]), index);    \n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1029",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_REG_CB 1000\n\ntypedef struct TAG_REG_CB {\n    VOS_UINT32 ulCID;\n    VOS_UINT32 ulUID;\n    VOS_UINT32 ulIID;\n    VOS_UINT32 ulRegState;\n\n    VOS_UINT8 bIsDeReg : 1;                     \n    VOS_UINT8 bIsScscfNameLocal : 1;            \n    VOS_UINT8 key_reserved_4 : 6;\n    VOS_UINT8 ucUserTypeEx;\n    VOS_UINT8 ucIsSericeWhtUser;\n    VOS_UINT8 bIfUserNeedIPsec : 1;             \n    VOS_UINT8 bIfUserNeedTLS : 1;               \n    VOS_UINT8 key_reserved_8 : 5;\n    VOS_UINT8 bIsNEncReg : 1;\n} REG_CB;\n\nREG_CB *g_pstRegCb = VOS_NULL_PTR;\n\nVOS_UINT32 ScuInitAllocMem()\n{\n    g_pstRegCb = VOS_MemAlloc(PID_TEST, STATIC_MEM_PT, (sizeof(REG_CB) * MAX_REG_CB));\n    if (g_pstRegCb == VOS_NULL_PTR) {\n        return VOS_ERR;\n    }\n    return VOS_OK;\n}\n\nVOS_BOOL queryuserisencregbyinsTGT(vos_uint32 ulinst)\n{\n    if (g_pstRegCb == VOS_NULL_PTR) {\n        return VOS_FALSE;\n    }\n\n    if (g_pstRegCb[ulInst].bIfUserNeedIPsec || g_pstRegCb[ulInst].bIfUserNeedTLS) { \n        return VOS_TRUE;\n    }\n\n    return VOS_FALSE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\n\n\n\n\n\nvoid TestVectorElementAccess()\n{\n    std::vector<int> data = { 1, 2, 3, 4, 5 };\n\n    std::cout << \"Testing AccessVectorElementBad:\" << std::endl;\n    int unsafeValue = AccessVectorElementBad(data);\n    std::cout << \"Unsafe access value: \" << unsafeValue << std::endl;\n\n    std::cout << \"Testing AccessVectorElementGood:\" << std::endl;\n    int safeValue = AccessVectorElementGood(data);\n    std::cout << \"Safe access value: \" << safeValue << std::endl;\n}\n\nint accessvectorelementTGT(const std::vector<int> &data)\n{\n    int index = 5;\n    int value = 0;\n\n    if (index < data.size()) {\n        value = data[index];  \n    } else {\n        std::cerr << \"Index out of bounds, access prevented.\" << std::endl;\n    }\n\n    return value;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n\n#define IPV4_ADDR_LEN 4\n#define IPV6_ADDR_LEN 16\n\n#define SAN_IPV4 4\n#define SAN_IPV6 6\n\n#define VOS_HTONL(x) ((((x) & 0x000000ff) << 24) | \\\n             (((x) & 0x0000ff00) <<  8) | \\\n             (((x) & 0x00ff0000) >>  8) | \\\n             (((x) & 0xff000000) >> 24))\n\n#define SAFE_MEMCPY_S(dst, src, count) memcpy_s(dst, count, src, count)   \n\ntypedef struct _tagSAN_IPV6 {\n    union {\n        VOS_UCHAR     u6_ucaddr[16];\n        VOS_UINT16    u6_usaddr[8];\n        VOS_UINT32    u6_uladdr[4];\n        VOS_UINT64    u6_ulladdr[2];\n    } u6_addr;    \n} SAN_IPV6_S;\n\ntypedef struct _tagSaN_IP_Port {\n    VOS_UINT16   usPort;\n    VOS_UCHAR    ucTranProtocol;\n    VOS_UCHAR    ucVer;     \n    union {\n        VOS_UINT32   ulIP;\n        SAN_IPV6_S   stIPv6;\n    } u;\n    VOS_UINT32   ulVrfIndex;\n} SAN_IP_PORT_S;\n\ntypedef struct {\n    union {\n        VOS_UINT8 aucAddr[16];   \n        VOS_UINT16 ausAddr[8];   \n        VOS_UINT32 auiAddr[4];   \n    } u;\n} IPSEC_IPV6_S;\n\ntypedef struct {\n    VOS_UINT8 ucVer;          \n    VOS_UINT8 ucProto;        \n    VOS_UINT16 usPort;        \n    union {\n        VOS_UINT32 uiIp;      \n        IPSEC_IPV6_S stIpV6;  \n    } u;\n    VOS_UINT32 uiVrfIndex;    \n} IPSEC_IP_PORT_S;\n\nVOS_VOID akasaniptoipsecipTGT(san_ip_port_s *pstsanip, ipsec_ip_port_s *pstipsecip)\n{\n    errno_t eRet = EOK;\n\n    if ((VOS_NULL_PTR == pstSanIP) || (VOS_NULL_PTR == pstIPsecIP)) {\n        return;\n    }\n\n    pstIPsecIP->ucVer      = pstSanIP->ucVer;\n    pstIPsecIP->uiVrfIndex = pstSanIP->ulVrfIndex;\n\n    if (SAN_IPV4 == pstSanIP->ucVer) {\n        pstIPsecIP->u.uiIp = VOS_HTONL(pstSanIP->u.ulIP);\n    } else {\n        eRet = memcpy_s(pstIPsecIP->u.stIpV6.u.aucAddr, IPV6_ADDR_LEN, \n            pstSanIP->u.stIPv6.u6_addr.u6_ucaddr, IPV6_ADDR_LEN); \n        PUB_CONDITION_OPT((EOK != eRet), LOG_RunInfo(\"memcpy_s(0) error, eRet[%d].\", eRet));\n    }\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.Velocity;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.io.Reader;\nimport java.io.StringReader;\nimport java.io.StringWriter;\nimport java.io.UnsupportedEncodingException;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityEvaluateInjection {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/evaluate_TGT001\")\n    public void TGT001(@RequestParam String exp) throws UnsupportedEncodingException {\n        VelocityContext context = new VelocityContext();\n        StringWriter writer = new StringWriter();\n        \n        \n        \n        Reader reader = new StringReader(exp);\n        Velocity.evaluate(context, writer, \"\", reader); \n        Velocity.evaluate(context, writer, \"\", exp); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"use_nullpoint.h\"\n\nvoid invaliditerator2TGT(string key)\n{\n    TestClass_03 testClass;\n    testClass.Init();  \n    auto iter = testClass.m_Map_1.find(key);\n    if (iter == testClass.m_Map_1.end()) {\n        return;\n    }\n    cout << \"iter->second: \" << iter->second << endl;  \n\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.unpreparedstatement;\n\nimport com.huawei.bme.container.control.ContextRegistry;\nimport com.huawei.bme.das.orm.jpa.BmeJpaTemplate;\nimport com.huawei.cwd.sqlinjection.util.pojo.User;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.regex.Pattern;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithUnPreparedStatement\")\npublic class BmeInjectionWithUnPreparedStatement {\n    private static final Pattern WHITELIST_PATTERN = Pattern.compile(\"^name|password$\", Pattern.CASE_INSENSITIVE);\n\n    private final BmeJpaTemplate bmeJpaTemplate = (BmeJpaTemplate) ContextRegistry.getContextHolder().getBean(\n        \"bmeJpaTemplate\");\n\n    \n    \n\n    \n    \n\n    \n    public static boolean isValidField(String filed) {\n        return WHITELIST_PATTERN.matcher(filed).matches();\n    }\n    @GetMapping(\"/TGT001\")\n    @ResponseBody\n    public List<User> TGT001(@RequestParam(value = \"order\") String order) {\n        if (!isValidField(order)) {\n            return new ArrayList<>();\n        }\n\n        Map<String, String> map = new HashMap<>();\n        map.put(\"order\", order);\n        List<User> result = bmeJpaTemplate.findList(\"getUserWithOrderBy\", map); \n        if (result.isEmpty()) {\n            return new ArrayList<>();\n        }\n        return result;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define LOCAL_APP_MODULE 401\n#define MAX_CALL_ID_HEADER_LEN 128\n#define LOG_DATASECTION_PROTOCOL_INFO (0x0100) \n\n#define IS_VALID_STRING_PTR(_pstrVar) ((VOS_NULL_PTR != (_pstrVar)) \\\n    && (VOS_NULL_PTR != (_pstrVar)->pcData) \\\n    && (0 < (_pstrVar)->iLength))\n\ntypedef struct _String {\n    VOS_UINT32 iLength; \n    VOS_UCHAR *pcData;  \n} String;\n\ntypedef struct {\n    VOS_UINT32      eSoType;                           \n    VOS_UINT32      ulModuleId;                        \n    VOS_UINT32      ulogID;                            \n    VOS_UINT32      ulBlogTime;                        \n    VOS_CHAR        aucCallid[MAX_CALL_ID_HEADER_LEN]; \n    union {                                            \n        VOS_UINT8     aucIpV4[4];\n        VOS_UINT8     aucIpV6[16];\n    } aucIp;\n    VOS_UINT8       enModuleType;                      \n    VOS_UINT8       ulAddrType;                        \n} LogProtocolBasicInfo;\n\n\nextern VOS_UINT32 LOG_CSCF_RDInfo(VOS_UINT32 ulSoType, VOS_UINT32 ulSoID,\n    VOS_UINT32 ulDatasectionType, VOS_UINT32 ulLength, VOS_VOID *data);\n\nVOS_UINT32 callsetdebugprotocolinfofornotifyTGT(string *pstrcallid, vos_uint32 ulsotype, vos_uint32 ulsoid)\n{\n    errno_t eRet = EOK;\n    LogProtocolBasicInfo stLogInfo = {0};\n\n    if (!IS_VALID_STRING_PTR(pstrCallID)) {\n        return VOS_ERR;\n    }\n\n    stLogInfo.eSoType      = ulSoType;\n    stLogInfo.ulModuleId   = LOCAL_APP_MODULE;\n\n    eRet = SafeMemcpyS(stLogInfo.aucCallid, MAX_CALL_ID_HEADER_LEN, \n        pstrCallID->pcData, pstrCallID->iLength); \n    PUB_CONDITION_OPT((EOK != eRet), LOG_RunInfo(\"memcpy_s(0) error, eRet[%d].\", eRet));\n    if (pstrCallID->iLength < MAX_CALL_ID_HEADER_LEN) {\n        stLogInfo.aucCallid[pstrCallID->iLength] = '\\0';\n    } else {\n        stLogInfo.aucCallid[MAX_CALL_ID_HEADER_LEN - 1] = '\\0'; \n    }\n\n    LOG_CSCF_RDInfo(ulSoType, ulSoID, (VOS_UINT32)LOG_DATASECTION_PROTOCOL_INFO, sizeof(stLogInfo), &stLogInfo);\n\n    return VOS_OK;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInCDATA {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInCDATA.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/cdata_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String cData) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        Element students = document.addElement(\"Students\");\n        \n        \n        \n        \n        \n        \n        \n        \n        students.addCDATA(cData); \n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1025",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\nvoid ReleaseMemory(int *pointer)\n{\n    if (pointer != NULL) {\n        free(pointer);\n        pointer = NULL;  \n    }\n}\n\n\n#define FREE_MEMORY(pointer)     \\\n    do {                         \\\n        if (NULL != (pointer)) { \\\n            (void)free(pointer); \\\n            (pointer) = NULL;    \\\n        }                        \\\n    } while (0)\n\n\n\n\n\n\n\nvoid TestMemoryAllocation()\n{\n    printf(\"\\nTesting AllocateAndFreeBad:\\n\");\n    int resultBad = AllocateAndFreeBad();\n    printf(\"Result: %s\\n\", resultBad == RETURN_OK ? \"Success\" : \"Failure\");\n\n    printf(\"\\nTesting AllocateAndFreeGood:\\n\");\n    int resultGood = AllocateAndFreeGood();\n    printf(\"Result: %s\\n\", resultGood == RETURN_OK ? \"Success\" : \"Failure\");\n}\n\nint allocateandfreeTGT(void)\n{\n    int *pointer = (int *)SAFE_MALLOC(sizeof(int));\n    if (pointer == NULL) {\n        printf(\"Error: Failed to allocate memory\\n\");\n        return RETURN_ERROR;\n    }\n\n    \n    ReleaseMemory(pointer);\n    ReleaseMemory(pointer);  \n    return RETURN_OK;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1027",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include <stdlib.h>\n#include \"external_data_common.h\"\n\nstruct TIMER_NODE {\n    DWORD mode = 0;  // 定时节点模式\n    void *msg;       // 定时时间到时需要发送的消息\n};\n\n\n\n#include \"memory_leak_common.h\"\n\nvoid internalswatTGTcase(int size)\n{\n    \n    struct TIMER_NODE *p = new TIMER_NODE;\n    \n    p->msg = new uint8_t[size];\n\n    delete p;  \n    return;    \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\nstruct BuffWithLen {\n    char buff[10];\n    int len;\n};\n\nint freestackmemoryTGTcase3(char *nicname, unsigned int nicnamelength)\n{\n    BuffWithLen arr;\n    arr.buff[1] = nicName[nicNameLength - 1];\n    return 0;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1002",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n#include <vector>\n#include <string>\n#include \"securec.h\"\n\nusing namespace std;\n\n\n\n\n\nconst uint32_t MAX_CONTAINER_SIZE = 1000;\n\n\n\n\n\nuint32_t GetDBFileList(vector<string> &fileNameVec)\n{\n    const uint16_t osppathLen = 256;\n    char pkgFile[osppathLen] = \"/huawei/ofs1/hwx/DBF.PKG\";\n    FILE *fp = fopen(pkgFile, \"r\");\n    if (fp == nullptr) {\n        return -1;\n    }\n\n    char lineBuf[osppathLen + 1] = {0};\n    (void)memset_s(lineBuf, sizeof(lineBuf), 0, sizeof(lineBuf));\n    while (fgets(lineBuf, osppathLen, fp) != nullptr) {\n        ProcSecStart(lineBuf, fileNameVec);\n    }\n    (void)fclose(fp);\n    return 0;\n}\n\nvoid ProcSecStart(const char *lineBuf, vector<string> &fileNameVec)\n{\n    string str(lineBuf);\n    fileNameVec.push_back(str);   \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define MAX_SIZE 10\n\ntypedef struct {\n    char data[MAX_SIZE];\n    int len;\n} Datainfo;\n\ntypedef struct {\n    Datainfo info;\n} GfpReq;\n\ntypedef struct {\n    Datainfo info;\n} GfpExpAdpt;\n\nstatic GfpReq g_gfpReq;\n\n\n\n\nvoid ValidateBufferSizeGood(GfpExpAdpt *adpt)\n{\n    if (adpt == NULL || adpt->info.len > MAX_SIZE) {  \n        printf(\"Error: Invalid adapter pointer or data length exceeds maximum allowed size\\n\");\n        return;\n    }\n    g_gfpReq.info.len = adpt->info.len;  \n    CheckMemcpyGood(g_gfpReq, adpt);\n    return;\n}\n\n\n\n\nvoid ValidateBufferSizeBad(GfpExpAdpt *adpt)\n{\n    if (adpt == NULL) {\n        printf(\"Error: Invalid adapter pointer\\n\");\n        return;\n    }\n    g_gfpReq.info.len = adpt->info.len;  \n    CheckMemcpyBad(g_gfpReq, adpt);\n    return;\n}\n\nvoid TestBufferSizeValidation()\n{\n    GfpExpAdpt adptSafe = { { \"ValidData\", 8 } };\n\n    printf(\"\\nTesting ValidateBufferSizeGood with valid data:\\n\");\n    ValidateBufferSizeGood(&adptSafe);\n\n    printf(\"\\nTesting ValidateBufferSizeBad with valid data:\\n\");\n    ValidateBufferSizeBad(&adptSafe);\n}\n\nvoid checkmemcpyTGT(gfpreq ggfpreq, gfpexpadpt *adpt)\n{\n    (void)memcpy_s(gGfpReq.info.data, gGfpReq.info.len, adpt->info.data, adpt->info.len);  \n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\n\n\nvoid BadCaseFunc()\n{\n    \n    char charNicName[10];\n    FreeStackmemoryBadCase4(charNicName, 10);\n}\n\n\n\nvoid GoodCaseFunc()\n{\n    \n    char charNicName[10];\n    FreeStackmemoryGoodCase4(charNicName, 10);\n}\n\nvoid freestackmemoryTGTcase4(char *nicname, unsigned int nicnamelength)\n{\n    char a = nicName[nicNameLength - 1];\n    return;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1025",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"header_type.h\"\n\nvoid Case21(void);\n\nBOOL IsPalindrome(char *str)\n{\n    int len = strlen(str) - 1;\n    int i = 0;\n    while (i < len) {\n        if (str[i] != str[len]) {\n            break;\n        }\n        i++;\n        len--;\n    }\n\n    if (i >= len) {\n        return TRUE;\n    }\n\n    return FALSE;\n}\n/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"common.h\"\n\ntypedef unsigned int BOOL;\ntypedef int errno_t;\n#ifndef EOK\n#define EOK 0\n#endif\n\n\n\n#include \"header_func.h\"\n#include \"securec.h\"\n\nvoid exceptiondoublefreeTGTcase()\n{\n    char *p = (char *)malloc(10);\n    errno_t rc = strcpy_s(p, 10, \"aefrtegg\");\n    if (rc != EOK) {\n        \n        free(p);\n    }\n\n    if (p != NULL) {\n        BOOL flag = IsPalindrome(p);\n        if (flag) {\n            printf(\"%s is huiwen string\\r\\n\", p);\n        } else {\n            printf(\"%s is not huiwen string\\r\\n\", p);\n        }\n    }\n\n    \n    free(p);  \n\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\nconst std::size_t vectorSize = 64;\n\n\n\n\n\n\n\nvoid TestArrayAccess()\n{\n    const char *testInputs[] = {\n        \"Hello\",                                            \n        \"\",                                                 \n        \"A very long string that exceeds the vector size\",  \n        nullptr                                             \n    };\n\n    std::cout << \"Testing AccessArrayByStrlenBad:\" << std::endl;\n    for (const char *input : testInputs) {\n        std::cout << \"Input: \" << (input ? input : \"nullptr\") << std::endl;\n        AccessArrayByStrlenBad(input);\n        std::cout << std::endl;\n    }\n\n    std::cout << \"Testing AccessArrayByStrlenGood:\" << std::endl;\n    for (const char *input : testInputs) {\n        std::cout << \"Input: \" << (input ? input : \"nullptr\") << std::endl;\n        AccessArrayByStrlenGood(input);\n        std::cout << std::endl;\n    }\n}\n\nvoid accessarraybystrlenTGT(const char *input)\n{\n    if (input == nullptr) {\n        std::cerr << \"Error: Input is null.\" << std::endl;\n        return;\n    }\n\n    std::vector<int> dataVector(vectorSize, 0);  \n    std::size_t position = std::strlen(input);   \n    if (position < vectorSize) {\n        std::cout << \"Specified value: \" << dataVector[position] << std::endl;  \n    } else {\n        std::cerr << \"Error: Position out of bounds.\" << std::endl;\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1030",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <malloc.h>\n#include \"basic_data_type.h\"\n\nvoid freeuninitptrTGT()\n{\n    char *p;        \n    FreePtrBad(p);  \n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1026",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\ntypedef struct {\n    int32_t index;   \n    int16_t length;  \n    void *reserved;  \n    char data[0];    \n} EventContext;\n\n\nvoid ProcessEvent(EventContext *context)\n{\n    if (context == NULL) {\n        printf(\"Warning: Null context pointer.\\n\");\n        return;\n    }\n    int32_t id = context->index;\n    printf(\"Info: Context event id: %d\\n\", id);\n}\n\n\n\n\n\n\n\nvoid TestDanglingPointer()\n{\n    printf(\"\\nTesting CheckDanglingPointerBad:\\n\");\n    CheckDanglingPointerBad();\n\n    printf(\"\\nTesting CheckDanglingPointerGood:\\n\");\n    CheckDanglingPointerGood();\n}\n\nvoid checkdanglingpointerTGT(void)\n{\n    EventContext *eventContext = (EventContext *)SAFE_MALLOC(sizeof(EventContext));\n    if (eventContext == NULL) {\n        printf(\"Error: Failed to allocate memory for event context.\\n\");\n        return;\n    }\n\n    free(eventContext);          \n    ProcessEvent(eventContext);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n\n#define IPV4_ADDR_LEN 4\n#define IPV6_ADDR_LEN 16\n\n#define SAN_IPV4 4\n#define SAN_IPV6 6\n\n#define VOS_HTONL(x) ((((x) & 0x000000ff) << 24) | \\\n             (((x) & 0x0000ff00) <<  8) | \\\n             (((x) & 0x00ff0000) >>  8) | \\\n             (((x) & 0xff000000) >> 24))\n\n#define SAFE_MEMCPY_S(dst, src, count) memcpy_s(dst, count, src, count)   \n\ntypedef struct _tagSAN_IPV6 {\n    union {\n        VOS_UCHAR     u6_ucaddr[16];\n        VOS_UINT16    u6_usaddr[8];\n        VOS_UINT32    u6_uladdr[4];\n        VOS_UINT64    u6_ulladdr[2];\n    } u6_addr;    \n} SAN_IPV6_S;\n\ntypedef struct _tagSaN_IP_Port {\n    VOS_UINT16   usPort;\n    VOS_UCHAR    ucTranProtocol;\n    VOS_UCHAR    ucVer;     \n    union {\n        VOS_UINT32   ulIP;\n        SAN_IPV6_S   stIPv6;\n    } u;\n    VOS_UINT32   ulVrfIndex;\n} SAN_IP_PORT_S;\n\ntypedef struct {\n    union {\n        VOS_UINT8 aucAddr[16];   \n        VOS_UINT16 ausAddr[8];   \n        VOS_UINT32 auiAddr[4];   \n    } u;\n} IPSEC_IPV6_S;\n\ntypedef struct {\n    VOS_UINT8 ucVer;          \n    VOS_UINT8 ucProto;        \n    VOS_UINT16 usPort;        \n    union {\n        VOS_UINT32 uiIp;      \n        IPSEC_IPV6_S stIpV6;  \n    } u;\n    VOS_UINT32 uiVrfIndex;    \n} IPSEC_IP_PORT_S;\n\nVOS_VOID akasaniptoipsecipTGT(san_ip_port_s *pstsanip, ipsec_ip_port_s *pstipsecip)\n{\n    errno_t eRet = EOK;\n\n    if ((VOS_NULL_PTR == pstSanIP) || (VOS_NULL_PTR == pstIPsecIP)) {\n        return;\n    }\n\n    pstIPsecIP->ucVer      = pstSanIP->ucVer;\n    pstIPsecIP->uiVrfIndex = pstSanIP->ulVrfIndex;\n\n    if (SAN_IPV4 == pstSanIP->ucVer) {\n        pstIPsecIP->u.uiIp = VOS_HTONL(pstSanIP->u.ulIP);\n    } else {\n        eRet = SAFE_MEMCPY_S(pstIPsecIP->u.stIpV6.u.aucAddr, \n            pstSanIP->u.stIPv6.u6_addr.u6_ucaddr, IPV6_ADDR_LEN); \n        PUB_CONDITION_OPT((EOK != eRet), LOG_RunInfo(\"SAFE_MEMCPY_S(0) error, eRet[%d].\", eRet));\n    }\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1043",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n\nusing namespace std;\n\nvoid inputvecnotcheckemptyTGT(std::vector<int> data)\n{\n    int value = data.front();  \n    std::cout << value;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1023",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define BUFFER_SIZE 256\n\n\n\n\n\n\n\nvoid TestAllocateAndFreeBuffer()\n{\n    printf(\"\\nTesting AllocateAndFreeBufferBad:\\n\");\n    AllocateAndFreeBufferBad();\n\n    printf(\"\\nTesting AllocateAndFreeBufferGood:\\n\");\n    AllocateAndFreeBufferGood();\n}\n\nvoid allocateandfreebufferTGT(void)\n{\n    int32_t *buffer = (int32_t *)SAFE_MALLOC(BUFFER_SIZE * sizeof(int32_t));\n    if (buffer == NULL) {\n        fprintf(stderr, \"Memory allocation failed.\\n\");\n        return;\n    }\n\n    for (int32_t index = 0; index < BUFFER_SIZE; index++) {\n        buffer[index] = index;\n    }\n\n    for (int32_t index = 0; index < BUFFER_SIZE; index++) {\n        if (buffer[index] == 10) {\n            \n            printf(\"Find index (%d), buffer addr : %pK\\n\", index, (void *)(++buffer));\n            break;\n        }\n    }\n    \n    SAFE_FREE(buffer);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1025",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include \"securec.h\"\n\n\nclass DoubleFreeCase01 {\npublic:\n    DoubleFreeCase01() = default;\n    ~DoubleFreeCase01();\n    int Init();\n    void ProcBadFunc();\n    void ProcGoodFunc();\n\nprivate:\n    void *m_ptr{nullptr};\n};\n\nint DoubleFreeCase01::Init()\n{\n    int len = 100;\n    m_ptr = malloc(len);\n    if (m_ptr == nullptr) {\n        return 1;\n    }\n\n    (void)memset_s(m_ptr, len, 0, len);\n    return 0;\n}\n\n\n\n\n\n\n，析构函数再次释放，导致内存双重释放\nDoubleFreeCase01::~DoubleFreeCase01()\n{\n    if (m_ptr != nullptr) {\n        free(m_ptr);\n        m_ptr = nullptr;\n    }\n}\n\nint BadTestCase()\n{\n    DoubleFreeCase01 badCase;\n    \n    if (badCase.Init() != 0) {\n        return -1;\n    }\n    badCase.ProcBadFunc();\n    return 0;\n}\n\nint GoodTestCase()\n{\n    DoubleFreeCase01 goodCase;\n    \n    if (goodCase.Init() != 0) {\n        return -1;\n    }\n    goodCase.ProcGoodFunc();\n    return 0;\n}\n\nvoid doublefreecase01::procTGTfunc()\n{\n    if (m_ptr != nullptr) {\n        free(m_ptr);  \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.springbootthymeleaf.injectioncase;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\nimport org.thymeleaf.context.Context;\nimport org.thymeleaf.spring5.SpringTemplateEngine;\n\nimport java.util.regex.Pattern;\n\n\n@Controller\npublic class SpringbootThymeleafInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(SpringbootThymeleafInjection.class);\n\n    private static final String LETTER_DIGIT_REGEX = \"^[a-z0-9A-Z]+$\";\n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/thymeleaf/TGT\")\n    @ResponseBody\n    public String TGT(@RequestParam String name) {\n        \n        Pattern pattern = Pattern.compile(LETTER_DIGIT_REGEX);\n        if (!pattern.matcher(name).matches()) {\n            LOGGER.error(\"parameter is illegal\");\n            return \"parameter is illegal\";\n        }\n        String template = \"<span>\" + name + \"</span>\";\n        Context context = new Context();\n        return new SpringTemplateEngine().process(template, context); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1093",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jndi.lookupcase;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport javax.naming.InitialContext;\nimport javax.naming.NamingException;\n\n\n@Controller\n@RequestMapping(\"/JndiAttackedHighRMI\")\npublic class JndiAttackedHighRMI {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JndiAttackedHighRMI.class);\n\n    private static final String[] URI_ARRAY = {\"rmi://1.2.3.4/aaa\", \"rmi://5.6.7.8/aaa\"};\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    public void TGT001(@RequestParam String uri) {\n        try {\n            \n            new InitialContext().lookup(uri); \n        } catch (NamingException e) {\n            LOGGER.info(\"bad002: Lookup failed\");\n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1029",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdbool.h>\n#include <stdint.h>\n#include \"basic_data_type.h\"\n\n\n#define VOS_HB_SHORT       1        // 高字节偏移\n#define VOS_LB_SHORT       0        // 低字节偏移\n\nenum OtType {\n    OT_MEP_OBJ,\n    OT_LAG_OBJ,\n    OT_MEPPERF_OBJ\n};\n\nenum BdType {\n    BD_VLANOFVUNI_OBJ,\n    BD_VNNIOFL2VPN_OBJ,\n    BD_PWAPSGROUP_OBJ,\n    BD_MLPPPGROUP_OBJ\n};\n\ntypedef struct {\n    WORD SVar;\n    BYTE CVar[2]; \n} VosUcUnit;\n\n\nbool IsDataAlmPer(enum BdType wBdType, enum OtType wOType, BYTE *pbyPara, WORD wParaLen);\n\n\nstatic bool BY2WCase02(uint8_t *pbyVal, uint16_t *pwVal)\n{\n    VosUcUnit tmp = {0};\n    tmp.CVar[1] = *(pbyVal + VOS_HB_SHORT);\n    tmp.CVar[0] = *(pbyVal + VOS_LB_SHORT);\n\n    *pwVal = tmp.SVar;\n    return true;\n}\n\nbool IsDataAlmPer(enum BdType wBdType, enum OtType wOType, BYTE *pbyPara, WORD wParaLen)\n{\n    if ((!pbyPara) ||\n        (wOType != OT_MEP_OBJ) || (wOType != OT_LAG_OBJ) || (wOType != OT_MEPPERF_OBJ)) {\n        return false;\n    }\n\n    WORD wPort = 0xffff;  \n    if (wBdType == BD_VLANOFVUNI_OBJ) { \n        (void)BY2WCase02(pbyPara + 3, &wPort);  \n    } else if ((wBdType == BD_VNNIOFL2VPN_OBJ) && (wParaLen > 2)) { \n        (void)BY2WCase02(pbyPara + 3, &wPort);  \n    } else if ((wBdType == BD_PWAPSGROUP_OBJ) && (wParaLen > 4)) { \n        (void)BY2WCase02(pbyPara + 3, &wPort);  \n    } else {\n        return false;\n    }\n    return true;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_CDB_IMPU_LEN   64\n#define MAX_IMPU_LEN       128\n\n\ntypedef struct {\n    VOS_CHAR   acImpu[MAX_CDB_IMPU_LEN]; \n    VOS_UINT32 ulScuMid;                 \n    VOS_UINT32 ulRecWriteTime;           \n    VOS_UINT8  ucUserClass;              \n} TblSImpuDispatch;\n\n\ntypedef struct {\n    VOS_BOOL   bRegMethod;      \n    VOS_BOOL   bSNetMerged;     \n    VOS_CHAR   acImpu[MAX_IMPU_LEN];\n    VOS_UINT32 bIsSegReChoose; \n    VOS_UINT32 ulSenderCpuId;  \n    VOS_UINT32 ulSenderPid;    \n    VOS_UINT32 ulQueryMethod;  \n    VOS_UINT32 onlyQuery;    \n} SDispatch;\n\nextern VOS_UINT32 CdbQueryImpuDispTblByImpu(TblSImpuDispatch *pstTblSImpuDispatch, VOS_UINT32 *pulElemIndex);\n\nVOS_UINT32 cdbquerysimpuTGT(sdispatch *sdispatch)\n{\n    errno_t               eRet             = EOK;\n    VOS_UINT32            ret              = VOS_NULL;\n    TblSImpuDispatch      tblSImpuDispatch = { 0 };\n    VOS_UINT32            elemIndex        = VOS_NULL_DWORD;\n\n    if (VOS_NULL_PTR == sDispatch) {\n        LOG_RunInfo(\"[CDB_LOG]:CdbQuerySImpu: Input pointer is null!\\r\\n\");\n        return VOS_ERR;\n    }\n\n    eRet = VOS_memcpy_s(tblSImpuDispatch.acImpu, MAX_CDB_IMPU_LEN, \n        (const VOS_VOID *)sDispatch->acImpu, MAX_CDB_IMPU_LEN - 1); \n    PUB_CONDITION_OPT(EOK != eRet, LOG_RunInfo(\"memcpy_s(0) failed, ret[%d]\", eRet));\n    tblSImpuDispatch.acImpu[MAX_CDB_IMPU_LEN - 1] = 0;\n\n    tblSImpuDispatch.ulScuMid       = 0;\n    tblSImpuDispatch.ucUserClass    = 0;\n    tblSImpuDispatch.ulRecWriteTime = 0;\n\n    \n    sDispatch->bIsSegReChoose = VOS_FALSE;\n\n    \n    ret = CdbQueryImpuDispTblByImpu(&tblSImpuDispatch, &elemIndex);\n    return ret;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1101",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.unpreparedstatement;\n\nimport com.huawei.bme.container.control.ContextRegistry;\nimport com.huawei.bme.das.orm.jpa.BmeJpaTemplate;\nimport com.huawei.cwd.sqlinjection.util.pojo.User;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.regex.Pattern;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithUnPreparedStatement\")\npublic class BmeInjectionWithUnPreparedStatement {\n    private static final Pattern WHITELIST_PATTERN = Pattern.compile(\"^name|password$\", Pattern.CASE_INSENSITIVE);\n\n    private final BmeJpaTemplate bmeJpaTemplate = (BmeJpaTemplate) ContextRegistry.getContextHolder().getBean(\n        \"bmeJpaTemplate\");\n\n    \n    \n\n    \n    \n\n    \n    public static boolean isValidField(String filed) {\n        return WHITELIST_PATTERN.matcher(filed).matches();\n    }\n    @GetMapping(\"/TGT001\")\n    @ResponseBody\n    public List<User> TGT001(@RequestParam(value = \"order\") String order) {\n        Map<String, String> map = new HashMap<>();\n        map.put(\"order\", order);\n        List<User> result = bmeJpaTemplate.findList(\"getUserWithOrderBy\", map); \n        if (result.isEmpty()) {\n            return new ArrayList<>();\n        }\n        return result;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInDocType {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInDocType.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/DocType_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String systemID) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        \n        String safeSystemID = HWEncoder.encodeForXML(systemID);\n        document.addDocType(\"key\", \"\", safeSystemID); \n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1025",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define EXECUTE_EXPRESSION(EXPR)                                    \\\n    try {                                                           \\\n        EXPR;                                                       \\\n    } catch (const std::exception &e) {                             \\\n        std::cerr << \"Exception caught: \" << e.what() << std::endl; \\\n    }\n\nclass MemoryPool {\npublic:\n    explicit MemoryPool() = default;\n    ~MemoryPool()\n    {\n        for (auto *ptr : m_allocatedBlocks) {  \n            delete[] ptr;\n        }\n        m_allocatedBlocks.clear();\n    }\n\n    int *AllocateBlock(std::size_t blockSize)\n    {\n        if (blockSize <= 0) {\n            return nullptr;\n        }\n        int *pointer = new int[blockSize];\n        if (pointer != nullptr) {\n            m_allocatedBlocks.insert(pointer);\n        }\n        return pointer;\n    }\n\n    void DeallocateBlock(int *pointer)\n    {\n        if (pointer != nullptr && m_allocatedBlocks.find(pointer) != m_allocatedBlocks.end()) {\n            delete[] pointer;\n            m_allocatedBlocks.erase(pointer);\n        }\n    }\n\nprivate:\n    std::set<int *> m_allocatedBlocks;  \n};\n\n\n\n\n\nvoid MemoryReleaseGood(std::size_t blockSize)\n{\n    MemoryPool pool;\n    int *memoryBlock = pool.AllocateBlock(blockSize);\n    if (memoryBlock == nullptr) {\n        return;\n    }\n    pool.DeallocateBlock(memoryBlock);\n}  \n\nvoid TestMemoryRelease()\n{\n    std::cout << \"Testing MemoryReleaseBad:\" << std::endl;\n    MemoryReleaseBad(5);\n\n    std::cout << \"Testing MemoryReleaseGood:\" << std::endl;\n    MemoryReleaseGood(5);\n}\n\nvoid memoryreleaseTGT(std::size_t blocksize)\n{\n    MemoryPool pool;\n    int *memoryBlock = pool.AllocateBlock(blockSize);\n    if (memoryBlock == nullptr) {\n        return;\n    }\n\n    pool.DeallocateBlock(memoryBlock);\n    \n    EXECUTE_EXPRESSION(delete memoryBlock);  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_IMPU_LEN 128\n#define MAX_TRACE_USER_HANDLE_NUM 64\n#define INVALID_TRACE_HANDLE_VALUE 0xFFFFFFFF      \n\ntypedef struct _CdbDiagInfoStartReq {\n    VOS_UINT32  ulTraceType;\n    VOS_UINT32  ulTraceHandle;            \n    VOS_CHAR    acImpu[MAX_IMPU_LEN];\n} CdbDiagInfoStartReq;\n\nCdbDiagInfoStartReq g_astDiagTraceReqInfo[MAX_TRACE_USER_HANDLE_NUM] = {{0}};\nVOS_UINT32 gulDiagTraceReqInfoNum = 0;\n\nextern VOS_BOOL TRC_IsValidTraceHandle(VOS_UINT32 ulTraceHandle);\n\nVOS_UINT32 mdbcheckdiagtracehandleTGT(vos_uint32 ulpos)\n{\n    VOS_UINT32 ulHandleIndex  = 0;\n    VOS_UINT32 ulCpyNum       = 0;\n    errno_t    eRet           = EOK;\n\n    if ((MAX_TRACE_USER_HANDLE_NUM < gulDiagTraceReqInfoNum)\n        || (0 == gulDiagTraceReqInfoNum)) {\n        return VOS_NULL;\n    }\n\n    for (ulHandleIndex = ulPos ; ulHandleIndex < gulDiagTraceReqInfoNum ; ulHandleIndex++) {\n        if (TRC_IsValidTraceHandle(g_astDiagTraceReqInfo[ulHandleIndex].ulTraceHandle)) {\n            continue;  \n        }\n\n        \n        ulCpyNum = MAX_TRACE_USER_HANDLE_NUM - ulHandleIndex - 1;\n        if (0 < ulCpyNum) {\n            eRet = memmove_s(&g_astDiagTraceReqInfo[ulHandleIndex], \n                (MAX_TRACE_USER_HANDLE_NUM - ulHandleIndex) * sizeof(CdbDiagInfoStartReq), \n                &g_astDiagTraceReqInfo[ulHandleIndex + 1], ulCpyNum * sizeof(CdbDiagInfoStartReq)); \n            PUB_CONDITION_OPT((EOK != eRet), LOG_RunInfo(\"[CHECK RETURN]:call memmove_s(0) failed (%d)\", eRet));\n        }\n\n        gulDiagTraceReqInfoNum--;\n\n        \n        memset_s(&g_astDiagTraceReqInfo[MAX_TRACE_USER_HANDLE_NUM - 1], sizeof(CdbDiagInfoStartReq),\n            VOS_NULL, sizeof(CdbDiagInfoStartReq));\n        g_astDiagTraceReqInfo[MAX_TRACE_USER_HANDLE_NUM - 1].ulTraceHandle = INVALID_TRACE_HANDLE_VALUE;\n        break;\n    }\n\n    return ulHandleIndex;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1026",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "class PtrMgr {\npublic:\n    int *m_ptr;\n    PtrMgr()\n    {\n        m_ptr = new int[1];\n    }\n    virtual ~PtrMgr()\n    {\n        delete[] m_ptr;\n    }\n};\nPtrMgr *g_ptr = nullptr;\n\nvoid GlobalPtrFreeWithoutSetNull()\n{\n    g_ptr = new PtrMgr;\n    delete g_ptr;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1115",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xee.jdkscene;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\nimport org.springframework.web.multipart.MultipartFile;\nimport org.xml.sax.InputSource;\n\nimport java.io.IOException;\n\nimport javax.xml.xpath.XPath;\nimport javax.xml.xpath.XPathConstants;\nimport javax.xml.xpath.XPathExpression;\nimport javax.xml.xpath.XPathExpressionException;\nimport javax.xml.xpath.XPathFactory;\n\n\n@Controller\n@RequestMapping(value = \"/XEEInXPathExpression\")\npublic class XEEInXPathExpression {\n    private static final String EXPRESSION = \"/student/name\";\n\n    \n    \n    @RequestMapping(value = \"/TGT001\", method = RequestMethod.POST)\n    public void TGT001(MultipartFile file) throws XPathExpressionException, IOException {\n        XPathFactory xPathFactory = XPathFactory.newInstance(); \n        XPath xpath = xPathFactory.newXPath();\n        XPathExpression compiledExpression = xpath.compile(EXPRESSION);\n        InputSource inputSource = new InputSource(file.getInputStream());\n        \n        compiledExpression.evaluate(inputSource, XPathConstants.NODESET); \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1006",
+    "major": "Logic",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdint.h>\n#include <securec.h>\n\ntypedef struct {\n    uint8_t mode  : 2;  \n    uint8_t state : 3;  \n    uint8_t error : 3;  \n} DeviceStatus;\n\nstatic int32_t structbitfieldTGT(char *outbuf, size_t buflen)\n{\n    DeviceStatus dev = { 0 };\n    uint8_t *ptr = (uint8_t *)&dev;  \n    \n    \n    ptr[0] = 0xB9;\t\n    \n    \n    \n    \n\t(void)sprintf_s(outBuf, bufLen, \"mode: %u, state: %u, error: %u\", dev.mode, dev.state, dev.error);\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <iostream>\n\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid newlenthnotcheck2TGT()\n{\n    int len;\n    std::cin >> len; \n\n    if (len > 0 && len < MAX_COUNT) { \n        char *p = new char[len]; \n        p[0] = 1;\n        delete[] p;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define MAX_ARRAY_SIZE 10\n\n\n\n\n\nvoid TestInitializeArray()\n{\n    printf(\"Testing InitializeArrayBad:\\n\");\n    InitializeArrayBad(MAX_ARRAY_SIZE - 1);\n\n    printf(\"\\nTesting InitializeArrayGood:\\n\");\n    InitializeArrayGood(MAX_ARRAY_SIZE - 1);\n}\n\nint32_t initializearrayTGT(uint16_t start)\n{\n    if (start >= MAX_ARRAY_SIZE) {\n        printf(\"Error: Start index out of bounds\\n\");\n        return -1;\n    }\n\n    uint16_t arrayData[MAX_ARRAY_SIZE] = { 0 };\n    uint16_t index = start;\n    while (index--) {  \n        if (index - 1 < 0 || index - 1 >= MAX_ARRAY_SIZE) {\n            printf(\"Error: Array index out of bounds\\n\");\n            break;\n        }\n        arrayData[index - 1] = index;  \n        printf(\"Set arrayData[%u] = %u\\n\", index - 1, index);\n    }\n\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <malloc.h>\n#include <iostream>\n\n\nvoid *VW_Malloc(long size)\n{\n    char *buf = NULL;\n\n    if (0 >= size) {\n        return NULL;\n    }\n\n    buf = (char *)malloc((unsigned long)size);\n    if (NULL == buf) {\n        return NULL;\n    }\n\n    return buf;\n}\n\nvoid VW_Free(void *buff)\n{\n    if (NULL != buff) {\n        free(buff);\n    }\n}\n\n\n\nconst uint32_t MAX_COUNT = 1000;\n\nvoid NewLenthNotCheck4Bood()\n{\n    int len;\n    std::cin >> len;\n\n    \n    if (len <= 0 || len > MAX_COUNT) {\n        return;\n    }\n\n    char *p = (char *)VW_Malloc(len);  \n    p[0] = 1;\n    VW_Free(p);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1029",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n#include <stdbool.h>\n#include <stdlib.h>\n\n\ntypedef struct TAG_WCWP_TLV_INFO {\n    uint32_t ulMsgType;\n    uint16_t usMsgLength;\n    uint16_t usElemetId;\n    uint16_t usElemLen;\n    uint16_t usResv;\n} WCWP_TLV_INFO_S;\n\n#define CAPWAP_ELEMENT_HEAD_LEN (4)\n#define CAPWAP_VENDER_HEAD_LEN  (8)\n#define WCWP_MIN_VENDORSPEC_LEN 7\n#define WCWP_FOUR  4\n#define VOS_NTOHL(x) ((((x) & 0x000000ff) << 24) | \\\n                      (((x) & 0x0000ff00) << 8) | \\\n                      (((x) & 0x00ff0000) >> 8) | \\\n                      (((x) & 0xff000000) >> 24))\n\n#define WCWP_GET_4BYTE(ulVal, pucMsgBuf)                                 \\\n    {                                                                    \\\n        ulVal = (uint32_t)VOS_NTOHL(*((uint32_t *)(uintptr_t)(pucMsgBuf))); \\\n        (pucMsgBuf) += WCWP_FOUR;                                        \\\n    }\n\nint BufBufLenMismatch2Tp(WCWP_TLV_INFO_S *pstTlvInfo, void *pMsgData)\n{\n    \n    unsigned char *pucElemData = (unsigned char *)pMsgData;\n    uint16_t usElemTotalLen = pstTlvInfo->usElemLen + CAPWAP_ELEMENT_HEAD_LEN;\n    if (usElemTotalLen < WCWP_MIN_VENDORSPEC_LEN) {\n        return 1;\n    }\n    uint32_t ulVendorId;\n    \n    WCWP_GET_4BYTE(ulVendorId, pucElemData); \n    \n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.sqlconcatenation;\n\nimport com.huawei.bme.das.CmdRequest;\nimport com.huawei.bme.das.DASCommand;\nimport com.huawei.bme.das.DASCommandFactory;\nimport com.huawei.bme.das.DataParam;\nimport com.huawei.bme.das.DataSet;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.Collections;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithSqlConcatenation\")\npublic class BmeInjectionWithSqlConcatenation {\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT002\")\n    @ResponseBody\n    public String TGT002(@RequestParam(value = \"name\") String name) {\n        String sql = \"SELECT * FROM  user WHERE name = :name\"; \n        CmdRequest cmdRequest = new CmdRequest();\n        cmdRequest.setSQL(sql);\n        DataParam dataParam = new DataParam();\n        dataParam.setName(\"name\");\n        dataParam.setString(name);\n        cmdRequest.setDataParamList(Collections.singletonList(dataParam)); \n        DASCommand dasCommand = DASCommandFactory.getDASCommand();\n        dasCommand.getPreparedSQL(cmdRequest); \n        DataSet dataSet = dasCommand.execute(cmdRequest).getDataSet(); \n        if (dataSet != null) {\n            if (dataSet.next()) {\n                return dataSet.getString(\"name\");\n            }\n        }\n        return \"\";\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"header_type.h\"\n\nvoid Case21(void);\n\nBOOL IsPalindrome(char *str)\n{\n    int len = strlen(str) - 1;\n    int i = 0;\n    while (i < len) {\n        if (str[i] != str[len]) {\n            break;\n        }\n        i++;\n        len--;\n    }\n\n    if (i >= len) {\n        return TRUE;\n    }\n\n    return FALSE;\n}\n/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n\n#include \"common.h\"\n\ntypedef unsigned int BOOL;\ntypedef int errno_t;\n#ifndef EOK\n#define EOK 0\n#endif\n\n\n\n#include \"header_func.h\"\n#include \"securec.h\"\n\nvoid exceptiondoublefreeTGTcase()\n{\n    char *p = (char *)malloc(10);\n    errno_t rc = strcpy_s(p, 10, \"aefrtegg\");\n    if (rc != EOK) {\n        free(p);  \n        return;\n    }\n\n    if (p != NULL) {\n        BOOL flag = IsPalindrome(p);\n        if (flag) {\n            printf(\"%s is huiwen string\\r\\n\", p);\n        } else {\n            printf(\"%s is not huiwen string\\r\\n\", p);\n        }\n    }\n\n    free(p);  \n\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1043",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <map>\n#include <algorithm>\n#include <iostream>\n\nusing namespace std;\n\nvoid accessitrinloopcondaftereraseinloopbodyTGT()\n{\n    std::map<int, int> testMap;\n    for (auto itr = testMap.begin(); itr != testMap.end(); itr = std::next(itr, 1)) {  \n        testMap.erase(itr);                                                            \n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n#define BUFFER_SIZE 256\n\n\n\n\n\n\n\nvoid TestAllocateAndFreeBuffer()\n{\n    printf(\"\\nTesting AllocateAndFreeBufferBad:\\n\");\n    AllocateAndFreeBufferBad();\n\n    printf(\"\\nTesting AllocateAndFreeBufferGood:\\n\");\n    AllocateAndFreeBufferGood();\n}\n\nvoid allocateandfreebufferTGT(void)\n{\n    int32_t *buffer = (int32_t *)SAFE_MALLOC(BUFFER_SIZE * sizeof(int32_t));\n    if (buffer == NULL) {\n        fprintf(stderr, \"Memory allocation failed.\\n\");\n        return;\n    }\n\n    for (int32_t index = 0; index < BUFFER_SIZE; index++) {\n        buffer[index] = index;\n    }\n\n    for (int32_t index = 0; index < BUFFER_SIZE; index++) {\n        if (buffer[index] == 10) {\n            printf(\"Find index (%d), buffer addr : %pK\\n\", index, (void *)buffer);\n            break;\n        }\n    }\n    \n    SAFE_FREE(buffer);  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1029",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <cstdint>\n#include \"external_data_common.h\"\n\nint oamgetontdynpwdrspTGT(void *inmsg, uint32_t msglen)\n{\n    \n    if (msgLen < (sizeof(OAM_VAR_CONT_NOLEN_S))) {  \n        return -1;\n    }\n\n    OAM_VAR_CONT_NOLEN_S *varCont = (OAM_VAR_CONT_NOLEN_S *)inMsg;\n    uint16_t rspLen = *(uint16_t *)(varCont + 1);  \n    \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1030",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\ntypedef struct MsgCB {\n    VOS_MSG_HEADER\n    VOS_UINT8  aucValue[4];\n} MSG_CB;\n\n#define UMG_MSG_TYPE_BUTT 511\n\n#define MCMU_COMMON_MSG_HEADER  VOS_UINT16       uwMsgType;   \\\n                                VOS_UINT16       uwErrorCode;       \\\n                                VOS_UINT16       uwH248ErrorCode; \\\n                                VOS_UINT16      uwLength;   \n\ntypedef struct TagMcmuCcSubmsgStru {\n    MCMU_COMMON_MSG_HEADER\n    VOS_UINT32      udwSeqNo;       \n    VOS_UINT32      udwContextId;   \n}MCMU_CC_SUBMSG_S;\n\n#define MCMU_UP_MAX_OPER_NUM  255\n\ntypedef struct TagUpOperStru {\n    VOS_UINT8   ucOper;     \n    VOS_UINT8   ucReserved; \n    VOS_UINT16  uwDestIdx;  \n    VOS_UINT16  uwSrcIdx;   \n    VOS_UINT8   aucReserved2[2]; \n} UP_OPER_S;\n\ntypedef struct TagupCcbStru {\n    VOS_UINT8   ucUpFsm;          \n    VOS_UINT8   ucOperNum;        \n    VOS_UINT8   aucReserved[2];   \n    UP_OPER_S   astOper[MCMU_UP_MAX_OPER_NUM];\n} UP_CCB_S;\n\n#define MCMU_GET_INDEX_FROM_CTXID(udwContexId)  ((udwContexId)&0x0000FFFF)\n\n#define MCMU_MAX_CONTEXT_NUM    1000\n\ntypedef enum TagUpStateType {\n    UP_STATE_IDLE,          \n    UP_STATE_IN_PROCESS,    \n    \n    UP_STATE_BUTT\n} UP_STATE_EN;\n\ntypedef struct TagMcmuContextCcbStru {\n    UP_CCB_S* pstUpCcb;\n} MCMU_CONTEXT_CCB_S;\n\n#define MRFP_MSG_HEADER_UPDATE_LEN 8\n\nMCMU_CONTEXT_CCB_S g_astContext[MCMU_MAX_CONTEXT_NUM];\n\nVOS_VOID UP_SubMsgProc(struct MsgCB *pstMsg)\n{\n    VOS_UINT32        udwReturn    = VOS_OK;\n    VOS_UINT32        udwMsgId     = VOS_NULL_DWORD;\n    VOS_UINT8         ucMsgIdIndex = VOS_NULL_BYTE;    \n    VOS_UINT16        uwMsgType    = UMG_MSG_TYPE_BUTT;\n    VOS_UINT32        udwCtxIndex  = VOS_NULL_DWORD;\n    MCMU_CC_SUBMSG_S *pstSubMsg    = VOS_NULL_PTR;\n    UP_CCB_S         *pstUpCcb     = VOS_NULL_PTR;\n    \n    \n    if (VOS_NULL_PTR == pstMsg) {\n        return;\n    }\n\n    if (((sizeof(MCMU_CC_SUBMSG_S) + MRFP_MSG_HEADER_UPDATE_LEN) > pstMsg->ulLength)) {\n        return;\n    }\n\n    pstSubMsg   = (MCMU_CC_SUBMSG_S *)(((VOS_UINT8 *)(pstMsg->aucValue)) + MRFP_MSG_HEADER_UPDATE_LEN);\n\n    if (((VOS_UINT16)(pstSubMsg->uwLength + MRFP_MSG_HEADER_UPDATE_LEN) != pstMsg->ulLength)) {\n        return;\n    }\n\n    \n    udwMsgId    = pstSubMsg->udwSeqNo;\n\n    udwCtxIndex = MCMU_GET_INDEX_FROM_CTXID(pstSubMsg->udwContextId);\n\n    uwMsgType   = pstSubMsg->uwMsgType;\n\n    \n    if (0 == udwCtxIndex || MCMU_MAX_CONTEXT_NUM <= udwCtxIndex) {\n        return;\n    }\n    \n    \n    pstUpCcb = g_astContext[udwCtxIndex].pstUpCcb;\n    \n    \n    if ((UP_STATE_IN_PROCESS != pstUpCcb->ucUpFsm)) {   \n        return;\n    }\n    \n    \n    if (VOS_OK == pstSubMsg->uwErrorCode) {\n        \n        pstUpCcb->ucUpFsm = UP_STATE_IN_PROCESS;\n        return;\n    }\n\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\nVOS_CHAR *g_n30Str = VOS_NULL_PTR;\n\nVOS_BOOL n30_memleaktest2_TGT(int index)\n{\n    g_n30Str = (char *)malloc(20);\n    PUB_CONDITION_RET(VOS_NULL_PTR == g_n30Str, VOS_FALSE);\n\n    g_n30Str[0] = 20;\n    g_n30Str[1] = 20; \n    free(g_n30Str);\n    return VOS_TRUE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n#include <securec.h>\n\n\nextern void *JSON_ObjNewObj();\nextern uint32_t JSON_ObjAddKeyValueString(void *pvJson, const char *pcKey, const char *pValue);\nextern void JSON_ObjPut(void *json);\nextern uint32_t JSON_ObjAddKeyValue(void *json, const char *key, void *value);\n\nchar *GetInfo()\n{\n    void *newJson = (void*)JSON_ObjNewObj();\n    uint32_t ret = JSON_ObjAddKeyValueString(newJson, \"Info\", (const char *)\"getInfo Info\");\n    if (ret != 0) {\n        JSON_ObjPut(newJson);\n        return NULL;\n    }\n\n    return newJson;\n}\n\nchar *jsontest3TGTcase()\n{\n    void *newJson = (void*)JSON_ObjNewObj();\n    if (newJson == NULL) {\n        return NULL;\n    }\n\n    char *info = GetInfo();\n    if (info == NULL) {\n        JSON_ObjPut(newJson);\n        return NULL;\n    }\n\n    uint32_t ret = JSON_ObjAddKeyValue(newJson, \"List\", info);\n    if (ret != 0) {\n        JSON_ObjPut(info);\n        JSON_ObjPut(newJson);\n        return NULL;\n    }\n\n    ret = JSON_ObjAddKeyValueString(newJson, \"Event\", (const char *)\"json_test3 Event\");\n    if (ret != 0) {\n        \n        JSON_ObjPut(newJson); \n        return NULL;\n    }\n\n    return newJson;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <securec.h>\n#include <pthread.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <unistd.h>\n\n\n\n#define TABLE_MAX_NUM 10\n#define TABLE_NODE_SIZE 100\n\nuint8_t *g_shareTable[TABLE_MAX_NUM] = {0};\n\nint CreateShareTable(void)\n{\n    for (uint8_t i = 0; i < TABLE_MAX_NUM; i++) {\n        g_shareTable[i] = malloc(TABLE_NODE_SIZE);\n        if (g_shareTable[i] == NULL) {\n            continue;\n        }\n    }\n\n    return 0;\n}\n\nvoid DestroyShareTable(void)\n{\n    for (uint8_t i = 0; i < TABLE_MAX_NUM; i++) {\n        if (g_shareTable[i] == NULL) {\n            continue;\n        }\n\n        free(g_shareTable[i]);\n        g_shareTable[i] = NULL;\n    }\n}\n\nuint8_t *FindShareTableNode(uint8_t index)\n{\n    if (index >= TABLE_MAX_NUM) {\n        return NULL;\n    }\n\n    return g_shareTable[index];\n}\n\n\n\n\n\nint BadCase()\n{\n    int ret = CreateShareTable();\n    if (ret != 0) {\n        return ret;\n    }\n\n    pthread_t threadAId;\n    ret = pthread_create(&threadAId, NULL, (void *)ThreadAEntry, NULL);\n\n    pthread_t threadBId;\n    ret = pthread_create(&threadBId, NULL, (void *)ThreadBEntry, NULL);\n\n    return 0;\n}\n\npthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;\n\n\n\n\n\nint GoodCase()\n{\n    int ret = CreateShareTable();\n    if (ret != 0) {\n        return ret;\n    }\n\n    pthread_t threadCId;\n    ret = pthread_create(&threadCId, NULL, (void *)ThreadCEntry, NULL);\n\n    pthread_t threadDId;\n    ret = pthread_create(&threadDId, NULL, (void *)ThreadDEntry, NULL);\n\n    return 0;\n}\n\nvoid *ThreadCEntry(void *para)\n{\n    pthread_mutex_lock(&g_mutex);\n    uint8_t *node = FindShareTableNode(0);\n    if (node == NULL) {\n        pthread_mutex_unlock(&g_mutex);\n        return NULL;  \n    }\n\n    sleep(1);\n\n    node[0] = 1;  \n    pthread_mutex_unlock(&g_mutex);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1009",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_CDB_IMPU_LEN   64\n#define MAX_IMPU_LEN       128\n\n\ntypedef struct {\n    VOS_CHAR   acImpu[MAX_CDB_IMPU_LEN]; \n    VOS_UINT32 ulScuMid;                 \n    VOS_UINT32 ulRecWriteTime;           \n    VOS_UINT8  ucUserClass;              \n} TblSImpuDispatch;\n\n\ntypedef struct {\n    VOS_BOOL   bRegMethod;      \n    VOS_BOOL   bSNetMerged;     \n    VOS_CHAR   acImpu[MAX_IMPU_LEN];\n    VOS_UINT32 bIsSegReChoose; \n    VOS_UINT32 ulSenderCpuId;  \n    VOS_UINT32 ulSenderPid;    \n    VOS_UINT32 ulQueryMethod;  \n    VOS_UINT32 onlyQuery;    \n} SDispatch;\n\nextern VOS_UINT32 CdbQueryImpuDispTblByImpu(TblSImpuDispatch *pstTblSImpuDispatch, VOS_UINT32 *pulElemIndex);\n\nVOS_INT32 VOS_memcpy_s(VOS_VOID *dest, VOS_UINT32 destMax, const VOS_VOID* src, VOS_UINT32 count) \n{\n    return memcpy_s(dest, count, src, count); \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1068",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.cmdinjection;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.owasp.esapi.codecs.WindowsCodec;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/CommandInjectionInProcessBuilder\")\npublic class CommandInjectionInProcessBuilder {\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"ip\") String ip) throws IOException {\n        if (Objects.isNull(ip)) {\n            return \"ip is Null.\";\n        }\n\n        List<String> commands = new ArrayList<>();\n        commands.add(\"cmd.exe\");\n        commands.add(\"/c\");\n        commands.add(\"ping\");\n        commands.add(ip);\n\n        ProcessBuilder processBuilder = new ProcessBuilder(commands); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return \"success\";\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.sqlinjection.bme.sqlconcatenation;\n\nimport com.huawei.bme.das.CmdRequest;\nimport com.huawei.bme.das.DASCommand;\nimport com.huawei.bme.das.DASCommandFactory;\nimport com.huawei.bme.das.DataParam;\nimport com.huawei.bme.das.DataSet;\n\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.ResponseBody;\n\nimport java.util.Collections;\n\n\n@Controller\n@RequestMapping(\"/sql_injection/BmeInjectionWithSqlConcatenation\")\npublic class BmeInjectionWithSqlConcatenation {\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    @ResponseBody\n    public String TGT001(@RequestParam(value = \"name\") String name) {\n        CmdRequest cmdRequest = new CmdRequest();\n        cmdRequest.setNamingLabel(\"getUserWithColonSign\");\n        DataParam dataParam = new DataParam();\n        dataParam.setName(\"name\");\n        dataParam.setString(name);\n        cmdRequest.setDataParamList(Collections.singletonList(dataParam)); \n        DASCommand dasCommand = DASCommandFactory.getDASCommand();\n        DataSet dataSet = dasCommand.execute(cmdRequest).getDataSet(); \n        if (dataSet != null) {\n            if (dataSet.next()) {\n                return dataSet.getString(\"name\");\n            }\n        }\n        return \"\";\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.droolsinjection;\n\nimport org.kie.api.io.ResourceType;\nimport org.kie.api.runtime.KieSession;\nimport org.kie.internal.utils.KieHelper;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.UUID;\n\n\n@Controller\n@RequestMapping(\"/drools\")\npublic class DroolsInjectionController {\n    private List<String> script = new ArrayList<>();\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT001\")\n    public void TGT001(@RequestParam int expIndex) {\n        \n        String drlExpression = script.get(expIndex);\n        KieHelper helper = new KieHelper();\n        helper.setReleaseId(helper.ks.newReleaseId(\"org.default\", UUID.randomUUID().toString(), \"V1.1.1\"));\n        helper.addContent(drlExpression, ResourceType.DRL); \n        KieSession kSession = helper.build().newKieSession();\n        Map<String, Exception> result = new HashMap<>();\n        kSession.insert(result);\n        kSession.fireAllRules(); \n        kSession.dispose();\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1040",
+    "major": "Input",
+    "lang": "cpp",
+    "code": "#include \"securec.h\"\n#include <stdint.h>\n#include \"basic_data_type.h\"\n\n\n#define XPON_PROF_NAME_LEN 32\n\ntypedef struct {\n    uint8_t ucPotsNum;\n    uint8_t ucEthPortNum;\n    uint8_t ucVdslPortNum;\n    char szProfDisc[XPON_PROF_NAME_LEN + 1];\n} XPONPROF_SRVPROF_COMMON_S;\n\n\n\nuint32_t StringInitBad(XPONPROF_SRVPROF_COMMON_S *record)\n{\n    if (record == NULL) {\n        return RET_ERR;\n    }\n\n    XPONPROF_SRVPROF_COMMON_S dbRecord;\n\n    \n    (void)memset_s(&dbRecord, sizeof(dbRecord), UINT8_MAX, sizeof(dbRecord));\n\n    return XPONPROF_IfDdmSrvProfDataChangeBad(&dbRecord, record);\n}\n\n\n\nuint32_t StringInitGood(XPONPROF_SRVPROF_COMMON_S *record)\n{\n    if (record == NULL) {\n        return RET_ERR;\n    }\n\n    XPONPROF_SRVPROF_COMMON_S dbRecord;\n\n    \n    (void)memset_s(&dbRecord, sizeof(dbRecord), 0, sizeof(dbRecord));\n\n    return XPONPROF_IfDdmSrvProfDataChangeGood(&dbRecord, record);\n}\n\n\n\nuint32_t StringInitGood2(XPONPROF_SRVPROF_COMMON_S *record)\n{\n    if (record == NULL) {\n        return RET_ERR;\n    }\n\n    XPONPROF_SRVPROF_COMMON_S dbRecord;\n\n    (void)memset_s(&dbRecord, sizeof(dbRecord), UINT8_MAX, sizeof(dbRecord));\n\n    \n    dbRecord.szProfDisc[XPON_PROF_NAME_LEN] = '\\0';\n\n    return XPONPROF_IfDdmSrvProfDataChangeGood2(&dbRecord, record);\n}\n\nstatic uint32_t xponprof_ifddmsrvprofdatachangeTGT(xponprof_srvprof_common_s *olddata, xponprof_srvprof_common_s *newdata)\n{\n    if (strcmp(oldData->szProfDisc, newData->szProfDisc) != 0) {  \n        return 0;\n    }\n\n    return 1;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.scriptengine.injectioncase;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport javax.script.ScriptEngine;\nimport javax.script.ScriptEngineManager;\nimport javax.script.ScriptException;\n\n\n@RestController\npublic class ScriptEngineEvalInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEngineEvalInjection.class);\n\n    private static final String LETTER_DIGIT_REGEX = \"^[a-z0-9A-Z]+$\";\n\n    \n    \n\n    \n    \n    @GetMapping(path = \"/TGT002\")\n    public void TGT002(@RequestParam String name) {\n        \n        if (!name.matches(LETTER_DIGIT_REGEX)) {\n            LOGGER.error(\"name is illegal\");\n            return;\n        }\n        String script = \"print('Hello \" + name + \"')\";\n        ScriptEngineManager manager = new ScriptEngineManager();\n        ScriptEngine engine = manager.getEngineByName(\"JavaScript\");\n        try {\n            engine.eval(script); \n        } catch (ScriptException exception) {\n            LOGGER.error(\"Some errors happened when executing the script\");\n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\n#define SAFE_POINTER_ADDITION(a, b) (((b) != nullptr) ? (*b) : (0))\n#define SAFE_ADDITION(a, b) SAFE_POINTER_ADDITION((a), (b))\n\n\n#define UNSAFE_POINTER_ADDITION(a, b) (*b)\n#define UNSAFE_ADDITION(a, b) UNSAFE_POINTER_ADDITION((a), (b))\n\n\n\n\n\n\n\n\nvoid TestPointerAdditionCases()\n{\n    std::cout << \"Testing unsafe pointer addition...\" << std::endl;\n    TestPointerAdditionBad();\n\n    std::cout << \"\\nTesting safe pointer addition...\" << std::endl;\n    TestPointerAdditionGood();\n}\n\nvoid testpointeradditionTGT()\n{\n    std::unique_ptr<int> pointer(new (std::nothrow) int(1));\n\n    std::cout << \"Safe result : \" << SAFE_ADDITION(0, pointer) << std::endl;          \n    std::cout << \"Safe result : \" << SAFE_POINTER_ADDITION(0, pointer) << std::endl;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1019",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\n\ntypedef struct BuffWithLen {\n    char buff[10];\n    int len;\n} BuffWithLen;\n\nvoid *returnlocaladdr4TGT()\n{\n    BuffWithLen tempStu;\n    tempStu.len = 1;\n    return (void *)&tempStu;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\n\n\nvoid BadCaseFunc()\n{\n    \n    char charNicName[10];\n    FreeStackmemoryBadCase4(charNicName, 10);\n}\n\n\n\nvoid GoodCaseFunc()\n{\n    \n    char charNicName[10];\n    FreeStackmemoryGoodCase4(charNicName, 10);\n}\n\nvoid freestackmemoryTGTcase4(char *nicname, unsigned int nicnamelength)\n{\n    char a = nicName[nicNameLength - 1];\n    \n    free(nicName);  \n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\nint strdupTGTcase(char *strcli)\n{\n    char *a = strdup(strcli);  \n    if (a == NULL) {\n        return -1;  \n    }\n\n    int g = 5;\n    if (g < -1) {\n        printf(\"%d\", g);  \n        return g;         \n    }\n    free(a);\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1015",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define EAM_PORT_LEN 64\n#define DRV_PORT_LEN 32\n\n\n\n\n\n\n\nvoid TestMemcpyParameter()\n{\n    printf(\"\\nTesting CheckMemcpyParameterBad:\\n\");\n    CheckMemcpyParameterBad();\n\n    printf(\"\\nTesting CheckMemcpyParameterGood:\\n\");\n    CheckMemcpyParameterGood();\n}\n\nvoid checkmemcpyparameterTGT()\n{\n    char dstPortName[EAM_PORT_LEN] = { 0 };\n    char srcPortName[DRV_PORT_LEN] = \"DrvPortName\";\n\n    \n    int32_t ret = memcpy_s(dstPortName, EAM_PORT_LEN, srcPortName, EAM_PORT_LEN);  \n    if (ret != EOK) {\n        printf(\"memcpy_s failed.\\n\");\n        return;\n    }\n    printf(\"Destination port name: %s\\n\", dstPortName);\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\nstruct BuffWithLen {\n    char buff[10];\n    int len;\n};\n\nint freestackmemoryTGTcase3(char *nicname, unsigned int nicnamelength)\n{\n    BuffWithLen arr;\n    arr.buff[1] = nicName[nicNameLength - 1];\n    \n    free(arr.buff);  \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1016",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define MAX_SIZE 10\n\ntypedef struct {\n    char data[MAX_SIZE];\n    int len;\n} Datainfo;\n\ntypedef struct {\n    Datainfo info;\n} GfpReq;\n\ntypedef struct {\n    Datainfo info;\n} GfpExpAdpt;\n\nstatic GfpReq g_gfpReq;\n\n\n\n\n\n\n\nvoid TestBufferSizeValidation()\n{\n    GfpExpAdpt adptSafe = { { \"ValidData\", 8 } };\n\n    printf(\"\\nTesting ValidateBufferSizeGood with valid data:\\n\");\n    ValidateBufferSizeGood(&adptSafe);\n\n    printf(\"\\nTesting ValidateBufferSizeBad with valid data:\\n\");\n    ValidateBufferSizeBad(&adptSafe);\n}\n\nvoid validatebuffersizeTGT(gfpexpadpt *adpt)\n{\n    if (adpt == NULL) {\n        printf(\"Error: Invalid adapter pointer\\n\");\n        return;\n    }\n    g_gfpReq.info.len = adpt->info.len;  \n    {\n        GfpReq gfpReqTmp1 = g_gfpReq;\n        GfpReq gfpReqTmp2 = g_gfpReq;\n        {\n            GfpReq gGfpReq = gfpReqTmp2;  \n            (void)memcpy_s(gGfpReq.info.data, gGfpReq.info.len, adpt->info.data, adpt->info.len);  \n        }\n    }\n    return;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <cstdint>\n\n\n\n\nint32_t TestCaseBad(void)\n{\n    \n    intptr_t addr;\n    std::cout << \"Enter memory address: \";\n    std::cin >> addr;  \n    \n    \n    int64_t* ptr = reinterpret_cast<intptr_t*>(addr);\n    \n    \n    ProcessDataBad(ptr);\n    return 0;\n}\n\n\n\n\n\nint32_t TestCaseGood(void)\n{\n    std::vector<int> safe_buffer = {10, 20, 30, 40, 50};\n    \n    \n    unsigned index;\n    std::cout << \"Enter data index, must be less than \" << safe_buffer.size() - 1 << \": \";\n    std::cin >> index;\n\n    \n    if (index >= safe_buffer.size()) {\n        std::cerr << \"Error: Invalid index\" << std::endl;\n        return 1;\n    }\n\n    \n    ProcessDataGood(safe_buffer[index]);\n    return 0;\n}\n\nstatic void processdataTGT(int safe_data)\n{\n    \n    std::cout << \"Safe data: \" << safe_data << std::endl;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.arbitrarycmdexec;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.us.common.os.UsProcessBuilderUtils;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.Arrays;\nimport java.util.List;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/ArbitraryCommandExecInProcessBuilder\")\npublic class ArbitraryCommandExecInProcessBuilder {\n    private static final List<String> COMMAND_WHITELIST = Arrays.asList(\"ls\", \"date\", \"uptime\");\n\n    private static final String COMMAND_C = \"cmd.exe /c \";\n\n    private static final String CMD_SEPARATOR = \" \";\n\n    private static final String SUCCESS = \"success\";\n\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/gtsTGT001\")\n    public String gtsTGT001(@RequestParam(name = \"cmdList\") String cmdList) throws IOException {\n        if (Objects.isNull(cmdList)) {\n            return \"cmdList is Null.\";\n        }\n\n        List<String> commands = Arrays.asList(cmdList.split(CMD_SEPARATOR));\n        /*\n         * 使用US框架提供的UsProcessBuilderUtils.getProcessBuilder获取安全的ProcessBuilder，需要在框架配置文件配置可以执行的命令白\n         * 名单,如未设置，默认可以执行的命令有：chmod,cd,cat,date,pwd,ll,ls,mkdir,cp,df,zip,unzip,tar,free,grep,java,mknod。\n         * 建议根据业务需要重新设置白名单。本示例中在us.config.properties配置文件中设置了仅可以使用ping命令，参考框架使用指导\n         * https://codehub-y.huawei.com/GTS_Cloud_Platform/DSP_Security/SwordOfSecurity/us/files?ref=master\n         */\n        ProcessBuilder processBuilder = UsProcessBuilderUtils.getProcessBuilder(commands); \n        Process process = processBuilder.start();\n\n        CommonUtils.showProcessEcho(process);\n        return SUCCESS;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdint.h>\n\n\ntypedef uint16_t VOS_UINT16;\ntypedef uint32_t VOS_UINT32;\n#define VOS_NULL_PTR NULL\n#define IPV4_PROTOCOL_TCP 6\n#define IPV4_PROTOCOL_UDP 17\n#define PS_TRUE 1\n#define PS_FALSE 0\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint8_t  verIhl;        \n    uint8_t  tos;            \n    uint16_t totalLength;   \n    uint16_t id;             \n    uint16_t fragOffs;      \n    uint8_t  ttl;            \n    uint8_t  protocol;       \n    uint16_t checksum;       \n    uint32_t srcAddr;       \n    uint32_t dstAddr;       \n} IPV4_Hdr;\n#pragma pack(pop)\n\n\n#pragma pack(push, 1)\ntypedef struct {\n    uint16_t srcPort;       \n    uint16_t dstPort;       \n    uint32_t seqNum;        \n    uint32_t ackNum;        \n    uint8_t  dataOffset;    \n    uint8_t  flags;          \n    uint16_t window;         \n    uint16_t checksum;       \n    uint16_t urgentPtr;     \n} TCP_Hdr;\n#pragma pack(pop)\n\nstruct XXX_IpInfo {\n    VOS_UINT16 protocol;\n    VOS_UINT16 dstPort;\n};\n\n\n#define IP_NTOHS(val) ((((val) >> 8) & 0x00FF) | (((val) << 8) & 0xFF00))\n\n#define IPV4_HDR_LEN 20\n\nVOS_UINT32 xxxdecodebstdlpacketTGT(vos_uint32 *ippktaddr, struct xxx_ipinfo *ipinfo)\n{\n    IPV4_Hdr *ipv4Hdr = VOS_NULL_PTR;\n    TCP_Hdr *tcpHdr = VOS_NULL_PTR;\n\n    ipv4Hdr = (IPV4_Hdr *)(ipPktAddr);\n    \n    if ((ipv4Hdr->protocol != IPV4_PROTOCOL_TCP) && (ipv4Hdr->protocol != IPV4_PROTOCOL_UDP)) {\n        return PS_FALSE;\n    }\n \n    ipInfo->protocol = ipv4Hdr->protocol;\n    if (ipv4Hdr->totalLength < IPV4_HDR_LEN + sizeof(TCP_Hdr)) {\n        return PS_FALSE;\n    }\n    tcpHdr = (TCP_Hdr *)(ipPktAddr + IPV4_HDR_LEN);\n \n    ipInfo->dstPort = IP_NTOHS(tcpHdr->dstPort); \n\n    return PS_TRUE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1005",
+    "major": "Logic",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdint.h>\n#include <arpa/inet.h>  \n\n\n#define IPV6_ADDR_LENGTH 16\n#define UCHAR unsigned char\n#define COPY_IPV6_ADDR(d, s) do {                   \\\n    int i = 0;                               \\\n    for (; i < IPV6_ADDR_LENGTH; i++) {                  \\\n        ((UCHAR*)(d))[i] = ((UCHAR*)(s))[i]; \\\n    }                                          \\\n} while (0)\n\ntypedef struct {\n    uint8_t spare;\n    uint8_t ipv4Flag;\n    uint8_t ipv6Flag;\n    uint64_t identifier;\n    union {\n        uint32_t ipv4Addr;\n        uint8_t ipv6Addr[IPV6_ADDR_LENGTH];\n    } ip;\n} DataStructure;\n\nvoid TGTcase(void *indata, void *outdata)\n{\n    DataStructure *input = (DataStructure *)inData;\n    DataStructure *output = (DataStructure *)outData;\n\n    output->spare = 0;\n    output->ipv4Flag = input->ipv4Flag;\n    output->ipv6Flag = input->ipv6Flag;\n    output->identifier = htonl(input->identifier);  \n\n    if (input->ipv4Flag) {\n        output->ip.ipv4Addr = input->ip.ipv4Addr;  \n    } else if (input->ipv6Flag) {\n        \n        COPY_IPV6_ADDR(output->ip.ipv6Addr, input->ip.ipv6Addr);\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <stdbool.h>\n#include <string.h>\n#include <securec.h>\n\n\n\n\n\n\nenum ETH_TRUNK_MSGTYPE {\n    ETH_TRUNK_MSGTYPE_DEL,\n    ETH_TRUNK_MSGTYPE_ADD,\n    ETH_TRUNK_MSGTYPE_MERGE,\n    ETH_TRUNK_MSGTYPE_MAX,\n};\n\nenum ETH_TRUNK_MSG_ACTION {\n    ETH_TRUNK_MSG_ACTION_DEL,\n    ETH_TRUNK_MSG_ACTION_ADD,\n    ETH_TRUNK_MSG_ACTION_MERGE,\n    ETH_TRUNK_MSG_ACTION_MAX,\n};\n\nstruct EthTrunkMngMsg {\n    int msgId;\n    int msgType;\n    int action;\n    int tblId;\n};\n\n#define BOARD_ETH_TRUNK_TBL_MAX (100)\n\nbool g_masterBoardTbl[BOARD_ETH_TRUNK_TBL_MAX] = {0};\nbool g_slaveBoardTbl[BOARD_ETH_TRUNK_TBL_MAX] = {0};\n\nvoid MasterBoardSetTblProcess(int tblId)\n{\n    if (tblId < 0 || tblId >= BOARD_ETH_TRUNK_TBL_MAX) {\n        return;\n    }\n    g_masterBoardTbl[tblId] = 1;\n}\n\nvoid SlaveBoardSetTblProcess(int tblId)\n{\n    if (tblId < 0 || tblId >= BOARD_ETH_TRUNK_TBL_MAX) {\n        return;\n    }\n    g_slaveBoardTbl[tblId] = 1;\n}\n\nstruct EthTrunkMngMsg g_ethTrunkMngMsgBuf = {0};\n\nvoid SendMsgFromMasterBoard(struct EthTrunkMngMsg *msg)\n{\n    memcpy_s(&g_ethTrunkMngMsgBuf, sizeof(struct EthTrunkMngMsg), msg, sizeof(struct EthTrunkMngMsg));\n}\n\nint CleanMngMsgbuf()\n{\n    return memset_s(&g_ethTrunkMngMsgBuf, sizeof(g_ethTrunkMngMsgBuf), 0, sizeof(g_ethTrunkMngMsgBuf));\n}\n\nint GetTblIdFromLocalMsgBuf()\n{\n    return g_ethTrunkMngMsgBuf.tblId;\n}\n\n\nbool BoardReconciliationIsCorrect()\n{\n    for (int i = 0; i < BOARD_ETH_TRUNK_TBL_MAX; i++) {\n        if (g_masterBoardTbl[i] != g_slaveBoardTbl[i]) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint TGTcase(int tblid)\n{\n    MasterBoardSetTblProcess(tblId);\n\n    \n    struct EthTrunkMngMsg *msg = (struct EthTrunkMngMsg *)malloc(sizeof(struct EthTrunkMngMsg)); \n    if (!msg) {\n        return -1;\n    }\n    bzero(msg, sizeof(struct EthTrunkMngMsg));\n    msg->msgId = 0;\n    msg->msgType = ETH_TRUNK_MSGTYPE_DEL;\n    msg->action = ETH_TRUNK_MSG_ACTION_DEL;\n    msg->tblId = tblId;\n\n    \n    SendMsgFromMasterBoard(msg);\n    free(msg);\n\n    SlaveBoardSetTblProcess(GetTblIdFromLocalMsgBuf());\n    CleanMngMsgbuf();\n\n    if (!BoardReconciliationIsCorrect()) {\n        abort();\n    }\n\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1026",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#ifndef HEAD_H\n#define HEAD_H\n#include <stdlib.h>\ntypedef void *VOS_MUTEX_T;\ntypedef enum {\n    FGSYNC_TYPE_REALTIME,  // 实时同步\n    FGSYNC_TYPE_BATCH,     // 批量同步\n    FGSYNC_TYPE_MAX,\n} FgSyncType;\n\ntypedef enum {\n    FG_OBJTYPE_MAX,\n} FG_DRV_OBJTYPE_E;\n\ntypedef struct TagVosSll {\n    int stHead;   /**< 链表头节点 */\n    int *pstTail; /**< 指向链表尾 */\n    int uiCount;      /**< 链表节点个数 */\n} VOS_SLL_S;\ntypedef struct {\n    VOS_MUTEX_T lock;\n    VOS_SLL_S nodes;  // FgSyncNode链表\n} FgSyncQueue;\n\nFgSyncQueue g_fgSyncQueue[FGSYNC_TYPE_MAX][FG_OBJTYPE_MAX];\n// 销毁互斥锁\nvoid VOS_MutexDestroy(void *p);\n#endif\n\n\n\n\n\n\n#include <stdio.h>\n#include <securec.h>\n#include \"head.h\"\n\nvoid TGTcase(void)\n{\n    for (int queueType = 0; queueType < FGSYNC_TYPE_MAX; queueType++) {\n        for (int objType = 0; objType < FG_OBJTYPE_MAX; objType++) {\n            (void)VOS_MutexDestroy(&(g_fgSyncQueue[queueType][objType].lock));  \n            \n        }\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\n\ntypedef struct BuffWithLen {\n    char buff[10];\n    int len;\n} BuffWithLen;\n\nvoid *returnlocaladdr5TGT()\n{\n    static BuffWithLen tempStu;\n    tempStu.len = 1;\n    return (void *)&tempStu.len;  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1027",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n\nint callocreleaseTGTcase(char *nicname, unsigned int nicnamelength)\n{\n    char *charNicName = nullptr;\n    charNicName = (char *)calloc(1, 64 * sizeof(char));  \n    if (charNicName == nullptr) {\n        return 1;\n    }\n    memset_s(charNicName, 64 * sizeof(char), 0, 64 * sizeof(char));\n    if (nicNameLength > 64 * sizeof(char) - 1) {\n        free(charNicName);\n        return 1;\n    }\n    free(charNicName);  \n    return 0;           \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n#include \"external_data_common.h\"\n\n\nconst DWORD DMM_MSG_LEN = 4;\nconstexpr uint32_t SERVICE_TYPE_YANGDS_DB_CHANGE_LEN = (sizeof(uint32_t)) + 100;\n\nDWORD DMM_GetMsgDataLength(void *, uint32_t &)\n{\n    return 0;\n}\n\nvoid ProcYangdsDbChange(uintptr_t (&msg)[DMM_MSG_LEN])\n{\n    \n    if ((msg[1] == 0)) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    \n    uint32_t msgLength = 0;\n    (void)DMM_GetMsgDataLength(reinterpret_cast<void *>(static_cast<uintptr_t>(msg[1])), msgLength);\n    if (msgLength < SERVICE_TYPE_YANGDS_DB_CHANGE_LEN) {\n        return;\n    }\n\n    \n    DbChangeInfo *dbChangeInfo1 = reinterpret_cast<DbChangeInfo *>(msg[1]);  \n\n    dbChangeInfo->type = VOS_NTOHL(dbChangeInfo->type);\n    uint32_t dsmMsgSize = DMM_MSG_LEN * sizeof(uint32_t) + msg[3];  \n\n    return;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1016",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define HEADER_LEN (sizeof(VOS_UINT16) + sizeof(VOS_UINT16))\n#define MAX_IMSI_LEN_15 15\n#define MAX_HLRGTNUM_LEN_16 16\n\n#pragma pack(1)\ntypedef struct Map_Cc_Msg {\n    VOS_UINT8 msgType;\n    VOS_UINT32 ieLen;\n    VOS_UINT8 ies[0];\n} MapScMsg;\n\n#define ELEMENT_HEADER \\\n    VOS_UINT16 ie;     \\\n    VOS_UINT16 elength\n\ntypedef struct {\n    ELEMENT_HEADER;\n    VOS_UINT8 IMSI[MAX_IMSI_LEN_15 + 1];\n} MapIeIMSI;\n#define MAP_IE_IMSI_LEN (sizeof(MapIeIMSI) - HEADER_LEN)\n\ntypedef struct {\n    ELEMENT_HEADER;\n    VOS_UINT8 aucImeisv[MAX_HLRGTNUM_LEN_16 + 1];\n} MapIeImeisv;\n#define MAP_IE_IMEI_LEN (sizeof(MapIeImeisv) - HEADER_LEN)\n\ntypedef struct _MAP_Support_MTRF {\n    ELEMENT_HEADER;\n    VOS_UINT8 ucSupportMtrf;\n} MapIeSupportMTRF;\n#define MAP_IE_SUPPORT_MTRF_LEN (sizeof(MapIeSupportMTRF) - HEADER_LEN)\n\ntypedef struct {\n    MapIeIMSI stIeIMSI;\n    MapIeImeisv stIeIMEISV;\n} SC_MAPLocReq;\n#pragma pack()\n\n\n\n\n\n\n\n\n\n\nVOS_UINT32 SC_SendLocationToMapReqBad()\n{\n    VOS_UINT16 usMsgLen = VOS_NULL;\n    MapScMsg *pstMapMsg = VOS_NULL_PTR;\n\n    \n    usMsgLen = (sizeof(MapScMsg) + sizeof(SC_MAPLocReq));\n    pstMapMsg = (MapScMsg *)VOS_MemAlloc(PID_TEST, DYNAMIC_MEM_PT, usMsgLen);\n    PUB_CONDITION_RET(VOS_NULL_PTR == pstMapMsg, VOS_ERR);\n\n    usMsgLen = 0;\n    (VOS_VOID) SC_MakeUpdateLocationMsgBodyBad(pstMapMsg, &usMsgLen);\n\n    pstMapMsg->ieLen = usMsgLen;\n\n    VOS_MemFree(PID_TEST, pstMapMsg);\n    return VOS_OK;\n}\n\n\n\n\n\n\n\n\n\nVOS_UINT32 SC_SendLocationToMapReqGood()\n{\n    VOS_UINT16 usMsgLen = VOS_NULL;\n    MapScMsg *pstMapMsg = VOS_NULL_PTR;\n    VOS_UINT16 maxIeLen = VOS_NULL;\n\n    \n    usMsgLen = (sizeof(MapScMsg) + sizeof(SC_MAPLocReq));\n    pstMapMsg = (MapScMsg *)VOS_MemAlloc(PID_TEST, DYNAMIC_MEM_PT, usMsgLen);\n    PUB_CONDITION_RET(VOS_NULL_PTR == pstMapMsg, VOS_ERR);\n\n    usMsgLen = 0;\n    maxIeLen = sizeof(SC_MAPLocReq);\n    (VOS_VOID) SC_MakeUpdateLocationMsgBodyGood(pstMapMsg, &usMsgLen, maxIeLen);\n\n    pstMapMsg->ieLen = usMsgLen;\n\n    VOS_MemFree(PID_TEST, pstMapMsg);\n    return VOS_OK;\n}\n\nVOS_BOOL sc_makeupdatelocationmsgbodyTGT(mapscmsg *pstmapmsg, vos_uint16 *pusmsglen)\n{\n    SC_MakeImsiForReportBad(pstMapMsg, pusMsgLen); \n    SC_AddMapImeisvToUpdateLoctionBad(pstMapMsg, pusMsgLen); \n    \n    SC_MakeIeMtrfBad(pstMapMsg, pusMsgLen); \n    return VOS_TRUE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n#include \"securec/securec.h\"\n\n#define BUFFER_LENGTH 64\n#define OFFSET_LENGTH 3\n\n\n\n\n\n\n\nvoid TestMemoryCopyWithOffset()\n{\n    printf(\"\\nTesting CopyMemoryWithOffsetBad:\\n\");\n    CopyMemoryWithOffsetBad();\n\n    printf(\"\\nTesting CopyMemoryWithOffsetGood:\\n\");\n    CopyMemoryWithOffsetGood();\n}\n\nvoid copymemorywithoffsetTGT()\n{\n    char source[BUFFER_LENGTH] = \"Hello, World!\";\n    char buffer[BUFFER_LENGTH];\n    size_t bytesToCopy = BUFFER_LENGTH - OFFSET_LENGTH;  \n\n    if (memcpy_s(buffer, BUFFER_LENGTH, source + OFFSET_LENGTH, bytesToCopy) != EOK) {  \n        printf(\"Error: memcpy_s failed\\n\");\n        return;\n    }\n\n    buffer[BUFFER_LENGTH - 1] = '\\0';\n    printf(\"Source string: %s\\n\", source);\n    printf(\"Destination string: %s\\n\", buffer);\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.droolsinjection;\n\nimport org.drools.core.base.RuleNameEndsWithAgendaFilter;\nimport org.kie.api.io.ResourceType;\nimport org.kie.api.runtime.KieSession;\nimport org.kie.internal.utils.KieHelper;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.util.HashMap;\nimport java.util.Map;\nimport java.util.UUID;\n\n\n@Controller\n@RequestMapping(\"/drools\")\npublic class DroolsInjectionController {\n    private static final Logger LOGGER = LoggerFactory.getLogger(DroolsInjectionController.class);\n\n    private static final String GLOBAL = \"Hissec\";\n\n    private static final String KEY = \"hero\";\n\n    private static final String LETTER_DIGIT_REGEX = \"^[a-z0-9A-Z]+$\";\n\n    private static final String DRL_TEMPLATE = \"package eval;\\n\" + \"import java.util.Map;\\n\" + \"global Object %s\\n\"\n        + \"\\n\" + \"rule \\\"rule0\\\"\\n\" + \"    no-loop true\\n\" + \"    when\\n\" + \"        $result:Map(%s);\\n\" + \"    then\\n\"\n        + \"        $result.put(\\\"%s\\\",true);\\n\" + \"end\\n\\n\" + \"rule \\\"rule1\\\"\\n\" + \"    no-loop true\\n\" + \"    when\\n\"\n        + \"        $result:Map(hero);\\n\" + \"    then\\n\" + \"        $result.put(\\\"aaa\\\",true);\\n\" + \"end\\n\";\n\n    \n    \n\n    \n    \n    @GetMapping(\"/TGT002\")\n    public void TGT002(@RequestParam String param) {\n        if (!param.matches(LETTER_DIGIT_REGEX)) {\n            LOGGER.error(\"param is illegal\");\n            return;\n        }\n        String drl = String.format(DRL_TEMPLATE, GLOBAL, param, KEY);\n        KieHelper helper = new KieHelper();\n        helper.setReleaseId(helper.ks.newReleaseId(\"org.default\", UUID.randomUUID().toString(), \"V1.1.1\"));\n        helper.addContent(drl, ResourceType.DRL); \n        KieSession kSession = helper.build().newKieSession();\n        Map<String, Exception> result = new HashMap<>();\n        kSession.insert(result);\n        kSession.fireAllRules(new RuleNameEndsWithAgendaFilter(\"rule1\")); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1029",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common.h\"\n#include \"basic_data_type.h\"\n#include \"securec.h\"\n\n\n\nconst DWORD OTDR_DATA_PACK_LEN = 10;\n\nDWORD case1TGT(word pkgid, word pkglen, byte *sorfilebuf, byte *m_eotdrsorfilebuf)\n{\n    \n    errno_t err = memcpy_s((sorFileBuf + 15), OTDR_DATA_PACK_LEN, (m_EotdrSorFileBuf + OTDR_DATA_PACK_LEN * (pkgId - 1)),  pkgLen);  \n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#include <stdlib.h>\n#define VOID void\n\ntypedef unsigned int UINT32;\n\ntypedef struct TagVfpDfaAlgUploadThresholdLib {\n    void *localThList;   /* 挂接各CPUkey相同的阈值列表 */\n    UINT32 thresholdNum;\n} VfpDfaAlgUploadThresholdLib;\n\ntypedef struct {\n    UINT32 startIndex;\n    enum {\n        TRAVERSE, SORT, SAVE, UPLOAD, AGE, END\n    } procType;\n    VfpDfaAlgUploadThresholdLib uploadThreshold;\n} VfpDfaAlgUpThProcInfo;\n\ntypedef struct {\n    VOID *algUpThProcInfo;\n} VfpDfaAgeThis;\n\nUINT32 VFP_DFA_DeleteLocalThresholdLib(VfpDfaAlgUpThProcInfo *procInfo);\n#include \"head.h\"\n\nUINT32 VFP_DFA_DeleteLocalThresholdLib(VfpDfaAlgUpThProcInfo *procInfo)\n{\n    if (procInfo == NULL) {\n        return 0;\n    }\n    if (procInfo->uploadThreshold.localThList == NULL) {\n        return 1;\n    }\n    (VOID)free(procInfo->uploadThreshold.localThList);\n    procInfo->uploadThreshold.localThList = NULL;\n    return 1;\n}\n\n\n\n\n\n#include <stdio.h>\n#include <stdlib.h>\n#include <securec.h>\n#include \"head.h\"\n\nint TGTcase(void *pthis)\n{\n    VfpDfaAgeThis *agingCtx = (VfpDfaAgeThis *)pThis;\n    VfpDfaAlgUpThProcInfo *procInfo = (VfpDfaAlgUpThProcInfo *)agingCtx->algUpThProcInfo;\n    UINT32 ret = VFP_DFA_DeleteLocalThresholdLib(procInfo);\n    if (ret != 1) {\n        return 0;\n    }\n    (VOID)memset_s(agingCtx->algUpThProcInfo, sizeof(VfpDfaAlgUpThProcInfo), 0, sizeof(VfpDfaAlgUpThProcInfo)); \n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1081",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.xmldatainjection;\n\nimport com.huawei.wsf.core.HWEncoder;\n\nimport org.dom4j.Document;\nimport org.dom4j.DocumentHelper;\nimport org.dom4j.Element;\nimport org.dom4j.io.XMLWriter;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\n\nimport java.io.IOException;\nimport java.io.StringWriter;\n\n\npublic class XMLCBBDataInjectionInComment {\n    private static final Logger LOGGER = LoggerFactory.getLogger(XMLCBBDataInjectionInComment.class);\n\n    \n    \n\n    \n    \n    @RequestMapping(value = \"/comment_TGT001\", method = RequestMethod.POST)\n    public void TGT001(@RequestBody String comment) throws IOException {\n        Document document = DocumentHelper.createDocument();\n        Element students = document.addElement(\"Students\");\n        Element student = students.addElement(\"student\");\n        \n        \n        \n        \n        \n        \n        \n        \n        student.addComment(comment); \n        student.setText(\"anonyUser\");\n        StringWriter writer = new StringWriter();\n        XMLWriter output = new XMLWriter(writer);\n        output.write(document); \n        output.close();\n        LOGGER.info(writer.toString());\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1096",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.velocity.injectioncase;\n\nimport org.apache.velocity.VelocityContext;\nimport org.apache.velocity.app.VelocityEngine;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\nimport java.io.IOException;\nimport java.io.Reader;\nimport java.io.StringReader;\nimport java.io.Writer;\n\nimport javax.servlet.http.HttpServletResponse;\n\n\n@Controller\n@RequestMapping(\"/velocity\")\npublic class VelocityEvaluateInjection {\n    \n    \n    @GetMapping(value = \"/evaluate_TGT002\")\n    public void TGT002(@RequestParam String name, HttpServletResponse response) throws IOException {\n        \n        \n        String helloPageStr = \"\" + \"<html>\\n\" + \"<head>\\n\" + \"<title>welcome</title>\\n\" + \"</head>\\n\" + \"<body>\\n\"\n            + \"hello: \" + name + \" <br/>\\n\" + \"</body>\\n\" + \"</html>\";\n        VelocityEngine engine = new VelocityEngine();\n        VelocityContext context = new VelocityContext();\n        Writer writer = response.getWriter();\n        Reader reader = new StringReader(helloPageStr);\n        engine.evaluate(context, writer, \"\", reader); \n        engine.evaluate(context, writer, \"\", helloPageStr); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1016",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\nVOS_BOOL encodestringvalueTGT(vos_uchar *content, vos_uint32 conetlen, vos_char* attrname, vos_char* attrvalue, vos_uint16 attrvaluelen)\n{\n    if (content == VOS_NULL_PTR || attrName == VOS_NULL_PTR || attrValue == VOS_NULL_PTR) {\n        return VOS_FALSE;\n    }\n\n    VOS_UINT32 nameLen = strlen(attrName);\n    if (memcpy_s(content, nameLen, attrName, nameLen) != 0) { \n        printf(\"memcpy attrName err\");\n        return VOS_FALSE;\n    }\n\n    content += nameLen;\n    content[0] = '='; \n    content += 1;\n\n    if (memcpy_s(content, attrValueLen, attrValue, attrValueLen) != 0) { \n        printf(\"memcpy attrValue err\");\n        return VOS_FALSE;\n    }\n\n    content += attrValueLen;\n    content[0] = ';'; \n    content += 1 ;\n    return VOS_TRUE;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.arbitrarycmdexec;\n\nimport com.huawei.cwd.utils.CommonUtils;\nimport com.huawei.us.common.os.UsOSUtils;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.IOException;\nimport java.util.Objects;\n\n\n@RestController\n@RequestMapping(value = \"/ArbitraryCommandExecInRuntime\")\npublic class ArbitraryCommandExecInRuntime {\n    private static final String SUCCESS = \"success\";\n\n    private static final String COMMAND_C = \"cmd.exe /c \";\n\n    private static final String[] COMMAND_WHITELIST = {\n        \"ls\", \n        \"echo Hello\" \n        \n    };\n\n    \n    \n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/TGT001\")\n    public String TGT001(@RequestParam(name = \"index\") int index) throws IOException {\n        if (index < 0 || index >= COMMAND_WHITELIST.length) {\n            return \"Invalid command index.\";\n        }\n\n        String cmd = COMMAND_C + COMMAND_WHITELIST[index];\n        Runtime runtime = Runtime.getRuntime();\n        Process process = runtime.exec(cmd); \n\n        CommonUtils.showProcessEcho(process);\n        return SUCCESS;\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1071",
+    "major": "Injection",
+    "lang": "java",
+    "code": "package com.huawei.cwd.jexl.injectioncase;\n\nimport org.apache.commons.jexl3.JexlBuilder;\nimport org.apache.commons.jexl3.JexlContext;\nimport org.apache.commons.jexl3.JexlEngine;\nimport org.apache.commons.jexl3.JexlExpression;\nimport org.apache.commons.jexl3.MapContext;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\n\n@Controller\n@RequestMapping(\"/jexl\")\npublic class JexlInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JexlInjection.class);\n\n    \n    \n\n    \n    \n    @GetMapping(value = \"/jexlEngine/createExpression_TGT001\")\n    public void TGT001(@RequestParam(name = \"exp\") String exp) {\n        JexlEngine jexl = new JexlBuilder().create();\n        \n        \n        JexlExpression expression = jexl.createExpression(exp); \n        JexlContext context = new MapContext();\n        Object object = expression.evaluate(context); \n        LOGGER.info(object.toString());\n    }\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdint.h>\n\nchar *returnlocaladdr2TGT()\n{\n    static char arr[10];\n    arr[0] = 1;\n    return &arr[2];  \n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1030",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n\n\ntypedef struct NodeKey {\n    int key1;\n    int key2;\n} NodeKey;\n\n\ntypedef struct Node {\n    NodeKey key;\n    struct Node *next;\n} Node;\n\n\nNode *CreateNode(NodeKey *key)\n{\n    Node *newNode = (Node *)malloc(sizeof(Node));\n    newNode->key = *key;\n    newNode->next = NULL;\n    return newNode;\n}\n\n\nvoid Insert(Node **head, NodeKey *key)\n{\n    Node *newNode = CreateNode(key);\n    newNode->next = *head;\n    *head = newNode;\n}\n\n\nvoid Delete(Node **head, NodeKey *key)\n{\n    Node *temp = *head;\n    Node *prev = NULL;\n\n    \n    while (temp != NULL && memcmp(&temp->key, key, sizeof(NodeKey)) != 0) {\n        prev = temp;\n        temp = temp->next;\n    }\n\n    \n    if (temp == NULL) {\n        printf(\"Node with key %d,%d not found\\n\", key->key1, key->key2);\n        return;\n    }\n\n    \n    if (prev == NULL) {\n        *head = temp->next;\n    } else {\n        prev->next = temp->next;\n    }\n\n    free(temp);\n}\n\n\nvoid PrintList(Node *head)\n{\n    Node *temp = head;\n    while (temp != NULL) {\n        printf(\"%d,%d -> \", temp->key.key1, temp->key.key2);\n        temp = temp->next;\n    }\n    printf(\"NULL\\n\");\n}\n\nint TGTcase()\n{\n    Node *head = NULL;\n    NodeKey addkey;\n    NodeKey delKey;\n\n    \n    addkey.key1 = 1;\n    Insert(&head, &addkey);  \n\n    printf(\"链表内容: \");\n    PrintList(head);\n\n    \n    delKey.key1 = 1;\n    Delete(&head, &delKey);  \n\n    printf(\"删除未初始化key后的链表内容: \");\n    PrintList(head);\n\n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1019",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\ntypedef struct {\n    int32_t fieldA;\n    int32_t fieldB;\n} Block;\n\n\nBlock *g_globalBlock = NULL;\n\n\n\n\n\nvoid TestGlobalVariableInitBad(void)\n{\n    InitializeGlobalBlockBad();  \n    if (g_globalBlock == NULL) {\n        printf(\"The global block initialize failed.\\n\");\n        return;\n    }\n\n    if (g_globalBlock->fieldA == 123 && g_globalBlock->fieldB == 456) {\n        printf(\"The global block initialize succeeded.\\n\");\n    } else {\n        printf(\"The global block initialize failed.\\n\");\n    }\n}\n\n\n\n\n\nvoid TestGlobalVariableInitGood(void)\n{\n    InitializeGlobalBlockGood();  \n    if (g_globalBlock == NULL) {\n        printf(\"The global block initialize failed.\\n\");\n        return;\n    }\n\n    if (g_globalBlock->fieldA == 123 && g_globalBlock->fieldB == 456) {\n        printf(\"The global block initialize succeeded.\\n\");\n    } else {\n        printf(\"The global block initialize failed.\\n\");\n    }\n\n    SAFE_FREE(g_globalBlock);\n}\n\nvoid TestGlobalVariableInitialization()\n{\n    printf(\"\\nTesting TestGlobalVariableInitBad:\\n\");\n    TestGlobalVariableInitBad();\n\n    printf(\"\\nTesting TestGlobalVariableInitGood:\\n\");\n    TestGlobalVariableInitGood();\n}\n\nvoid initializeglobalblockTGT(void)\n{\n    Block block;\n    block.fieldA = 123;\n    block.fieldB = 456;\n    \n    g_globalBlock = &block;  \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "java",
+    "code": "package com.huawei.cwd.juel.injectioncase;\n\nimport org.activiti.engine.impl.javax.el.ExpressionFactory;\nimport org.activiti.engine.impl.javax.el.ValueExpression;\nimport org.activiti.engine.impl.juel.ExpressionFactoryImpl;\nimport org.activiti.engine.impl.juel.SimpleContext;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\n\n\n@Controller\n@RequestMapping(\"/JuelInjection\")\npublic class JuelInjection {\n    private static final Logger LOGGER = LoggerFactory.getLogger(JuelInjection.class);\n\n    private static final String LETTER_DIGIT_REGEX = \"^[0-9]+$\";\n\n    \n    \n\n    \n    \n    @GetMapping(path = \"/TGT001\")\n    public void TGT001(@RequestParam String userInput) {\n        \n        if (!userInput.matches(LETTER_DIGIT_REGEX)) {\n            LOGGER.error(\"name is illegal\");\n            return;\n        }\n        String expression = \"result = \" + userInput;\n\n        ExpressionFactory expressionFactory = new ExpressionFactoryImpl();\n        SimpleContext simpleContext = new SimpleContext();\n        ValueExpression valueExpression =\n            expressionFactory.createValueExpression(simpleContext, expression, String.class); \n\n        valueExpression.getValue(simpleContext); \n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1017",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_IMPU_LEN 128\n#define MAX_TRACE_USER_HANDLE_NUM 64\n#define INVALID_TRACE_HANDLE_VALUE 0xFFFFFFFF      \n\ntypedef struct _CdbDiagInfoStartReq {\n    VOS_UINT32  ulTraceType;\n    VOS_UINT32  ulTraceHandle;            \n    VOS_CHAR    acImpu[MAX_IMPU_LEN];\n} CdbDiagInfoStartReq;\n\nCdbDiagInfoStartReq g_astDiagTraceReqInfo[MAX_TRACE_USER_HANDLE_NUM] = {{0}};\nVOS_UINT32 gulDiagTraceReqInfoNum = 0;\n\nextern VOS_BOOL TRC_IsValidTraceHandle(VOS_UINT32 ulTraceHandle);\n\nVOS_UINT32 mdbcheckdiagtracehandleTGT(vos_uint32 ulpos)\n{\n    VOS_UINT32 ulHandleIndex  = 0;\n    VOS_UINT32 ulCpyNum       = 0;\n    errno_t    eRet           = EOK;\n\n    if ((MAX_TRACE_USER_HANDLE_NUM < gulDiagTraceReqInfoNum)\n        || (0 == gulDiagTraceReqInfoNum)) {\n        return VOS_NULL;\n    }\n\n    for (ulHandleIndex = ulPos ; ulHandleIndex < gulDiagTraceReqInfoNum ; ulHandleIndex++) {\n        if (TRC_IsValidTraceHandle(g_astDiagTraceReqInfo[ulHandleIndex].ulTraceHandle)) {\n            continue;  \n        }\n\n        \n        ulCpyNum = MAX_TRACE_USER_HANDLE_NUM - ulHandleIndex - 1;\n        if (0 < ulCpyNum) {\n            eRet = memcpy_s(&g_astDiagTraceReqInfo[ulHandleIndex], \n                (MAX_TRACE_USER_HANDLE_NUM - ulHandleIndex) * sizeof(CdbDiagInfoStartReq), \n                &g_astDiagTraceReqInfo[ulHandleIndex + 1], ulCpyNum * sizeof(CdbDiagInfoStartReq)); \n            PUB_CONDITION_OPT((EOK != eRet), LOG_RunInfo(\"[CHECK RETURN]:call memmove_s(0) failed (%d)\", eRet));\n        }\n\n        gulDiagTraceReqInfoNum--;\n\n        \n        memset_s(&g_astDiagTraceReqInfo[MAX_TRACE_USER_HANDLE_NUM - 1], sizeof(CdbDiagInfoStartReq),\n            VOS_NULL, sizeof(CdbDiagInfoStartReq));\n        g_astDiagTraceReqInfo[MAX_TRACE_USER_HANDLE_NUM - 1].ulTraceHandle = INVALID_TRACE_HANDLE_VALUE;\n        break;\n    }\n\n    return ulHandleIndex;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": "CWD-1008",
+    "major": "Logic",
+    "lang": "cpp",
+    "code": "#include <iostream>\n#include <vector>\n#include <deque>\n#include <cstdint>\n\n\nvoid processFlagsBad(const std::vector<bool>& flags)\n{\n    \n    for (bool flag : flags) {\n        std::cout << flag << ' ';\n    }\n}\n\n\n\n\nvoid processFlagsGood(const std::deque<bool>& flags)\n{\n    \n    for (bool flag : flags) {\n        std::cout << flag << ' ';\n    }\n}\n\nint32_t testcaseTGT(void)\n{\n    std::vector<bool> boolFlags = {true, false, true, true, false}; \n    \n    \n    processFlagsBad(boolFlags);\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "/*\n * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.\n */\n#ifndef HEAD_H\n#define HEAD_H\n#include <stdlib.h>\ntypedef void *VOS_MUTEX_T;\ntypedef enum {\n    FGSYNC_TYPE_REALTIME,  // 实时同步\n    FGSYNC_TYPE_BATCH,     // 批量同步\n    FGSYNC_TYPE_MAX,\n} FgSyncType;\n\ntypedef enum {\n    FG_OBJTYPE_MAX,\n} FG_DRV_OBJTYPE_E;\n\ntypedef struct TagVosSll {\n    int stHead;   /**< 链表头节点 */\n    int *pstTail; /**< 指向链表尾 */\n    int uiCount;      /**< 链表节点个数 */\n} VOS_SLL_S;\ntypedef struct {\n    VOS_MUTEX_T lock;\n    VOS_SLL_S nodes;  // FgSyncNode链表\n} FgSyncQueue;\n\nFgSyncQueue g_fgSyncQueue[FGSYNC_TYPE_MAX][FG_OBJTYPE_MAX];\n// 销毁互斥锁\nvoid VOS_MutexDestroy(void *p);\n#endif\n\n\n\n\n\n\n#include <stdio.h>\n#include <securec.h>\n#include \"head.h\"\n\nvoid TGTcase(void)\n{\n    for (int queueType = 0; queueType < FGSYNC_TYPE_MAX; queueType++) {\n        for (int objType = 0; objType < FG_OBJTYPE_MAX; objType++) {\n            (void)VOS_MutexDestroy(&(g_fgSyncQueue[queueType][objType].lock));  \n            \n            g_fgSyncQueue[queueType][objType].lock = NULL;\n        }\n    }\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1026",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\nVOS_CHAR *g_n29Str = VOS_NULL_PTR;\n\nVOS_BOOL n29_usefreedmemtest1_TGT()\n{\n    VOS_CHAR *str1 = (VOS_CHAR *)malloc(20);\n    PUB_CONDITION_RET(VOS_NULL_PTR == str1, VOS_FALSE);\n\n    str1[0] = 20;\n    free(str1);\n    return VOS_TRUE; \n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include \"common/public.h\"\n\n\nvoid ReleaseMemory(int *pointer)\n{\n    if (pointer != NULL) {\n        free(pointer);\n        pointer = NULL;  \n    }\n}\n\n\n#define FREE_MEMORY(pointer)     \\\n    do {                         \\\n        if (NULL != (pointer)) { \\\n            (void)free(pointer); \\\n            (pointer) = NULL;    \\\n        }                        \\\n    } while (0)\n\n\n\n\n\n\n\nvoid TestMemoryAllocation()\n{\n    printf(\"\\nTesting AllocateAndFreeBad:\\n\");\n    int resultBad = AllocateAndFreeBad();\n    printf(\"Result: %s\\n\", resultBad == RETURN_OK ? \"Success\" : \"Failure\");\n\n    printf(\"\\nTesting AllocateAndFreeGood:\\n\");\n    int resultGood = AllocateAndFreeGood();\n    printf(\"Result: %s\\n\", resultGood == RETURN_OK ? \"Success\" : \"Failure\");\n}\n\nint allocateandfreeTGT(void)\n{\n    int *pointer = (int *)SAFE_MALLOC(sizeof(int));\n    if (pointer == NULL) {\n        printf(\"Error: Failed to allocate memory\\n\");\n        return RETURN_ERROR;\n    }\n    \n    FREE_MEMORY(pointer);\n    FREE_MEMORY(pointer);  \n    return RETURN_OK;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1003",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include <malloc.h>\n#include <stdbool.h>\n#include <stdint.h>\n\n\n\ntypedef struct FacesS {\n    char *faceId;  \n    char *name;     \n    char *gender;   \n    bool ageBSet;\n    int age;\n    char *country;       \n    char *nation;        \n    char *native;        \n    char *occupation;    \n    char *organization;  \n    char *workNo;       \n    char *phone;         \n    char *email;         \n    char *domicile;      \n    char *remark;        \n    char *eigenValue;   \n    char *jpg;           \n    char *startTime;     \n    char *endTime;       \n    char *externalId;    \n} *Faces;\n\ntypedef struct ParamRespIpcFaceDatabaseRead {\n    bool facesBSet;\n    int facesCnt;\n    Faces *faces;\n} ParamRespIpcFaceDatabaseRead;\n\ntypedef int grpc_t;\n#define GRPC_MALLOC_LIST(grpc, face, facesCnt) \\\n    grpc = (grpc_t *)malloc((facesCnt) * sizeof(face[0]))   CWD-1003应告警_01\n\n\n\n#define GRPC_MALLOC_LIST_WITH_CHECK(grpc, face, facesCnt)                       \\\n    do {                                                                        \\\n        if ((facesCnt) > (SIZE_MAX / sizeof(face[0]))) {  \\\n            grpc = NULL;                                                        \\\n        } else {                                                                \\\n            grpc = (grpc_t *)malloc((facesCnt) * sizeof(face[0]));              \\\n        }                                                                       \\\n    } while (0)\n\nint OutOverFlowByMultiplicationGood(grpc_t *grpc, ParamRespIpcFaceDatabaseRead *resp)\n{\n    if (resp == NULL) {\n        return -1;\n    }\n\n    if (resp->facesCnt > 0) {\n         在宏内部，已经检查了facesCnt乘以sizeof(face[0])是否会溢出\n        GRPC_MALLOC_LIST_WITH_CHECK(grpc, resp->faces, resp->facesCnt);   CWD-1003不应告警_01\n    }\n    return 0;\n}\n\nint outoverflowbymultiplicationTGT(grpc_t *grpc, paramrespipcfacedatabaseread *resp)\n{\n    if (resp == NULL) {\n        return -1;\n    }\n\n    if (resp->facesCnt > 0) {\n        \n        GRPC_MALLOC_LIST(grpc, resp->faces, resp->facesCnt);  \n    }\n    return 0;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdlib.h>\n#include <securec.h>\n#include \"pub_interface.h\"\n\n#define MAX_CDB_IMPU_LEN   64\n#define MAX_IMPU_LEN       128\n\n\ntypedef struct {\n    VOS_CHAR   acImpu[MAX_CDB_IMPU_LEN]; \n    VOS_UINT32 ulScuMid;                 \n    VOS_UINT32 ulRecWriteTime;           \n    VOS_UINT8  ucUserClass;              \n} TblSImpuDispatch;\n\n\ntypedef struct {\n    VOS_BOOL   bRegMethod;      \n    VOS_BOOL   bSNetMerged;     \n    VOS_CHAR   acImpu[MAX_IMPU_LEN];\n    VOS_UINT32 bIsSegReChoose; \n    VOS_UINT32 ulSenderCpuId;  \n    VOS_UINT32 ulSenderPid;    \n    VOS_UINT32 ulQueryMethod;  \n    VOS_UINT32 onlyQuery;    \n} SDispatch;\n\nextern VOS_UINT32 CdbQueryImpuDispTblByImpu(TblSImpuDispatch *pstTblSImpuDispatch, VOS_UINT32 *pulElemIndex);\n\nVOS_UINT32 cdbquerysimpuTGT(sdispatch *sdispatch)\n{\n    errno_t               eRet             = EOK;\n    VOS_UINT32            ret              = VOS_NULL;\n    TblSImpuDispatch      tblSImpuDispatch = { 0 };\n    VOS_UINT32            elemIndex        = VOS_NULL_DWORD;\n\n    if (VOS_NULL_PTR == sDispatch) {\n        LOG_RunInfo(\"[CDB_LOG]:CdbQuerySImpu: Input pointer is null!\\r\\n\");\n        return VOS_ERR;\n    }\n\n    eRet = memcpy_s(tblSImpuDispatch.acImpu, MAX_CDB_IMPU_LEN, \n        (const VOS_VOID *)sDispatch->acImpu, MAX_CDB_IMPU_LEN - 1); \n    PUB_CONDITION_OPT(EOK != eRet, LOG_RunInfo(\"memcpy_s(0) failed, ret[%d]\", eRet));\n    tblSImpuDispatch.acImpu[MAX_CDB_IMPU_LEN - 1] = 0;\n\n    tblSImpuDispatch.ulScuMid       = 0;\n    tblSImpuDispatch.ucUserClass    = 0;\n    tblSImpuDispatch.ulRecWriteTime = 0;\n\n    \n    sDispatch->bIsSegReChoose = VOS_FALSE;\n\n    \n    ret = CdbQueryImpuDispTblByImpu(&tblSImpuDispatch, &elemIndex);\n    return ret;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1021",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\nchar g_charNicName[10] = {0};\n\nint freestackmemoryTGTcase2(char *nicname, unsigned int nicnamelength)\n{\n    \n    g_charNicName[1] = nicName[nicNameLength - 1];\n    \n    free(g_charNicName);  \n    return 0;\n}"
+  },
+  {
+    "label": "VULNERABLE",
+    "cwd": "CWD-1043",
+    "major": "Memory",
+    "lang": "cpp",
+    "code": "#include \"external_data_common.h\"\n\n\ntypedef struct {\n    size_t totalLen;\n    size_t payloadLen;\n    std::vector<uint8_t> recvBuf; \n} PacketInfo;\n\nstd::vector<uint8_t> fuPacketBuf_(524288U);\n\nvoid ProcFuAPackNotLast(const PacketInfo& pack, uint32_t& eachFuATotalLen)\n{\n    std::copy(pack.recvBuf.begin(), pack.recvBuf.begin() + static_cast<int64_t>(pack.totalLen),  \n        fuPacketBuf_.begin() + static_cast<int64_t>(eachFuATotalLen)); \n    eachFuATotalLen += pack.totalLen;\n}"
+  },
+  {
+    "label": "BENIGN",
+    "cwd": null,
+    "major": null,
+    "lang": "cpp",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n\n\ntypedef struct NodeKey {\n    int key1;\n    int key2;\n} NodeKey;\n\n\ntypedef struct Node {\n    NodeKey key;\n    struct Node *next;\n} Node;\n\n\nNode *CreateNode(NodeKey *key)\n{\n    Node *newNode = (Node *)malloc(sizeof(Node));\n    newNode->key = *key;\n    newNode->next = NULL;\n    return newNode;\n}\n\n\nvoid Insert(Node **head, NodeKey *key)\n{\n    Node *newNode = CreateNode(key);\n    newNode->next = *head;\n    *head = newNode;\n}\n\n\nvoid Delete(Node **head, NodeKey *key)\n{\n    Node *temp = *head;\n    Node *prev = NULL;\n\n    \n    while (temp != NULL && memcmp(&temp->key, key, sizeof(NodeKey)) != 0) {\n        prev = temp;\n        temp = temp->next;\n    }\n\n    \n    if (temp == NULL) {\n        printf(\"Node with key %d,%d not found\\n\", key->key1, key->key2);\n        return;\n    }\n\n    \n    if (prev == NULL) {\n        *head = temp->next;\n    } else {\n        prev->next = temp->next;\n    }\n\n    free(temp);\n}\n\n\nvoid PrintList(Node *head)\n{\n    Node *temp = head;\n    while (temp != NULL) {\n        printf(\"%d,%d -> \", temp->key.key1, temp->key.key2);\n        temp = temp->next;\n    }\n    printf(\"NULL\\n\");\n}\n\nint TGTcase()\n{\n    Node *head = NULL;\n    NodeKey addkey = {0};\n    NodeKey delKey = {0};\n\n    \n    addkey.key1 = 1;\n    Insert(&head, &addkey);  \n\n    printf(\"链表内容: \");\n    PrintList(head);\n\n    \n    delKey.key1 = 1;\n    Delete(&head, &delKey);  \n\n    printf(\"删除未初始化key后的链表内容: \");\n    PrintList(head);\n}"
+  }
+]

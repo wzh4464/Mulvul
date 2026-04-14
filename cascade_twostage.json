@@ -1,0 +1,603 @@
+{
+  "accuracy": 0.808695652173913,
+  "correct": 93,
+  "total": 115,
+  "elapsed_s": 53.7,
+  "per_major": {
+    "BENIGN": {
+      "accuracy": 0.8545454545454545,
+      "correct": 47,
+      "total": 55,
+      "fn": 0,
+      "fp": 0
+    },
+    "Input": {
+      "accuracy": 0.2,
+      "correct": 1,
+      "total": 5,
+      "fn": 4,
+      "fp": 0
+    },
+    "Memory": {
+      "accuracy": 0.7428571428571429,
+      "correct": 26,
+      "total": 35,
+      "fn": 9,
+      "fp": 10
+    },
+    "Logic": {
+      "accuracy": 0.6666666666666666,
+      "correct": 2,
+      "total": 3,
+      "fn": 1,
+      "fp": 0
+    },
+    "Injection": {
+      "accuracy": 1.0,
+      "correct": 17,
+      "total": 17,
+      "fn": 0,
+      "fp": 0
+    }
+  },
+  "wrong_samples": [
+    {
+      "idx": 7,
+      "cwd": "CWD-1038",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.99,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.99
+        ],
+        "Injection": [
+          "BENIGN",
+          0.98
+        ],
+        "Logic": [
+          "BENIGN",
+          0.97
+        ],
+        "Input": [
+          "VULNERABLE",
+          0.97
+        ]
+      }
+    },
+    {
+      "idx": 8,
+      "cwd": "CWD-1021",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.99
+        ],
+        "Input": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 10,
+      "cwd": "CWD-1027",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.99,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.99
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "VULNERABLE",
+          0.96
+        ]
+      }
+    },
+    {
+      "idx": 12,
+      "cwd": "CWD-1021",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 22,
+      "cwd": "CWD-1029",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "BENIGN",
+          0.98
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "BENIGN",
+          0.96
+        ]
+      }
+    },
+    {
+      "idx": 23,
+      "cwd": "CWD-1008",
+      "true_major": "Logic",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "BENIGN",
+          0.99
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 48,
+      "cwd": "CWD-1016",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.96,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.96
+        ]
+      }
+    },
+    {
+      "idx": 54,
+      "cwd": "CWD-1009",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.92,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "BENIGN",
+          0.95
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.92
+        ],
+        "Input": [
+          "BENIGN",
+          0.96
+        ]
+      }
+    },
+    {
+      "idx": 58,
+      "cwd": "CWD-1040",
+      "true_major": "Input",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "BENIGN",
+          0.95
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "VULNERABLE",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 60,
+      "cwd": "CWD-1031",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.74,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.74
+        ]
+      }
+    },
+    {
+      "idx": 61,
+      "cwd": "CWD-1030",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 66,
+      "cwd": "CWD-1026",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.97,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "BENIGN",
+          0.97
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 71,
+      "cwd": "CWD-1038",
+      "true_major": "Input",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "BENIGN",
+          0.98
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "VULNERABLE",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 72,
+      "cwd": "CWD-1028",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.98
+        ],
+        "Input": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 73,
+      "cwd": "CWD-1019",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.72,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.72
+        ]
+      }
+    },
+    {
+      "idx": 76,
+      "cwd": "CWD-1022",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.92,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.92
+        ]
+      }
+    },
+    {
+      "idx": 82,
+      "cwd": "CWD-1039",
+      "true_major": "Input",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.86,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.86
+        ]
+      }
+    },
+    {
+      "idx": 88,
+      "cwd": "CWD-1027",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.93,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.93
+        ]
+      }
+    },
+    {
+      "idx": 99,
+      "cwd": "CWD-1009",
+      "true_major": "Memory",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.88,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.88
+        ]
+      }
+    },
+    {
+      "idx": 104,
+      "cwd": "CWD-1029",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.98,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Injection": [
+          "VULNERABLE",
+          0.98
+        ],
+        "Logic": [
+          "BENIGN",
+          0.99
+        ],
+        "Input": [
+          "BENIGN",
+          0.97
+        ]
+      }
+    },
+    {
+      "idx": 107,
+      "cwd": "CWD-1006",
+      "true_major": "BENIGN",
+      "true_label": "BENIGN",
+      "lang": "cpp",
+      "pred_major": "Memory",
+      "pred_label": "VULNERABLE",
+      "conf": 0.96,
+      "correct": false,
+      "stage": 2,
+      "per_major": {
+        "Memory": [
+          "VULNERABLE",
+          0.96
+        ],
+        "Injection": [
+          "BENIGN",
+          0.99
+        ],
+        "Logic": [
+          "BENIGN",
+          0.97
+        ],
+        "Input": [
+          "BENIGN",
+          0.98
+        ]
+      }
+    },
+    {
+      "idx": 110,
+      "cwd": "CWD-1040",
+      "true_major": "Input",
+      "true_label": "VULNERABLE",
+      "lang": "cpp",
+      "pred_major": "BENIGN",
+      "pred_label": "BENIGN",
+      "conf": 0.91,
+      "correct": false,
+      "stage": 1,
+      "per_major": {
+        "binary": [
+          "BENIGN",
+          0.91
+        ]
+      }
+    }
+  ],
+  "best_rounds": {
+    "Memory": 1,
+    "Injection": 2,
+    "Logic": 1,
+    "Input": 2
+  }
+}

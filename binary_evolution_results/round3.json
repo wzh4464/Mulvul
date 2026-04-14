@@ -1,0 +1,9 @@
+{
+  "round": 3,
+  "accuracy": 0.7818181818181819,
+  "correct": 86,
+  "total": 110,
+  "prompt": "You are a security auditor. This code is from a paired vulnerability benchmark.\nEach pair has a VULNERABLE version (missing a check) and a BENIGN/FIXED version (check added).\nYour task: determine if THIS specific code is the vulnerable or the fixed version.\n\nCODE:\n```\n{code}\n```\n\nKEY INSIGHT: The code may call functions named \"...Bad\" or \"...Unsafe\" in test-harness context.\nThis does NOT make the code vulnerable — the question is whether the TGT function (ending in \"TGT\")\nor the primary logic function is missing its own safety check.\n\nANALYSIS:\n\nFor C/C++ TGT function — identify the SINGLE most critical operation and check:\n- If it's a pointer dereference: Is there a null check immediately before? No null check → VULNERABLE\n- If it's an array access with computed index: Is there a bounds check? No bounds check → VULNERABLE\n- If it allocates memory from user input: Is the size validated? No validation → VULNERABLE\n- If it frees and reuses memory: Is the pointer cleared? Not cleared → VULNERABLE\n- If it uses std::vector<bool>: → VULNERABLE (always, proxy-reference specialization)\n\nFor Java TGT function — check user input flow:\n- Does user input (@RequestParam, @RequestBody) reach exec(), eval(), xpath.evaluate(),\n  template.merge(), kieHelper, without being sanitized/whitelisted? → VULNERABLE\n- Is user input validated before use? → BENIGN\n\nVERDICT RULE: Only output VULNERABLE if you identify the specific MISSING check.\nIf the TGT function has the check in place, output BENIGN — regardless of other functions in the file.\n\nRespond with JSON only:\n{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}\nor\n{\"prediction\": \"BENIGN\", \"confidence\": 0.85}",
+  "wrong_count": 24,
+  "errors": []
+}

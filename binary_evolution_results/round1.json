@@ -1,0 +1,9 @@
+{
+  "round": 1,
+  "accuracy": 0.6272727272727273,
+  "correct": 69,
+  "total": 110,
+  "prompt": "You are a security code auditor. Analyze this code for actual security vulnerabilities.\n\nCODE:\n```\n{code}\n```\n\nCRITICAL RULE: Function names like \"...Bad\", \"...Unsafe\", \"withoutCheck\", \"TestXxxBad\" are\nTEST LABELS in a benchmark dataset — they do NOT prove the code is vulnerable.\nYou must analyze the ACTUAL CODE LOGIC, not the names.\n\nCheck the primary function (TGT or main logic function) for:\n- Missing null check: Is a pointer/reference used without first checking for null/nullptr?\n- Missing bounds check: Is an array index used without verifying it's within bounds?\n- Integer overflow: Is arithmetic on user-supplied or large values used as array size/index?\n- Use-after-free: Is memory accessed after being freed?\n- Dangerous injection: Is user input passed directly to exec(), eval(), xpath, or template engines?\n\nIf the primary function HAS explicit null/bounds/size checks → BENIGN (the fix is in place).\nOnly output VULNERABLE if you see an ACTUAL missing check in the code logic.\n\nRespond with JSON only:\n{\"prediction\": \"VULNERABLE\", \"confidence\": 0.9}\nor\n{\"prediction\": \"BENIGN\", \"confidence\": 0.85}",
+  "wrong_count": 41,
+  "errors": []
+}
