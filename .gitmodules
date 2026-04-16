@@ -1,0 +1,3 @@
+[submodule "evoprompt-skills"]
+	path = evoprompt-skills
+	url = https://github.com/wzh4464/evoprompt-skills.git
