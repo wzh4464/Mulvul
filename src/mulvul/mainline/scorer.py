@@ -85,6 +85,8 @@ class LLMNodeScorer:
         )
         matched_target = predicted_label == node.target_label
         effective_threshold = self._effective_threshold(node)
+        required_margin = self._required_margin(node)
+        top_margin = self._ranking_margin(ranking)
         decision: Decision
         reject_label: str | None
 
@@ -92,6 +94,9 @@ class LLMNodeScorer:
             decision = "abstain"
             reject_label = None
         elif top_confidence < effective_threshold:
+            decision = "abstain"
+            reject_label = None
+        elif matched_target and top_margin < required_margin:
             decision = "abstain"
             reject_label = None
         elif matched_target:
@@ -118,16 +123,64 @@ class LLMNodeScorer:
             metadata={
                 "candidate_labels": list(ctx.candidate_labels),
                 "evidence_count": len(ctx.evidence.items) if ctx.evidence else 0,
+                "top_margin": top_margin,
+                "required_margin": required_margin,
             },
         )
 
     def _effective_threshold(self, node: NodeSpec) -> float:
         if node.threshold is not None:
-            return node.threshold
-        return self.bundle.defaults.default_threshold
+            threshold = node.threshold
+        else:
+            threshold = self.bundle.defaults.default_threshold
+
+        if node.metadata.get("fallback_leaf_quarantine"):
+            extra = self._scorer_config_value("fallback_leaf_extra_threshold", 0.0)
+            try:
+                threshold += float(extra)
+            except (TypeError, ValueError):
+                self.logger.warning(
+                    "Invalid fallback_leaf_extra_threshold configuration: %r",
+                    extra,
+                )
+        return threshold
 
     def _scorer_config_value(self, key: str, default: Any) -> Any:
         return self.bundle.defaults.scorer_config.get(key, default)
+
+    def _required_margin(self, node: NodeSpec) -> float:
+        stage_margins = self._scorer_config_value("stage_margin_thresholds", {})
+        margin = 0.0
+        if isinstance(stage_margins, Mapping):
+            raw_value = stage_margins.get(node.stage, 0.0)
+            try:
+                margin = float(raw_value)
+            except (TypeError, ValueError):
+                self.logger.warning(
+                    "Invalid stage margin threshold for %s: %r",
+                    node.stage,
+                    raw_value,
+                )
+                margin = 0.0
+
+        if node.metadata.get("fallback_leaf_quarantine"):
+            extra = self._scorer_config_value("fallback_leaf_extra_margin", 0.0)
+            try:
+                margin += float(extra)
+            except (TypeError, ValueError):
+                self.logger.warning(
+                    "Invalid fallback_leaf_extra_margin configuration: %r",
+                    extra,
+                )
+        return margin
+
+    @staticmethod
+    def _ranking_margin(ranking: list[tuple[str, float]]) -> float:
+        if not ranking:
+            return 0.0
+        if len(ranking) == 1:
+            return float(ranking[0][1])
+        return float(ranking[0][1] - ranking[1][1])
 
     def _prompt_code_snippet(self, code: str) -> str:
         limit = self._scorer_config_value(

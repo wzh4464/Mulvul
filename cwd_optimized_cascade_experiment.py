@@ -211,6 +211,7 @@ class ExperimentConfig:
     eval_samples: int = 80
     dev_samples: int = 48
     vulnerable_ratio: float = 0.75
+    min_cwe_vulnerable_samples: int = 6
     seed: int = 13
     backend: str = "auto"
     model_name: str = "gpt-5.4"
@@ -230,11 +231,100 @@ class ExperimentConfig:
 
 
 class CWDDataset:
-    def __init__(self, dataset_path: Path):
+    def __init__(
+        self,
+        dataset_path: Path,
+        *,
+        min_cwe_vulnerable_samples: int = 0,
+    ):
         with dataset_path.open("r", encoding="utf-8") as fh:
-            self.raw = json.load(fh)
+            raw = json.load(fh)
+
+        self.dataset_path = dataset_path
+        self.min_cwe_vulnerable_samples = max(0, int(min_cwe_vulnerable_samples))
+        self.vulnerable_cwe_counts = self._count_vulnerable_examples(raw["examples"])
+        self.excluded_cwds = self._select_excluded_cwds(
+            raw["cwd_definitions"],
+            self.vulnerable_cwe_counts,
+        )
+        self.active_cwds = sorted(
+            cwd_id
+            for cwd_id in raw["cwd_definitions"].keys()
+            if cwd_id not in self.excluded_cwds
+        )
+        self.raw = self._filter_raw_dataset(raw)
         self.cwd_definitions = self.raw["cwd_definitions"]
         self.records = self._build_records(self.raw["examples"])
+        self.filter_summary = {
+            "dataset_path": str(dataset_path),
+            "min_cwe_vulnerable_samples": self.min_cwe_vulnerable_samples,
+            "excluded_cwds": list(self.excluded_cwds),
+            "excluded_cwd_count": len(self.excluded_cwds),
+            "active_cwds": list(self.active_cwds),
+            "active_cwd_count": len(self.active_cwds),
+            "original_example_count": len(raw["examples"]),
+            "kept_example_count": len(self.raw["examples"]),
+            "removed_example_count": len(raw["examples"]) - len(self.raw["examples"]),
+            "vulnerable_cwe_counts": dict(sorted(self.vulnerable_cwe_counts.items())),
+        }
+
+    def _count_vulnerable_examples(
+        self,
+        examples: Sequence[Mapping[str, Any]],
+    ) -> dict[str, int]:
+        counts: Counter[str] = Counter()
+        for example in examples:
+            labels = example.get("labels", {})
+            code_obj = example.get("code", {})
+            cwd_id = labels.get("cwd_id")
+            vulnerable = str(code_obj.get("vulnerable", "") or "").strip()
+            if cwd_id and vulnerable:
+                counts[str(cwd_id)] += 1
+        return dict(counts)
+
+    def _select_excluded_cwds(
+        self,
+        cwd_definitions: Mapping[str, Mapping[str, Any]],
+        vulnerable_counts: Mapping[str, int],
+    ) -> list[str]:
+        if self.min_cwe_vulnerable_samples <= 0:
+            return []
+        return sorted(
+            cwd_id
+            for cwd_id in cwd_definitions.keys()
+            if vulnerable_counts.get(cwd_id, 0) < self.min_cwe_vulnerable_samples
+        )
+
+    @property
+    def excluded_by_sample_floor(self) -> list[str]:
+        return sorted(
+            cwd_id
+            for cwd_id in self.excluded_cwds
+            if self.vulnerable_cwe_counts.get(cwd_id, 0) < self.min_cwe_vulnerable_samples
+        )
+
+    def _filter_raw_dataset(self, raw: Mapping[str, Any]) -> dict[str, Any]:
+        if not self.excluded_cwds:
+            return {
+                "cwd_definitions": dict(raw["cwd_definitions"]),
+                "examples": list(raw["examples"]),
+            }
+
+        excluded = set(self.excluded_cwds)
+        kept_examples = [
+            example
+            for example in raw["examples"]
+            if str(example.get("labels", {}).get("cwd_id") or "") not in excluded
+        ]
+        kept_definitions = {
+            cwd_id: definition
+            for cwd_id, definition in raw["cwd_definitions"].items()
+            if cwd_id not in excluded
+        }
+        return {
+            "cwd_definitions": kept_definitions,
+            "examples": kept_examples,
+        }
 
     def _build_records(self, examples: Sequence[Mapping[str, Any]]) -> list[SampleRecord]:
         records: list[SampleRecord] = []
@@ -298,8 +388,17 @@ class CWDDataset:
 
 
 class OptimizedBundleFactory:
-    def __init__(self, cwd_definitions: Mapping[str, Mapping[str, Any]]):
-        self.cwd_definitions = cwd_definitions
+    def __init__(
+        self,
+        cwd_definitions: Mapping[str, Mapping[str, Any]],
+        *,
+        active_cwds: Sequence[str] | None = None,
+    ):
+        self.cwd_definitions = dict(cwd_definitions)
+        self.active_cwds = set(active_cwds or cwd_definitions.keys())
+        self.excluded_cwds = sorted(
+            cwd_id for cwd_id in self.cwd_definitions.keys() if cwd_id not in self.active_cwds
+        )
 
     def build(
         self,
@@ -310,6 +409,7 @@ class OptimizedBundleFactory:
     ) -> PromptBundle:
         with contextlib.redirect_stdout(io.StringIO()):
             bundle = CWDPromptBundleFactory.create_cwd_bundle()
+        bundle = self._prune_bundle(bundle)
         bundle.defaults = BundleDefaults(
             default_threshold=major_threshold,
             distrust_fallback=True,
@@ -342,8 +442,57 @@ class OptimizedBundleFactory:
                 "middle_threshold": middle_threshold,
                 "cwe_threshold": cwe_threshold,
                 "prompt_contract": "ranking_v2",
+                "active_cwd_count": len(self.active_cwds),
+                "excluded_cwds": list(self.excluded_cwds),
             }
         )
+        return bundle
+
+    def _prune_bundle(self, bundle: PromptBundle) -> PromptBundle:
+        active_cwe_node_ids = {
+            node_id
+            for node_id, node in bundle.taxonomy.nodes.items()
+            if node.stage == "cwe" and node.label in self.active_cwds
+        }
+        active_middle_node_ids = {
+            bundle.taxonomy.parent_of(node_id)
+            for node_id in active_cwe_node_ids
+            if bundle.taxonomy.parent_of(node_id) is not None
+        }
+        active_major_node_ids = {
+            bundle.taxonomy.parent_of(node_id)
+            for node_id in active_middle_node_ids
+            if bundle.taxonomy.parent_of(node_id) is not None
+        }
+        benign_node_ids = {
+            node_id
+            for node_id, node in bundle.taxonomy.nodes.items()
+            if node.stage == "major" and node.label == bundle.taxonomy.benign_label
+        }
+        kept_node_ids = (
+            active_cwe_node_ids
+            | active_middle_node_ids
+            | active_major_node_ids
+            | benign_node_ids
+        )
+
+        pruned_taxonomy_nodes = {
+            node_id: node
+            for node_id, node in bundle.taxonomy.nodes.items()
+            if node_id in kept_node_ids
+        }
+        pruned_bundle_nodes = {
+            node_id: spec
+            for node_id, spec in bundle.nodes.items()
+            if node_id in kept_node_ids
+        }
+        bundle.taxonomy = bundle.taxonomy.__class__(
+            version=f"{bundle.taxonomy.version}-pruned-min-samples",
+            stage_order=bundle.taxonomy.stage_order,
+            nodes=pruned_taxonomy_nodes,
+            benign_label=bundle.taxonomy.benign_label,
+        )
+        bundle.nodes = pruned_bundle_nodes
         return bundle
 
     def _description_for(self, label: str) -> str:
@@ -1298,7 +1447,11 @@ def summarize_selection(records: Sequence[SampleRecord]) -> dict[str, Any]:
     }
 
 
-def validate_architecture(bundle: PromptBundle, support_records: Sequence[SampleRecord]) -> dict[str, Any]:
+def validate_architecture(
+    bundle: PromptBundle,
+    support_records: Sequence[SampleRecord],
+    dataset_filter: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     major_nodes = [node for node in bundle.taxonomy.nodes.values() if node.stage == "major"]
     middle_nodes = [node for node in bundle.taxonomy.nodes.values() if node.stage == "middle"]
     cwe_nodes = [node for node in bundle.taxonomy.nodes.values() if node.stage == "cwe"]
@@ -1317,9 +1470,12 @@ def validate_architecture(bundle: PromptBundle, support_records: Sequence[Sample
         "active_majors_in_support": active_majors,
         "active_middles_in_support": active_middles,
         "active_cwes_in_support": active_cwes,
+        "excluded_cwds": list(dataset_filter.get("excluded_cwds", [])) if dataset_filter else [],
         "note": (
-            "The current CWD subset only has vulnerable support for Memory, Injection, and Resource. "
-            "The taxonomy still preserves all 49 repaired nodes."
+            "The active taxonomy is pruned to CWD nodes that meet the current "
+            f"minimum vulnerable-sample floor of {dataset_filter.get('min_cwe_vulnerable_samples', 0)}."
+            if dataset_filter
+            else "Architecture validation ran without dataset-level pruning metadata."
         ),
     }
 
@@ -1332,6 +1488,9 @@ def render_report(results: Mapping[str, Any]) -> str:
     architecture = results["architecture_validation"]
     calibration = results["calibration"]["best"]
     env = results["environment"]
+    question_bank_filter = results["question_bank_filter"]
+    excluded_nodes = question_bank_filter["excluded_cwds"]
+    excluded_text = ", ".join(excluded_nodes) if excluded_nodes else "none"
     return f"""# Optimized CWD Cascade Experiment
 
 ## Summary
@@ -1341,6 +1500,13 @@ def render_report(results: Mapping[str, Any]) -> str:
 - DNS status: {env["dns_check"]["openrouter.ai"]["ok"]} ({env["dns_check"]["openrouter.ai"]["detail"]})
 - Eval samples: {results["sample_selection"]["eval"]["total"]}
 - Dev samples: {results["sample_selection"]["dev"]["total"]}
+
+## Active Label Space
+
+- Minimum vulnerable samples per CWD: {question_bank_filter["min_cwe_vulnerable_samples"]}
+- Active CWD nodes in question bank/cascade: {question_bank_filter["active_cwd_count"]}
+- Excluded low-sample CWD nodes: {question_bank_filter["excluded_cwd_count"]}
+- Excluded labels: {excluded_text}
 
 ## What Changed From The 0% Run
 
@@ -1417,6 +1583,7 @@ def main() -> None:
     parser.add_argument("--eval-samples", type=int, default=80)
     parser.add_argument("--dev-samples", type=int, default=48)
     parser.add_argument("--vulnerable-ratio", type=float, default=0.75)
+    parser.add_argument("--min-cwe-vuln-samples", type=int, default=6)
     parser.add_argument("--backend", choices=["auto", "prototype", "openrouter"], default="auto")
     parser.add_argument("--output-root", default="./cwd_optimized_experiment_results")
     args = parser.parse_args()
@@ -1425,6 +1592,7 @@ def main() -> None:
         eval_samples=args.eval_samples,
         dev_samples=args.dev_samples,
         vulnerable_ratio=args.vulnerable_ratio,
+        min_cwe_vulnerable_samples=args.min_cwe_vuln_samples,
         backend=args.backend,
         output_root=args.output_root,
     )
@@ -1439,7 +1607,10 @@ def main() -> None:
         raise RuntimeError(f"backend=openrouter requested but DNS failed: {dns_detail}")
     backend_used = "openrouter" if config.backend == "openrouter" or (config.backend == "auto" and dns_ok) else "prototype"
 
-    dataset = CWDDataset(SOURCE_ROOT / "cwd_native_dataset.json")
+    dataset = CWDDataset(
+        SOURCE_ROOT / "cwd_native_dataset.json",
+        min_cwe_vulnerable_samples=config.min_cwe_vulnerable_samples,
+    )
     subsets = select_diverse_subsets(
         dataset,
         eval_samples=config.eval_samples,
@@ -1447,7 +1618,10 @@ def main() -> None:
         vulnerable_ratio=config.vulnerable_ratio,
     )
 
-    bundle_factory = OptimizedBundleFactory(dataset.cwd_definitions)
+    bundle_factory = OptimizedBundleFactory(
+        dataset.cwd_definitions,
+        active_cwds=dataset.active_cwds,
+    )
     index = PrototypeSimilarityIndex(
         support_records=subsets["support"],
         cwd_definitions=dataset.cwd_definitions,
@@ -1496,7 +1670,11 @@ def main() -> None:
         flat_pairs=flat_baseline["pairs"],
         reported_baselines=config.reported_baselines or DEFAULT_REPORTED_BASELINES,
     )
-    architecture = validate_architecture(bundle, subsets["support"])
+    architecture = validate_architecture(
+        bundle,
+        subsets["support"],
+        dataset_filter=dataset.filter_summary,
+    )
 
     results = {
         "timestamp": timestamp,
@@ -1514,6 +1692,7 @@ def main() -> None:
             "dev": summarize_selection(subsets["dev"]),
             "support": summarize_selection(subsets["support"]),
         },
+        "question_bank_filter": dataset.filter_summary,
         "calibration": calibration,
         "architecture_validation": architecture,
         "cascade": cascade,

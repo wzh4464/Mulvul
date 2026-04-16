@@ -1,160 +1,165 @@
-from mulvul.mainline.artifacts import PromptArtifact
-from mulvul.mainline.bundle import PromptBundleAdapter, ScorerContext
+from __future__ import annotations
+
+import pytest
+
+from mulvul.mainline.bundle import (
+    BundleDefaults,
+    NodeSpec,
+    PromptBundle,
+    ScorerContext,
+    TaxonomyGraph,
+    TaxonomyNode,
+)
 from mulvul.mainline.scorer import LLMNodeScorer
 
 
-class StubLLMClient:
+class _FakeClient:
     def __init__(self, response: str):
         self.response = response
-        self.prompts = []
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        self.prompts.append(prompt)
+    def generate(self, prompt: str) -> str:
         return self.response
 
 
-def _make_bundle(*, distrust_fallback: bool = True):
-    artifact = PromptArtifact.from_mapping(
-        {
-            "prompts": {
-                "major_Memory": (
-                    "Analyze code.\nEvidence: {evidence}\nCode:\n{code}\n"
-                    "Candidates: {candidates}"
-                )
-            }
-        }
+def _build_bundle(*, scorer_config: dict | None = None) -> PromptBundle:
+    taxonomy = TaxonomyGraph(
+        version="test",
+        stage_order=("major", "middle", "cwe"),
+        benign_label="Benign",
+        nodes={
+            "middle_buffer": TaxonomyNode(
+                node_id="middle_buffer",
+                stage="middle",
+                label="Buffer Errors",
+                display_name="Buffer Errors",
+                parent_id="major_memory",
+            ),
+            "cwd_1016": TaxonomyNode(
+                node_id="cwd_1016",
+                stage="cwe",
+                label="CWD-1016",
+                display_name="CWD-1016",
+                parent_id="middle_buffer",
+            ),
+            "cwd_1015": TaxonomyNode(
+                node_id="cwd_1015",
+                stage="cwe",
+                label="CWD-1015",
+                display_name="CWD-1015",
+                parent_id="middle_buffer",
+            ),
+        },
     )
-    bundle = PromptBundleAdapter.from_artifact(artifact, allow_partial=True)
-    bundle.defaults.distrust_fallback = distrust_fallback
-    return bundle
-
-
-def _make_ctx(bundle):
-    node = bundle.nodes[bundle.taxonomy.node_id_for_label("major", "Memory")]
-    candidate_labels = bundle.taxonomy.decision_labels_for(node.node_id) + [
-        bundle.taxonomy.benign_label
-    ]
-    return node, ScorerContext(
-        code="strcpy(buf, input);", candidate_labels=candidate_labels
+    nodes = {
+        "cwd_1016": NodeSpec(
+            node_id="cwd_1016",
+            stage="cwe",
+            target_label="CWD-1016",
+            instruction_template="{code}",
+            threshold=0.5,
+        ),
+        "cwd_1015": NodeSpec(
+            node_id="cwd_1015",
+            stage="cwe",
+            target_label="CWD-1015",
+            instruction_template="{code}",
+            threshold=0.5,
+        ),
+    }
+    return PromptBundle(
+        schema_version="2",
+        taxonomy=taxonomy,
+        nodes=nodes,
+        defaults=BundleDefaults(
+            default_threshold=0.5,
+            distrust_fallback=False,
+            scorer_config=scorer_config or {},
+        ),
+        training_metadata={},
+        data_fingerprint="test",
+        code_revision="test",
     )
 
 
-def test_llm_node_scorer_json_accept_path():
-    bundle = _make_bundle()
-    node, ctx = _make_ctx(bundle)
+def _ctx() -> ScorerContext:
+    parent = type(
+        "ParentResult",
+        (),
+        {"target_label": "Buffer Errors"},
+    )()
+    return ScorerContext(
+        code="memcpy(dst, src, n);",
+        candidate_labels=["CWD-1016", "CWD-1015", "Benign"],
+        parent_result=parent,
+    )
+
+
+def test_scorer_abstains_when_target_margin_is_below_stage_requirement() -> None:
+    bundle = _build_bundle(
+        scorer_config={"stage_margin_thresholds": {"cwe": 0.1}},
+    )
     scorer = LLMNodeScorer(
-        StubLLMClient('{"predictions":[{"category":"Memory","confidence":0.91}]}'),
-        bundle,
-    )
-
-    result = scorer.score(node, ctx)
-
-    assert result.decision == "accept"
-    assert result.predicted_label == "Memory"
-    assert result.target_confidence == 0.91
-
-
-def test_llm_node_scorer_json_reject_path():
-    bundle = _make_bundle()
-    node, ctx = _make_ctx(bundle)
-    scorer = LLMNodeScorer(
-        StubLLMClient(
-            '{"predictions":['
-            '{"category":"Benign","confidence":0.91},'
-            '{"category":"Memory","confidence":0.60}'
-            "]} "
+        _FakeClient(
+            '{"predictions": ['
+            '{"cwe": "CWD-1016", "confidence": 0.62},'
+            '{"cwe": "CWD-1015", "confidence": 0.57},'
+            '{"cwe": "Benign", "confidence": 0.10}'
+            "]}",
         ),
         bundle,
     )
 
-    result = scorer.score(node, ctx)
+    result = scorer.score(bundle.nodes["cwd_1016"], _ctx())
 
-    assert result.decision == "reject"
-    assert result.reject_label == "Benign"
-    assert result.target_confidence == 0.60
-
-
-def test_llm_node_scorer_fallback_distrusted_maps_to_abstain():
-    bundle = _make_bundle(distrust_fallback=True)
-    node, ctx = _make_ctx(bundle)
-    scorer = LLMNodeScorer(StubLLMClient("The best label is Memory."), bundle)
-
-    result = scorer.score(node, ctx)
-
-    assert result.parse_status == "fallback"
+    assert result.predicted_label == "CWD-1016"
     assert result.decision == "abstain"
-    assert result.predicted_label == "Memory"
+    assert result.metadata["top_margin"] == pytest.approx(0.05)
+    assert result.metadata["required_margin"] == 0.1
 
 
-def test_llm_node_scorer_fallback_can_accept_when_trusted():
-    bundle = _make_bundle(distrust_fallback=False)
-    node, ctx = _make_ctx(bundle)
-    scorer = LLMNodeScorer(StubLLMClient("Memory is the best label."), bundle)
-
-    result = scorer.score(node, ctx)
-
-    assert result.parse_status == "fallback"
-    assert result.decision == "accept"
-    assert result.predicted_label == "Memory"
-
-
-def test_llm_node_scorer_total_parse_failure_maps_to_error():
-    bundle = _make_bundle()
-    node, ctx = _make_ctx(bundle)
-    scorer = LLMNodeScorer(StubLLMClient("no parseable ranking here"), bundle)
-
-    result = scorer.score(node, ctx)
-
-    assert result.decision == "error"
-    assert result.predicted_label is None
-
-
-def test_llm_node_scorer_filters_labels_to_candidate_space():
-    bundle = _make_bundle()
-    node, ctx = _make_ctx(bundle)
+def test_scorer_accepts_when_target_margin_clears_stage_requirement() -> None:
+    bundle = _build_bundle(
+        scorer_config={"stage_margin_thresholds": {"cwe": 0.1}},
+    )
     scorer = LLMNodeScorer(
-        StubLLMClient(
-            '{"predictions":['
-            '{"category":"MadeUp","confidence":0.99},'
-            '{"category":"Memory","confidence":0.91}'
-            "]} "
+        _FakeClient(
+            '{"predictions": ['
+            '{"cwe": "CWD-1016", "confidence": 0.72},'
+            '{"cwe": "CWD-1015", "confidence": 0.50},'
+            '{"cwe": "Benign", "confidence": 0.20}'
+            "]}",
         ),
         bundle,
     )
 
-    result = scorer.score(node, ctx)
+    result = scorer.score(bundle.nodes["cwd_1016"], _ctx())
 
-    assert result.ranking == [("Memory", 0.91)]
     assert result.decision == "accept"
+    assert result.metadata["top_margin"] == pytest.approx(0.22)
 
 
-def test_llm_node_scorer_accepts_top_level_list_and_deduplicates_by_max_confidence():
-    bundle = _make_bundle()
-    node, ctx = _make_ctx(bundle)
+def test_fallback_leaf_quarantine_raises_threshold_and_margin() -> None:
+    bundle = _build_bundle(
+        scorer_config={
+            "stage_margin_thresholds": {"cwe": 0.05},
+            "fallback_leaf_extra_threshold": 0.2,
+            "fallback_leaf_extra_margin": 0.2,
+        },
+    )
+    bundle.nodes["cwd_1016"].metadata["fallback_leaf_quarantine"] = True
     scorer = LLMNodeScorer(
-        StubLLMClient(
-            '[{"label":"Memory","confidence":0.41},'
-            '{"label":"Memory","confidence":0.91},'
-            '{"category":"Benign","confidence":0.20}]'
+        _FakeClient(
+            '{"predictions": ['
+            '{"cwe": "CWD-1016", "confidence": 0.64},'
+            '{"cwe": "CWD-1015", "confidence": 0.48},'
+            '{"cwe": "Benign", "confidence": 0.20}'
+            "]}",
         ),
         bundle,
     )
 
-    result = scorer.score(node, ctx)
+    result = scorer.score(bundle.nodes["cwd_1016"], _ctx())
 
-    assert result.ranking == [("Memory", 0.91), ("Benign", 0.2)]
-    assert result.decision == "accept"
-
-
-def test_llm_node_scorer_uses_configurable_prompt_code_limit():
-    bundle = _make_bundle()
-    bundle.defaults.scorer_config["prompt_code_max_chars"] = 12
-    node, ctx = _make_ctx(bundle)
-    ctx.code = "ABCDEFGHIJKLMNO"
-    client = StubLLMClient('{"predictions":[{"category":"Memory","confidence":0.91}]}')
-    scorer = LLMNodeScorer(client, bundle)
-
-    scorer.score(node, ctx)
-
-    assert "ABCDEFGHIJKL" in client.prompts[0]
-    assert "ABCDEFGHIJKLM" not in client.prompts[0]
+    assert result.decision == "abstain"
+    assert result.effective_threshold == 0.7
+    assert result.metadata["required_margin"] == 0.25

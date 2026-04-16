@@ -31,7 +31,9 @@ def load_env_vars() -> None:
                 if not line or line.startswith("#") or "=" not in line:
                     continue
                 key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip()
+                normalized_key = key.strip()
+                if normalized_key not in os.environ:
+                    os.environ[normalized_key] = value.strip()
         return
 
     logger.warning("No .env file found in any expected location")
