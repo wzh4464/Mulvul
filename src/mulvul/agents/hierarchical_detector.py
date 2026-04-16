@@ -69,6 +69,13 @@ def load_fallback_list(path: str = "data/cwe_fallback_list.json") -> Tuple[Set[s
 VALID_CWES, CWE_FALLBACK_MAP = load_fallback_list()
 
 
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a code vulnerability classifier. "
+    "Output ONLY valid JSON with no explanation or reasoning text. "
+    "Your response must start with '{' or '[' and be parseable JSON."
+)
+
+
 class LevelDetector:
     """Detector for a specific level (Major/Middle/CWE)."""
 
@@ -80,6 +87,7 @@ class LevelDetector:
         prompt: str,
         candidates: List[str],  # Possible outputs
         retriever=None,
+        system_prompt: Optional[str] = None,
     ):
         self.level = level
         self.target = target
@@ -87,6 +95,7 @@ class LevelDetector:
         self.prompt = prompt
         self.candidates = candidates
         self.retriever = retriever
+        self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 
     def detect(self, code: str, top_k: int = 2) -> List[Tuple[str, float]]:
         """Detect and return top-k candidates with confidence."""
@@ -101,8 +110,8 @@ class LevelDetector:
             candidates=candidates_str,
         )
 
-        # Query LLM
-        response = self.llm_client.generate(prompt)
+        # Query LLM with system prompt for JSON-only output
+        response = self.llm_client.generate(prompt, system_prompt=self.system_prompt)
 
         # Parse response
         return self._parse_response(response, top_k)

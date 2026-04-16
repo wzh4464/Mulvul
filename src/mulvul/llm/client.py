@@ -103,7 +103,7 @@ class SVENLLMClient(LLMClient):
     ):
         # Get configuration from environment or parameters
         self.api_base = api_base or os.getenv("API_BASE_URL", "https://api.chatanywhere.tech/v1")
-        self.api_key = api_key or os.getenv("API_KEY", "")
+        self.api_key = api_key or os.getenv("API_KEY") or os.getenv("OPENROUTER_API_KEY", "")
         self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o")
         self.backup_api_base = os.getenv("BACKUP_API_BASE_URL", "https://newapi.aicohere.org/v1")
         
@@ -339,9 +339,9 @@ class OpenAICompatibleClient(LLMClient):
             
         # Get configuration from environment or parameters
         self.api_base = api_base or os.getenv("API_BASE_URL", "https://api.chatanywhere.tech/v1")
-        self.api_key = api_key or os.getenv("API_KEY", "")
+        self.api_key = api_key or os.getenv("API_KEY") or os.getenv("OPENROUTER_API_KEY", "")
         self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-        
+
         self.max_retries = _get_env_int("OPENAI_CLIENT_MAX_RETRIES", max_retries)
         self.retry_delay = _get_env_float("OPENAI_CLIENT_RETRY_DELAY", retry_delay)
         self.request_timeout = _get_env_float("OPENAI_CLIENT_TIMEOUT", 60.0)
@@ -376,8 +376,11 @@ class OpenAICompatibleClient(LLMClient):
                     params["max_tokens"] = max_tokens
 
                 response = self.client.chat.completions.create(**params)
-                
-                content = response.choices[0].message.content.strip()
+
+                raw_content = response.choices[0].message.content
+                if raw_content is None:
+                    raise Exception("API returned empty content (None)")
+                content = raw_content.strip()
                 logger.debug(f"Successful API call (attempt {attempt + 1})")
                 return content
                 
@@ -654,8 +657,12 @@ def create_llm_client(llm_type: str = None, **kwargs) -> LLMClient:
         return OpenAICompatibleClient(**kwargs)
     elif llm_type in ["sven"]:
         return SVENLLMClient(**kwargs)
-    elif llm_type.startswith("gpt-") or llm_type.startswith("text-davinci") or llm_type.startswith("Qwen/"):
-        # Use OpenAI client for OpenAI and Qwen models
+    elif (llm_type.startswith("gpt-") or llm_type.startswith("text-davinci") or
+          llm_type.startswith("Qwen/") or llm_type.startswith("qwen/") or
+          llm_type.startswith("minimax/") or llm_type.startswith("zhipuai/") or
+          llm_type.startswith("google/") or llm_type.startswith("anthropic/") or
+          llm_type.startswith("openai/") or "/" in llm_type):
+        # Use OpenAI client for OpenRouter models (format: provider/model-name)
         return OpenAICompatibleClient(model_name=llm_type, **kwargs)
     elif llm_type.startswith("kimi"):
         # Use SVEN client for kimi models (requires different API format)

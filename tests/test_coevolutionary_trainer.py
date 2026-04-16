@@ -99,6 +99,14 @@ class TestNodePopulation:
         pop = self._make_pop()
         assert pop.size == 5
 
+    def test_population_alias_maps_to_individuals(self):
+        pop = self._make_pop()
+        assert pop.population is pop.individuals
+
+        replacement = pop.individuals[:2]
+        pop.population = replacement
+        assert pop.individuals == replacement
+
 
 class TestErrorAttribution:
     def test_major_error(self):

@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -86,11 +87,24 @@ class PromptIndividual:
 
 @dataclass
 class NodePopulation:
-    """A taxonomy node's prompt population."""
+    """A taxonomy node's prompt population.
+
+    ``population`` is kept as a backwards-compatible alias for older scripts
+    that predate the ``individuals`` rename.
+    """
 
     node_key: str
     stage: str
     individuals: List[PromptIndividual] = field(default_factory=list)
+
+    @property
+    def population(self) -> List[PromptIndividual]:
+        """Backward-compatible alias for legacy callers."""
+        return self.individuals
+
+    @population.setter
+    def population(self, value: List[PromptIndividual]) -> None:
+        self.individuals = value
 
     @property
     def size(self) -> int:
@@ -524,13 +538,19 @@ class CoevolutionaryTrainer:
 
         candidates_str = ", ".join(candidates)
 
+        json_instruction = (
+            "Output ONLY valid JSON, no explanation. "
+            "Your response must start with '{{' and be parseable JSON."
+        )
+
         if stage == "major":
             return (
                 f"You are a security expert specializing in {target} vulnerabilities.\n"
                 f"Classify the code into one of: {candidates_str}.\n\n"
                 "## Evidence:\n{evidence}\n\n"
                 "## Code:\n```\n{code}\n```\n\n"
-                '## Output (JSON):\n{{"predictions":[{{"category":"...","confidence":0.0}}]}}'
+                f"## Output:\n{json_instruction}\n"
+                'Format: {{"predictions":[{{"category":"<one of the candidates>","confidence":0.0-1.0}}]}}'
             )
         if stage == "middle":
             return (
@@ -538,7 +558,8 @@ class CoevolutionaryTrainer:
                 f"Classify the code into one of: {candidates_str}.\n\n"
                 "## Evidence:\n{evidence}\n\n"
                 "## Code:\n```\n{code}\n```\n\n"
-                '## Output (JSON):\n{{"predictions":[{{"category":"...","confidence":0.0}}]}}'
+                f"## Output:\n{json_instruction}\n"
+                'Format: {{"predictions":[{{"category":"<one of the candidates>","confidence":0.0-1.0}}]}}'
             )
         # cwe
         return (
@@ -546,7 +567,8 @@ class CoevolutionaryTrainer:
             f"Possible CWEs: {candidates_str}.\n\n"
             "## Evidence:\n{evidence}\n\n"
             "## Code:\n```\n{code}\n```\n\n"
-            '## Output (JSON):\n{{"predictions":[{{"cwe":"CWE-XXX","confidence":0.0}}]}}'
+            f"## Output:\n{json_instruction}\n"
+            'Format: {{"predictions":[{{"cwe":"<CWE-XXX or Benign>","confidence":0.0-1.0}}]}}'
         )
 
     # ------------------------------------------------------------------
@@ -563,19 +585,23 @@ class CoevolutionaryTrainer:
 
         representatives: Dict[str, PromptIndividual] = {}
         scoring_failure_count = 0
+        print(f"[DEBUG] Phase 1: {len(self.populations)} populations to score", flush=True)
 
         for key, pop in self.populations.items():
+            print(f"[DEBUG] Processing: {key}", flush=True)
             stage = pop.stage
             # Derive the target label from the key
             target = key.split("_", 1)[1]
 
             # Gather evaluation samples
+            print(f"[DEBUG]   Sampling for {stage}/{target}...", flush=True)
             if stage == "major":
                 samples = self.sampler.sample_for_major(target, n_samples)
             elif stage == "middle":
                 samples = self.sampler.sample_for_middle(target, n_samples)
             else:
                 samples = self.sampler.sample_for_cwe(target, n_samples)
+            print(f"[DEBUG]   Got {len(samples)} samples", flush=True)
 
             # Skip scoring for nodes without training data; keep seed fitness 0
             if not samples:
@@ -596,13 +622,19 @@ class CoevolutionaryTrainer:
 
             # Score every individual
             node_failures = 0
-            for ind in pop.individuals:
+            print(f"[DEBUG]   Scoring {len(pop.individuals)} individuals...", flush=True)
+            for idx, ind in enumerate(pop.individuals):
+                print(f"[DEBUG]     ind {idx}: scoring...", flush=True)
                 score, failures = self._score_individual(
                     ind, stage, target, samples
                 )
+                print(f"[DEBUG]     ind {idx}: score={score:.3f}, failures={failures}", flush=True)
                 ind.node_fitness = score
                 ind.generation = gen
                 node_failures += failures
+                # Brief pause between individuals to let HTTP connections reset
+                if idx < len(pop.individuals) - 1:
+                    time.sleep(0.3)
             scoring_failure_count += node_failures
 
             # Tournament select a representative
@@ -681,6 +713,7 @@ class CoevolutionaryTrainer:
             parent_middle = CWE_TO_MIDDLE.get(target, "Other")
             candidates = MIDDLE_TO_CWE.get(parent_middle, []) + ["Benign"]
 
+        print(f"[DEBUG]       Creating LevelDetector for {stage}/{target}...", flush=True)
         detector = LevelDetector(
             level=stage,
             target=target,
@@ -689,14 +722,18 @@ class CoevolutionaryTrainer:
             candidates=candidates,
             retriever=self.retriever,
         )
+        print(f"[DEBUG]       LevelDetector created, scoring {len(samples)} samples with {self._max_workers} workers...", flush=True)
 
         def _score_one(sample: TrainingSample) -> Tuple[str, bool, bool]:
             """Score a single sample. Returns (predicted, is_target, failed)."""
             try:
+                print(f"[DEBUG]           _score_one: calling detect...", flush=True)
                 results = detector.detect(sample.code, top_k=1)
+                print(f"[DEBUG]           _score_one: detect returned {results}", flush=True)
                 predicted = results[0][0] if results else "Benign"
                 return predicted, sample.label == "target", False
-            except Exception:
+            except Exception as e:
+                print(f"[DEBUG]           _score_one: exception {e}", flush=True)
                 return "Benign", sample.label == "target", True
 
         # Concurrent sample scoring
@@ -706,20 +743,27 @@ class CoevolutionaryTrainer:
         fp = 0
         fn = 0
         failure_count = 0
+        scored_count = 0
 
-        with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-            futures = [executor.submit(_score_one, s) for s in samples]
-            for future in as_completed(futures):
-                predicted, is_target, failed = future.result()
-                if failed:
-                    failure_count += 1
-                pred_is_target = predicted == target
-                if is_target and pred_is_target:
-                    tp += 1
-                elif pred_is_target and not is_target:
-                    fp += 1
-                elif is_target and not pred_is_target:
-                    fn += 1
+        # Sequential scoring (ThreadPoolExecutor has issues with this API)
+        print(f"[DEBUG]       Scoring {len(samples)} samples sequentially...", flush=True)
+        for i, s in enumerate(samples):
+            print(f"[DEBUG]         sample {i}: calling _score_one (code len={len(s.code)})...", flush=True)
+            predicted, is_target, failed = _score_one(s)
+            print(f"[DEBUG]         sample {i}: done, predicted={predicted}, failed={failed}", flush=True)
+            scored_count += 1
+            if scored_count % 5 == 0:
+                print(f"[DEBUG]       Scored {scored_count}/{len(samples)}...", flush=True)
+            if failed:
+                failure_count += 1
+            pred_is_target = predicted == target
+            if is_target and pred_is_target:
+                tp += 1
+            elif pred_is_target and not is_target:
+                fp += 1
+            elif is_target and not pred_is_target:
+                fn += 1
+        print(f"[DEBUG]       Scoring done: tp={tp}, fp={fp}, fn={fn}, failures={failure_count}", flush=True)
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0

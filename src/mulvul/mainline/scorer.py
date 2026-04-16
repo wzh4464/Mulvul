@@ -28,18 +28,33 @@ Decision = Literal["accept", "reject", "abstain", "error"]
 ParseStatus = Literal["ok", "fallback", "error"]
 
 
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a code vulnerability classifier. "
+    "Output ONLY valid JSON with no explanation or reasoning text. "
+    "Your response must start with '{' or '[' and be parseable JSON."
+)
+
+
 class LLMNodeScorer:
     """Default prompt-rendering LLM scorer for v2 bundles."""
 
-    def __init__(self, llm_client: Any, bundle: PromptBundle):
+    def __init__(
+        self,
+        llm_client: Any,
+        bundle: PromptBundle,
+        system_prompt: str | None = None,
+    ):
         self.llm_client = llm_client
         self.bundle = bundle
+        self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 
     def score(self, node: NodeSpec, ctx: ScorerContext) -> NodeScoreResult:
         """Score one node using the bundle-configured prompt contract."""
         try:
             prompt = self._render_prompt(node, ctx)
-            response = self.llm_client.generate(prompt)
+            response = self.llm_client.generate(
+                prompt, system_prompt=self.system_prompt
+            )
         except Exception as exc:
             return NodeScoreResult(
                 node_id=node.node_id,
