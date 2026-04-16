@@ -1,6 +1,7 @@
 import json
 
 from mulvul.data.sampler import BalancedSampler
+from mulvul.data.sampling import BalancedSampler as LegacyBalancedSampler
 
 
 def _write_jsonl(path, items):
@@ -31,3 +32,7 @@ def test_sample_primevul_balanced_by_major(tmp_path):
 
     counts = {label: stats[f"sampled_{label}"] for label in labels}
     assert len(set(counts.values())) == 1  # balanced across labels
+
+
+def test_legacy_sampling_module_reexports_balanced_sampler():
+    assert LegacyBalancedSampler is BalancedSampler
