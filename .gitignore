@@ -142,6 +142,13 @@ data/**
 # MacOS
 .DS_Store
 
+# Experiment results and reports (keep out of version control)
+node_evolution_runs/
+cwd_optimized_experiment_results/
+cwd_optimized_experiment_results_smoke/
+docs/baseline-results-v0.2.0.md
+docs/rag-ablation-results.md
+
 # data
 *.json
 .worktrees/
