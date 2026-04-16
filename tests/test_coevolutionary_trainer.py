@@ -378,12 +378,13 @@ class TestConstrainedMutation:
         )
         errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
 
-        result = trainer._mutate_prompt(original, errors, "major_Memory")
+        result, desc = trainer._mutate_prompt(original, errors, "major_Memory")
 
         assert "{evidence}" in result
         assert "{code}" in result
         assert "predictions" in result
         assert "buffer overflow" in result.lower()
+        assert isinstance(desc, str)
         trainer.log.close()
 
     def test_mutate_returns_original_when_no_errors(self, tmp_path):
@@ -396,7 +397,7 @@ class TestConstrainedMutation:
         trainer.log = EvolutionLog(tmp_path / "test.jsonl")
 
         original = "Some prompt\n\n## Evidence:\n{evidence}\n\n## Code:\n{code}"
-        result = trainer._mutate_prompt(original, [], "major_Memory")
+        result, desc = trainer._mutate_prompt(original, [], "major_Memory")
         assert result == original
         trainer.log.close()
 
@@ -416,7 +417,7 @@ class TestConstrainedMutation:
 
         original = "No markers in this prompt"
         errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
-        result = trainer._mutate_prompt(original, errors, "major_Memory")
+        result, desc = trainer._mutate_prompt(original, errors, "major_Memory")
         assert result == original
         trainer.log.close()
 
@@ -438,7 +439,7 @@ class TestConstrainedMutation:
 
         original = "You are an expert.\n\n## Evidence:\n{evidence}\n\n## Code:\n{code}"
         errors = [{"stage": "major", "true_major": "Memory", "pred_major": "Benign"}]
-        result = trainer._mutate_prompt(original, errors, "major_Memory")
+        result, desc = trainer._mutate_prompt(original, errors, "major_Memory")
         assert result == original
         trainer.log.close()
 

@@ -21,7 +21,7 @@ class StubLLMClient:
 
 
 class FakeTrainer:
-    def __init__(self, llm_client, sampler, retriever, output_dir):
+    def __init__(self, llm_client, sampler, retriever, output_dir, **kwargs):
         self.best_prompts = {
             f"major_{major}": f"Judge {major}: {{code}}" for major in MAJOR_TO_MIDDLE
         }

@@ -168,7 +168,7 @@ class CoevolutionaryTrainer:
         self.best_prompts: Dict[str, str] = {}
         self.best_scores: Dict[str, float] = {}
         self._max_workers: int = 8
-        self._pending_mutations: Dict[str, float] = {}
+        self._pending_mutations: Dict[str, Tuple[float, str]] = {}
         self.log = EvolutionLog(Path(output_dir) / "evolution.jsonl")
         self.memory = EvolutionMemory(Path(output_dir) / "evolution_memory.jsonl") if use_memory else None
 
@@ -1090,22 +1090,6 @@ class CoevolutionaryTrainer:
     # ------------------------------------------------------------------
     # Constrained mutation / crossover
     # ------------------------------------------------------------------
-
-    def _validate_prompt_structure(self, prompt: str) -> bool:
-        """Validate that essential prompt structure is preserved."""
-        # Check for essential markers that downstream components depend on
-        required_markers = [
-            "## Code:",           # Code delimiter
-            "vulnerabilities",    # JSON output section
-        ]
-
-        prompt_lower = prompt.lower()
-        for marker in required_markers:
-            if marker.lower() not in prompt_lower:
-                return False
-
-        # Check that it looks like JSON output format is preserved
-        return ("{" in prompt and "}" in prompt) or ("json" in prompt_lower)
 
     def _mutate_prompt(
         self,

@@ -85,7 +85,7 @@ class TestExperience:
 
 class TestEvolutionMemory:
     def test_record_and_retrieve_same_node(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         exp = Experience(
             node="cwe_CWE-189",
             action="mutation",
@@ -102,7 +102,7 @@ class TestEvolutionMemory:
         assert results[0].delta == 0.33
 
     def test_retrieve_includes_sibling_experiences(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         # Same node
         mem.record(Experience(
             node="cwe_CWE-189", action="mutation",
@@ -130,7 +130,7 @@ class TestEvolutionMemory:
         assert results[2].node == "major_Memory"
 
     def test_retrieve_ranking_by_abs_delta_within_tier(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         mem.record(Experience(
             node="cwe_CWE-189", action="mutation",
             description="Small improvement", f1_before=0.50, f1_after=0.55,
@@ -148,7 +148,7 @@ class TestEvolutionMemory:
         assert results[1].delta == 0.05
 
     def test_retrieve_top_k_limits_results(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         for i in range(10):
             mem.record(Experience(
                 node="cwe_CWE-189", action="mutation",
@@ -159,7 +159,7 @@ class TestEvolutionMemory:
         assert len(results) == 3
 
     def test_format_for_prompt_contains_delta_signs(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         mem.record(Experience(
             node="cwe_CWE-189", action="mutation",
             description="Added distinction rules between CWE-189/190",
@@ -181,18 +181,18 @@ class TestEvolutionMemory:
         assert "Completely rewrote role description" in text
 
     def test_format_for_prompt_empty_list(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         text = mem.format_for_prompt([])
         assert text == ""
 
     def test_empty_memory_returns_empty_list(self, tmp_path: Path):
-        mem = EvolutionMemory(tmp_path / "mem.jsonl")
+        mem = EvolutionMemory(tmp_path / "mem.jsonl", include_seeds=False)
         results = mem.retrieve("cwe_CWE-189", "cwe", top_k=5)
         assert results == []
 
     def test_persistence_across_instances(self, tmp_path: Path):
         path = tmp_path / "mem.jsonl"
-        mem1 = EvolutionMemory(path)
+        mem1 = EvolutionMemory(path, include_seeds=False)
         mem1.record(Experience(
             node="cwe_CWE-189", action="mutation",
             description="First session fix", f1_before=0.50, f1_after=0.83,
@@ -205,7 +205,7 @@ class TestEvolutionMemory:
         ))
 
         # New instance loads previous records
-        mem2 = EvolutionMemory(path)
+        mem2 = EvolutionMemory(path, include_seeds=False)
         results = mem2.retrieve("cwe_CWE-189", "cwe", top_k=5)
         assert len(results) == 2
         assert any(r.node == "cwe_CWE-189" for r in results)
@@ -213,7 +213,7 @@ class TestEvolutionMemory:
 
     def test_jsonl_format_on_disk(self, tmp_path: Path):
         path = tmp_path / "mem.jsonl"
-        mem = EvolutionMemory(path)
+        mem = EvolutionMemory(path, include_seeds=False)
         mem.record(Experience(
             node="cwe_CWE-189", action="mutation",
             description="Test", f1_before=0.5, f1_after=0.8,
