@@ -18,29 +18,6 @@ from .helpers import (
 logger = logging.getLogger(__name__)
 
 
-def load_env_vars():
-    """Load environment variables from .env file"""
-    # Try multiple possible locations for .env file
-    possible_paths = [
-        Path(__file__).parent.parent.parent / '.env',  # From package structure
-        Path.cwd() / '.env',  # From current working directory
-        Path(__file__).parent.parent.parent.parent / '.env'  # One level up from src
-    ]
-    
-    for env_path in possible_paths:
-        if env_path.exists():
-            logger.debug(f"Loading .env from: {env_path}")
-            with open(env_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        os.environ.setdefault(key.strip(), value.strip())
-            return
-    
-    logger.warning("No .env file found in any expected location")
-
-
 def _get_env_int(name: str, default: int) -> int:
     """Read an integer environment variable with fallback."""
     value = os.getenv(name)

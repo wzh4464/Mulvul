@@ -3,8 +3,11 @@
 测试修改后的并发批处理功能
 """
 
+import os
 import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, 'src')
 # 添加项目根目录到路径，以便导入scripts模块
@@ -14,7 +17,10 @@ sys.path.insert(0, str(project_root))
 def test_openai_client_concurrent():
     """测试OpenAI客户端并发功能"""
     print("🧪 测试OpenAI客户端并发功能...")
-    
+
+    if not os.getenv("API_KEY"):
+        pytest.skip("API_KEY 未设置，跳过真实并发集成测试")
+
     from mulvul.llm.client import create_default_client
     import time
     
