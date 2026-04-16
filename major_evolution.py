@@ -416,6 +416,214 @@ Respond with JSON only:
 {{"prediction": "VULNERABLE", "confidence": 0.9}}
 or
 {{"prediction": "BENIGN", "confidence": 0.8}}""",
+
+9: """\
+You are a memory-safety vulnerability detector specialized in C/C++.
+
+Determine whether the TARGET (TGT) function contains a MEMORY SAFETY vulnerability.
+
+Memory safety vulnerabilities include:
+- Buffer overflow / out-of-bounds read or write
+- Use-after-free: accessing heap memory after free()
+- Double-free: calling free() twice on the same pointer
+- Memory leak: heap allocation not freed on ALL non-failure return paths
+- Null-pointer or uninitialized-pointer dereference
+- Dangling pointer: returning or storing address of a local variable
+- Invalid free: calling free() on non-heap or non-start-of-buffer pointer
+- Overlapping memcpy/memmove source and destination
+- Integer overflow/underflow in size calculation leading to wrong allocation
+- Uncontrolled allocation size: malloc/new/vector::resize/container::reserve
+  called with a user-controlled parameter that has no upper-bound check — even
+  if a zero-check exists.  A check like `if (n == 0) return` does NOT guarantee
+  safety; the parameter could still be arbitrarily large.
+- Missing container size limit: the context defines a maximum-size constant
+  (e.g. MAX_COUNT, MAX_SIZE, MAX_CONTAINER_SIZE) but the TGT function inserts
+  into the container (push_back, insert, emplace_back, operator[]) without
+  checking that the container has not exceeded that limit.
+
+Rules:
+1. Ignore test-harness naming: TGT function name, even if it contains "Bad", "Unsafe",
+   "without", "withoutCheck" — these are BENCHMARK LABELS, not evidence.
+2. If the TGT function always frees/releases every allocation it makes (using free, delete,
+   Free*, Release*, Delete* patterns), or always returns the pointer to the caller — BENIGN.
+3. A return immediately after a malloc/new NULL check (allocation failure path) is OK.
+
+CODE:
+```c
+{code}
+```
+
+Respond with JSON only:
+{{"prediction": "VULNERABLE", "confidence": 0.9}}
+or
+{{"prediction": "BENIGN", "confidence": 0.8}}""",
+
+10: """\
+You are a memory-safety vulnerability detector specialized in C/C++.
+
+Determine whether the TARGET (TGT) function contains a MEMORY SAFETY vulnerability.
+
+Memory safety vulnerabilities include:
+- Buffer overflow / out-of-bounds read or write
+- Use-after-free: accessing heap memory after free()
+- Double-free: calling free() twice on the same pointer
+- Memory leak: heap allocation not freed on ALL non-failure return paths
+- Null-pointer or uninitialized-pointer dereference
+- Dangling pointer: returning or storing address of a local variable
+- Invalid free: calling free() on non-heap or non-start-of-buffer pointer
+- Overlapping memcpy/memmove source and destination
+- Integer overflow/underflow in size calculation leading to wrong allocation
+- Uncontrolled allocation size: malloc/new/vector::resize/container::reserve
+  is called with a SIZE that comes from an EXTERNAL source (function parameter,
+  deserialized field, network/socket read, user request count) AND the only guard
+  before that call is a zero/null check — no upper-bound check like
+  `if (n > MAX_SIZE) return/error`.  Do NOT flag if the size is computed internally
+  from a bounded expression or a constant.
+- Missing container size limit: ALL THREE conditions must hold simultaneously:
+  (a) the context defines a named capacity constant that is clearly the MAXIMUM
+      ELEMENT COUNT for a specific container (e.g. `MAX_ITEMS`, `MAX_CONTAINER_SIZE`);
+  (b) the TGT function appends to that specific container (push_back, insert,
+      emplace_back, emplace) without first checking `container.size() < MAX_*`;
+  (c) the constant is NEVER used anywhere in TGT (proving it is intentionally ignored).
+  Do NOT flag if the constant relates to string length, buffer bytes, or is used
+  elsewhere in TGT (even in a different context).
+
+Rules:
+1. Ignore test-harness naming: TGT function name, even if it contains "Bad", "Unsafe",
+   "without", "withoutCheck" — these are BENCHMARK LABELS, not evidence.
+2. If the TGT function always frees/releases every allocation it makes (using free, delete,
+   Free*, Release*, Delete* patterns), or always returns the pointer to the caller — BENIGN.
+3. A return immediately after a malloc/new NULL check (allocation failure path) is OK.
+
+CODE:
+```c
+{code}
+```
+
+Respond with JSON only:
+{{"prediction": "VULNERABLE", "confidence": 0.9}}
+or
+{{"prediction": "BENIGN", "confidence": 0.8}}""",
+
+11: """\
+You are a memory-safety vulnerability detector specialized in C/C++.
+
+Determine whether the TARGET (TGT) function contains a MEMORY SAFETY vulnerability.
+
+Memory safety vulnerabilities include:
+- Buffer overflow / out-of-bounds read or write
+- Use-after-free: accessing heap memory after free()
+- Double-free: calling free() twice on the same pointer
+- Memory leak: heap allocation not freed on ALL non-failure return paths
+- Null-pointer or uninitialized-pointer dereference
+- Dangling pointer: returning or storing address of a local variable
+- Invalid free: calling free() on non-heap or non-start-of-buffer pointer
+- Overlapping memcpy/memmove source and destination
+- Integer overflow/underflow in size calculation leading to wrong allocation
+- securec wrapper misuse: a #define macro or inline wrapper calls memcpy_s/strcpy_s
+  with the SAME value for both destination-capacity (arg 2) and copy-count (arg 4),
+  ignoring the actual destination buffer size.
+  Pattern: `memcpy_s(dst, count, src, count)` or `SAFE_MEMCPY_S(dst, src, count)`
+  expanding to `memcpy_s(dst, count, src, count)` — flag this, it is a bug.
+  Correct form: `memcpy_s(dst, sizeof(dst_buf), src, count)` where arg 2 ≠ arg 4.
+- Uncontrolled allocation size: malloc/new/vector::resize/container::reserve
+  is called with a SIZE that comes from an EXTERNAL source (function parameter,
+  deserialized field, network/socket read, user request count) AND the only guard
+  before that call is a zero/null check — no upper-bound check like
+  `if (n > MAX_SIZE) return/error`.  Do NOT flag if the size is computed internally
+  from a bounded expression or a constant.
+- Missing container size limit: ALL THREE conditions must hold simultaneously:
+  (a) the context defines a named capacity constant that is clearly the MAXIMUM
+      ELEMENT COUNT for a specific container (e.g. `MAX_ITEMS`, `MAX_CONTAINER_SIZE`);
+  (b) the TGT function appends to that specific container (push_back, insert,
+      emplace_back, emplace) without first checking `container.size() < MAX_*`;
+  (c) the constant is NEVER used anywhere in TGT (proving it is intentionally ignored).
+  Do NOT flag if the constant relates to string length, buffer bytes, or is used
+  elsewhere in TGT (even in a different context).
+
+Rules:
+1. Ignore test-harness naming: TGT function name, even if it contains "Bad", "Unsafe",
+   "without", "withoutCheck" — these are BENCHMARK LABELS, not evidence.
+   The surrounding context may also contain functions named *Bad*, *Good*, *withoutCheck*,
+   *WithCheck*, *Validate*Bad*, *Validate*Good* — these are comparison variants in the
+   same test file, NOT the function under analysis. Evaluate ONLY the TGT function's
+   logic, regardless of what the context functions are named.
+2. If the TGT function always frees/releases every allocation it makes (using free, delete,
+   Free*, Release*, Delete* patterns), or always returns the pointer to the caller — BENIGN.
+3. A return immediately after a malloc/new NULL check (allocation failure path) is OK.
+4. securec memset_s correct usage: `memset_s(dst, sizeof(T), 0, sizeof(T))` where both
+   size args equal sizeof(target) is the CORRECT way to zero a struct — NOT a vulnerability.
+   The arg2==arg4 misuse rule applies ONLY to memcpy_s and strcpy_s, not to memset_s.
+
+CODE:
+```c
+{code}
+```
+
+Respond with JSON only:
+{{"prediction": "VULNERABLE", "confidence": 0.9}}
+or
+{{"prediction": "BENIGN", "confidence": 0.8}}""",
+
+12: """\
+You are a memory-safety vulnerability detector specialized in C/C++.
+
+Determine whether the TARGET (TGT) function contains a MEMORY SAFETY vulnerability.
+
+Memory safety vulnerabilities include:
+- Buffer overflow / out-of-bounds read or write
+- Use-after-free: accessing heap memory after free()
+- Double-free: calling free() twice on the same pointer
+- Memory leak: heap allocation not freed on ALL non-failure return paths
+- Null-pointer or uninitialized-pointer dereference
+- Dangling pointer: returning or storing address of a local variable
+- Invalid free: calling free() on non-heap or non-start-of-buffer pointer
+- Overlapping memcpy/memmove source and destination
+- Integer overflow/underflow in size calculation leading to wrong allocation
+- securec wrapper misuse: a #define macro or inline wrapper calls memcpy_s/strcpy_s
+  with the SAME value for both destination-capacity (arg 2) and copy-count (arg 4),
+  ignoring the actual destination buffer size.
+  Pattern: `memcpy_s(dst, count, src, count)` or `SAFE_MEMCPY_S(dst, src, count)`
+  expanding to `memcpy_s(dst, count, src, count)` — flag this, it is a bug.
+  Correct form: `memcpy_s(dst, sizeof(dst_buf), src, count)` where arg 2 ≠ arg 4.
+- Uncontrolled allocation size: malloc/new/vector::resize/container::reserve
+  is called with a SIZE that comes from an EXTERNAL source (function parameter,
+  deserialized field, network/socket read, user request count) AND the only guard
+  before that call is a zero/null check — no upper-bound check like
+  `if (n > MAX_SIZE) return/error`.  Do NOT flag if the size is computed internally
+  from a bounded expression or a constant.
+- Missing container size limit: ALL THREE conditions must hold simultaneously:
+  (a) the context defines a named capacity constant that is clearly the MAXIMUM
+      ELEMENT COUNT for a specific container (e.g. `MAX_ITEMS`, `MAX_CONTAINER_SIZE`);
+  (b) the TGT function appends to that specific container (push_back, insert,
+      emplace_back, emplace) without first checking `container.size() < MAX_*`;
+  (c) the constant is NEVER used anywhere in TGT (proving it is intentionally ignored).
+  Do NOT flag if the constant relates to string length, buffer bytes, or is used
+  elsewhere in TGT (even in a different context).
+
+Rules:
+1. Ignore test-harness naming: TGT function name, even if it contains "Bad", "Unsafe",
+   "without", "withoutCheck" — these are BENCHMARK LABELS, not evidence.
+   The surrounding context may also contain functions named *Bad*, *Good*, *withoutCheck*,
+   *WithCheck*, *Validate*Bad*, *Validate*Good* — these are comparison variants in the
+   same test file, NOT the function under analysis. Evaluate ONLY the TGT function's
+   logic, regardless of what the context functions are named.
+2. If the TGT function always frees/releases every allocation it makes (using free, delete,
+   Free*, Release*, Delete* patterns), or always returns the pointer to the caller — BENIGN.
+3. A return immediately after a malloc/new NULL check (allocation failure path) is OK.
+4. securec memset_s correct usage: `memset_s(dst, sizeof(T), 0, sizeof(T))` where both
+   size args equal sizeof(target) is the CORRECT way to zero a struct — NOT a vulnerability.
+   The arg2==arg4 misuse rule applies ONLY to memcpy_s and strcpy_s, not to memset_s.
+
+CODE:
+```c
+{code}
+```
+
+Respond with JSON only:
+{{"prediction": "VULNERABLE", "confidence": 0.9}}
+or
+{{"prediction": "BENIGN", "confidence": 0.8}}""",
 },
 
 "Injection": {
@@ -1010,6 +1218,7 @@ def evaluate(
     concurrency: int = CONCURRENCY,
     code_limit: int = CODE_LIMIT,
     preprocess: bool = False,
+    llm_preprocess: bool = False,
     rag_bank: Optional["RAGBank"] = None,
 ) -> dict:
     """Evaluate prompt on dataset. Returns metrics dict."""
@@ -1028,11 +1237,51 @@ def evaluate(
         results_map: dict = {}
         done_count = 0
 
+        async def _anon_llm(code: str) -> str:
+            """LLM subagent: 语义识别并替换所有 benchmark 命名陷阱。"""
+            import re as _re
+            anon_prompt = (
+                "You are a code preprocessor. Identify ALL function and variable names that are "
+                "BENCHMARK LABELS (not real-world names). These include names like:\n"
+                "- BadCase*, GoodCase*, IsBad*, IsGood*, IsVulnerable*, IsSecure*\n"
+                "- FreeStackmemory*, FreeStack*, freestackmemory*\n"
+                "- TGTcase*, *withoutCheck*, *WithCheck*, *Unsafe*, *NoBound*, *NoBounds*\n"
+                "- Any PascalCase/camelCase that mixes 'Bad', 'Good', 'Vuln', 'Safe', 'Insecure', 'Secure'\n\n"
+                "Return ONLY a JSON object mapping each misleading name to a short neutral replacement:\n"
+                "{\"BadCaseMemcpy\": \"CopyData\", \"FreeStackmemory_TGT\": \"FreeBuffer\"}\n"
+                "Use neutral names like: CopyData, ProcessBuffer, HandleRecord, TransferBytes, "
+                "AllocBuffer, WriteData, ReadInput, ParseItem, StoreValue.\n"
+                "If no misleading names found, return {}.\n\n"
+                f"CODE:\n```c\n{code[:2000]}\n```"
+            )
+            try:
+                async with sem:
+                    resp = await aclient.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": anon_prompt}],
+                        temperature=0.0,
+                        max_tokens=300,
+                    )
+                text = resp.choices[0].message.content or ""
+                m = _re.search(r'\{[^}]*\}', text, _re.DOTALL)
+                if not m:
+                    return code
+                mapping = json.loads(m.group())
+                result = code
+                for orig, neutral in sorted(mapping.items(), key=lambda x: -len(x[0])):
+                    if orig and neutral and orig in result:
+                        result = _re.sub(r'\b' + _re.escape(orig) + r'\b', neutral, result)
+                return result
+            except Exception:
+                return code  # fallback: return original on any error
+
         async def _one(i: int, sample: dict):
             nonlocal done_count
             code = sample["code"][:code_limit]
             if preprocess:
                 code = anonymize_benchmark_names(code)
+            if llm_preprocess:
+                code = await _anon_llm(code)
             # Inject RAG few-shot block if available
             if rag_bank is not None and "{few_shot}" in prompt_template:
                 few_shot = rag_bank.format_few_shot(i)
@@ -1123,7 +1372,8 @@ def print_analysis(metrics: dict, round_num: int, major: str):
 # ── Main evolution loop ────────────────────────────────────────────────────────
 
 def run_major(major: str, rounds: Optional[List[int]] = None, verbose: bool = True,
-              preprocess: bool = False, use_rag: bool = False):
+              preprocess: bool = False, llm_preprocess: bool = False,
+              use_rag: bool = False):
     out_dir = Path(RESULTS_DIR) / major
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1174,8 +1424,13 @@ def run_major(major: str, rounds: Optional[List[int]] = None, verbose: bool = Tr
 
         prompt = prompts[rnd]
         has_fewshot = "{few_shot}" in prompt
-        # For RAG rounds, use a distinct result file so we don't overwrite plain results
-        suffix = "_rag" if (has_fewshot and rag_bank is not None) else ""
+        # Build result file suffix to avoid overwriting previous results
+        if llm_preprocess:
+            suffix = "_llmpp"
+        elif has_fewshot and rag_bank is not None:
+            suffix = "_rag"
+        else:
+            suffix = ""
         result_path = out_dir / f"round{rnd}{suffix}.json"
         if result_path.exists():
             with open(result_path) as f:
@@ -1190,10 +1445,12 @@ def run_major(major: str, rounds: Optional[List[int]] = None, verbose: bool = Tr
         active_rag = rag_bank if has_fewshot else None
         print(f"\n[{major}] Round {rnd}{suffix} — evaluating {len(dataset)} samples "
               f"(concurrency={CONCURRENCY}, code_limit={CODE_LIMIT}, "
-              f"preprocess={preprocess}, rag={active_rag is not None})...")
+              f"preprocess={preprocess}, llm_preprocess={llm_preprocess}, "
+              f"rag={active_rag is not None})...")
         t0 = time.time()
         metrics = evaluate(dataset, prompt, major=major, verbose=verbose,
-                           preprocess=preprocess, rag_bank=active_rag)
+                           preprocess=preprocess, llm_preprocess=llm_preprocess,
+                           rag_bank=active_rag)
         elapsed = time.time() - t0
 
         # Save
@@ -1236,6 +1493,9 @@ def main():
                         help="Suppress per-sample output")
     parser.add_argument("--preprocess", action="store_true",
                         help="Anonymize benchmark naming traps before sending to LLM")
+    parser.add_argument("--llm-preprocess", action="store_true",
+                        help="Use LLM subagent to semantically identify and replace "
+                             "ALL misleading benchmark names (more thorough than --preprocess)")
     parser.add_argument("--rag", action="store_true",
                         help="Enable RAG few-shot injection for rounds that have {few_shot} placeholder")
     args = parser.parse_args()
@@ -1261,12 +1521,14 @@ def main():
     rounds = [args.round] if args.round else None
     verbose = not args.quiet
     preprocess = args.preprocess
+    llm_preprocess = args.llm_preprocess
     use_rag = args.rag
 
     results_summary: Dict[str, float] = {}
     for major in target_majors:
         acc = run_major(major, rounds=rounds, verbose=verbose,
-                        preprocess=preprocess, use_rag=use_rag)
+                        preprocess=preprocess, llm_preprocess=llm_preprocess,
+                        use_rag=use_rag)
         if acc is not None:
             results_summary[major] = acc
 
