@@ -47,6 +47,7 @@ class EvolutionWorkflowConfig:
     phase1_only: bool = False
     elitism_threshold: float = 0.5
     constrained_mutation: bool = True
+    use_memory: bool = True
 
 
 @dataclass
@@ -132,6 +133,7 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         sampler=sampler,
         retriever=retriever,
         output_dir=config.output_dir,
+        use_memory=config.use_memory,
     )
 
     trainer.train_all_levels(
@@ -175,6 +177,10 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
     )
     PromptBundleIO.save(bundle, bundle_path, allow_partial=False)
 
+    # Compute score statistics for comparison
+    scores = list(trainer.best_scores.values())
+    avg_f1 = sum(scores) / len(scores) if scores else 0.0
+
     summary: Dict[str, Any] = {
         "timestamp": timestamp,
         "train_file": config.train_file,
@@ -199,6 +205,9 @@ def run_evolution_workflow(config: EvolutionWorkflowConfig) -> Dict[str, Any]:
         "router_prompt_count": len(artifact.router_prompts),
         "middle_prompt_count": len(artifact.middle_prompts),
         "cwe_prompt_count": len(artifact.cwe_prompts),
+        "use_memory": config.use_memory,
+        "avg_f1": round(avg_f1, 4),
+        "best_scores": {k: round(v, 4) for k, v in trainer.best_scores.items()},
     }
 
     summary_path = Path(config.output_dir) / "summary.json"

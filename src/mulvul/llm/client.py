@@ -30,6 +30,7 @@ from .runtime import LLMRuntime, LLMRuntimeConfig
 logger = logging.getLogger(__name__)
 
 
+
 def _get_env_int(name: str, default: int) -> int:
     """Read an integer environment variable with fallback."""
     value = os.getenv(name)
@@ -696,6 +697,9 @@ def create_llm_client(llm_type: str = None, **kwargs) -> LLMClient:
             model_name=model_name_override or llm_type,
             **kwargs,
         )
+    elif "mlx" in llm_type or llm_type.startswith("gemma") or llm_type.startswith("llama"):
+        # Local MLX/llama.cpp servers are OpenAI-compatible
+        backend = OpenAICompatibleClient(model_name=llm_type, **kwargs)
     else:
         # Use local client for local models
         backend = LocalLLMClient(model_name=model_name_override or llm_type, **kwargs)

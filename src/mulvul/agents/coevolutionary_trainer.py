@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from mulvul.agents.evolution_memory import EvolutionMemory, Experience
 from mulvul.agents.hierarchical_detector import LevelDetector
 from mulvul.agents.hierarchical_sampler import TrainingSample
 from mulvul.data.cwe_hierarchy import (
@@ -153,19 +154,23 @@ class CoevolutionaryTrainer:
         sampler: Any | None = None,
         retriever: Any | None = None,
         output_dir: str = "./outputs/coevolution",
+        use_memory: bool = True,
     ) -> None:
         self.llm_client = llm_client
         self.meta_llm = meta_llm_client or llm_client
         self.sampler = sampler
         self.retriever = retriever
         self.output_dir = output_dir
+        self.use_memory = use_memory
         os.makedirs(output_dir, exist_ok=True)
 
         self.populations: Dict[str, NodePopulation] = {}
         self.best_prompts: Dict[str, str] = {}
         self.best_scores: Dict[str, float] = {}
         self._max_workers: int = 8
+        self._pending_mutations: Dict[str, float] = {}
         self.log = EvolutionLog(Path(output_dir) / "evolution.jsonl")
+        self.memory = EvolutionMemory(Path(output_dir) / "evolution_memory.jsonl") if use_memory else None
 
     # ------------------------------------------------------------------
     # Public API
@@ -291,9 +296,54 @@ class CoevolutionaryTrainer:
             )
 
             self._save_checkpoint(gen + 1, n_rounds, population_size)
+            self._save_generation_snapshot(gen)
 
         self.log.close()
         return self.best_prompts
+
+    def _save_generation_snapshot(self, gen: int) -> None:
+        """Save a snapshot of the current generation's prompts and scores.
+
+        Each generation gets its own file in outputs/generations/ so we can
+        review any generation's prompts later, not just the final one.
+        """
+        gen_dir = Path(self.output_dir) / "generations"
+        gen_dir.mkdir(parents=True, exist_ok=True)
+        save_path = gen_dir / f"gen_{gen:03d}.json"
+
+        # Collect population state for this generation
+        population_snapshot = {}
+        for key, pop in self.populations.items():
+            population_snapshot[key] = {
+                "best_prompt": pop.best().prompt,
+                "best_fitness": round(pop.best().node_fitness, 6),
+                "individuals": [
+                    {
+                        "prompt": ind.prompt,
+                        "node_fitness": round(ind.node_fitness, 6),
+                        "origin": ind.origin,
+                    }
+                    for ind in pop.individuals
+                ],
+            }
+
+        data = {
+            "generation": gen,
+            "timestamp": datetime.now().isoformat(),
+            "best_prompts": dict(self.best_prompts),
+            "best_scores": {k: round(v, 6) for k, v in self.best_scores.items()},
+            "populations": population_snapshot,
+            "summary": {
+                "node_count": len(self.best_prompts),
+                "avg_best_f1": round(
+                    sum(self.best_scores.values()) / max(len(self.best_scores), 1), 4
+                ),
+                "max_f1": round(max(self.best_scores.values()) if self.best_scores else 0, 4),
+                "min_f1": round(min(self.best_scores.values()) if self.best_scores else 0, 4),
+            },
+        }
+        with save_path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
     def save_best_prompts(self, path: str | None = None) -> None:
         """Persist the best prompts and scores to disk."""
@@ -593,6 +643,23 @@ class CoevolutionaryTrainer:
                     "scoring_failure_count": node_failures,
                 },
             )
+
+            # Record evolution memory for pending mutations from previous gen
+            # Only record meaningful experiences (|delta| > 0.01) to avoid noise
+            if self.memory and key in self._pending_mutations:
+                f1_before, mutation_desc = self._pending_mutations.pop(key)
+                f1_after = pop.best().node_fitness
+                delta = f1_after - f1_before
+                if abs(delta) > 0.01:  # Filter out neutral experiences
+                    self.memory.record(Experience(
+                        node=key,
+                        action="mutation",
+                        description=mutation_desc,
+                        f1_before=f1_before,
+                        f1_after=f1_after,
+                        delta=delta,
+                        generation=gen,
+                    ))
 
             # Incremental save: persist best prompt per node immediately
             best_ind = pop.best()
@@ -916,7 +983,9 @@ class CoevolutionaryTrainer:
 
             # --- Mutation: rewrite worst individual using error feedback ---
             worst = pop.worst()
-            mutated_prompt = self._mutate_prompt(worst.prompt, node_errors, key)
+            f1_before = worst.node_fitness
+            mutated_prompt, mutation_desc = self._mutate_prompt(worst.prompt, node_errors, key)
+            self._pending_mutations[key] = (f1_before, mutation_desc)
             worst.prompt = mutated_prompt
             worst.origin = "mutation"
             worst.generation = gen
@@ -1043,8 +1112,8 @@ class CoevolutionaryTrainer:
         prompt: str,
         errors: List[Dict[str, Any]],
         node_key: str,
-    ) -> str:
-        """Use the meta-LLM to improve a prompt.
+    ) -> Tuple[str, str]:
+        """Use the meta-LLM to improve a prompt via constrained mutation.
 
         If constrained_mutation is enabled (default), the prompt is split at
         ``## Evidence:`` into a mutable header (role, candidates, rules) and a
@@ -1053,9 +1122,14 @@ class CoevolutionaryTrainer:
 
         If constrained_mutation is disabled, the entire prompt is sent for
         rewriting (unconstrained mutation).
+
+        Returns:
+            A tuple of (mutated_prompt, description) where description summarizes
+            what was changed for evolution memory tracking.
+
         """
         if not errors:
-            return prompt
+            return prompt, "No errors to address"
 
         error_summary = json.dumps(errors[:5], ensure_ascii=False)
 
@@ -1063,13 +1137,23 @@ class CoevolutionaryTrainer:
             # Constrained: only mutate mutable header
             mutable, protected = self._split_prompt(prompt)
             if not mutable:
-                return prompt
+                return prompt, "No mutable region found"
+
+            # Retrieve relevant evolution memory
+            memory_block = ""
+            if self.memory:
+                stage = node_key.split("_", 1)[0]
+                experiences = self.memory.retrieve(node_key, stage, top_k=5)
+                memory_context = self.memory.format_for_prompt(experiences)
+                if memory_context:
+                    memory_block = f"\n{memory_context}\n\n"
 
             mutation_request = (
                 f"Improve this vulnerability detection instruction for node '{node_key}'.\n\n"
                 f"--- CURRENT INSTRUCTION ---\n{mutable.strip()}\n"
                 f"--- END INSTRUCTION ---\n\n"
                 f"Cascade errors attributed to this node:\n{error_summary}\n\n"
+                f"{memory_block}"
                 "You may:\n"
                 "- Add decision boundaries between candidates (e.g., 'Choose X only when...')\n"
                 "- Add brief descriptions after candidate names\n"
@@ -1078,23 +1162,35 @@ class CoevolutionaryTrainer:
                 "You must NOT:\n"
                 "- Remove any candidate from the list\n"
                 "- Add {{code}}, {{evidence}}, or JSON format — those are handled separately\n\n"
-                "Return ONLY the improved instruction text, nothing else."
+                "First, write a ONE-LINE summary of your changes (prefix with 'SUMMARY:').\n"
+                "Then return the improved instruction text.\n\n"
+                "Format:\nSUMMARY: <one-line description of changes>\n<improved instruction>"
             )
-            result = self._safe_generate(mutation_request)
-            if not result:
-                self.log.emit("mutation_skipped", {
-                    "node": node_key, "reason": "generation_failed_or_too_short",
+            try:
+                result = self.meta_llm.generate(mutation_request)
+                result = result.strip()
+
+                # Extract summary line if present
+                description = "Prompt mutation applied"
+                if result.startswith("SUMMARY:"):
+                    lines = result.split("\n", 1)
+                    description = lines[0].replace("SUMMARY:", "").strip()[:200]
+                    if len(lines) > 1:
+                        result = lines[1].strip()
+
+                if len(result) < _MIN_LLM_OUTPUT_LEN:
+                    return prompt, "Mutation rejected: output too short"
+                new_prompt = self._reassemble(result, protected)
+                self.log.emit("mutation_applied", {
+                    "node": node_key,
+                    "mode": "constrained",
+                    "prompt_before": prompt,
+                    "prompt_after": new_prompt,
+                    "error_count": len(errors),
                 })
-                return prompt
-            new_prompt = self._reassemble(result, protected)
-            self.log.emit("mutation_applied", {
-                "node": node_key,
-                "mode": "constrained",
-                "prompt_before": prompt,
-                "prompt_after": new_prompt,
-                "error_count": len(errors),
-            })
-            return new_prompt
+                return new_prompt, description
+            except Exception as e:
+                return prompt, f"Mutation failed: {type(e).__name__}"
         else:
             # Unconstrained: rewrite entire prompt
             mutation_request = (
@@ -1112,7 +1208,7 @@ class CoevolutionaryTrainer:
                 self.log.emit("mutation_skipped", {
                     "node": node_key, "reason": "generation_failed_or_invalid_structure",
                 })
-                return prompt
+                return prompt, "Unconstrained mutation: generation failed"
             self.log.emit("mutation_applied", {
                 "node": node_key,
                 "mode": "unconstrained",
@@ -1120,7 +1216,7 @@ class CoevolutionaryTrainer:
                 "prompt_after": result,
                 "error_count": len(errors),
             })
-            return result
+            return result, "Unconstrained mutation applied"
 
     def _crossover_prompts(
         self, prompt_a: str, prompt_b: str, node_key: str
